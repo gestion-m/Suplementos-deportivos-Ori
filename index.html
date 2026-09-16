@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tienda de Suplementos</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root{
+  --ink:#14150f;
+  --paper:#eef0ea;
+  --card:#ffffff;
+  --line:#d9d6c7;
+  --muted:#6b6f63;
+  --gold:#f2c230;
+  --coral:#e8543a;
+  --green:#3f7d4f;
+  --radius:16px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
+h1,h2,h3,.headline{font-family:'Anton',sans-serif;font-weight:400;letter-spacing:0.01em;}
+img{max-width:100%;display:block;}
+button{font-family:'Inter',sans-serif;cursor:pointer;}
+
+.topbar{position:sticky;top:0;z-index:50;background:var(--ink);color:var(--paper);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;}
+.topbar .brand{font-family:'Anton',sans-serif;font-size:1.15rem;letter-spacing:0.02em;}
+.topbar .actions{display:flex;gap:8px;align-items:center;}
+.icon-btn{background:none;border:1px solid #3a3c31;color:var(--paper);border-radius:9px;padding:7px 10px;font-size:0.75rem;font-weight:600;}
+.icon-btn.active{background:var(--gold);color:var(--ink);border-color:var(--gold);}
+
+.hero{background:var(--ink);color:var(--paper);padding:38px 20px 46px;position:relative;overflow:hidden;}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:var(--gold);opacity:0.14;}
+.hero h1{font-size:2.5rem;line-height:0.98;margin:0 0 10px;max-width:11ch;}
+.hero .accent{color:var(--gold);}
+.hero p{margin:0 0 20px;font-size:0.95rem;color:#c9cbbf;max-width:32ch;}
+.hero-cta{display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:var(--ink);font-weight:700;font-size:0.88rem;padding:12px 18px;border-radius:11px;border:none;text-decoration:none;}
+
+.section{padding:34px 18px 8px;}
+.section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;}
+.section-head h2{font-size:1.5rem;margin:0;}
+.section-head .tag{font-size:0.72rem;color:var(--muted);font-weight:600;}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.p-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;}
+.p-photo{aspect-ratio:1/1;background:#e6e4d8;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer;}
+.p-photo img{width:100%;height:100%;object-fit:cover;}
+.p-photo .ph-empty{color:#a9ab9c;font-size:0.68rem;font-weight:600;text-align:center;padding:8px;}
+.p-brand-tag{position:absolute;top:8px;left:8px;background:var(--ink);color:var(--gold);font-size:0.6rem;font-weight:700;padding:3px 7px;border-radius:6px;letter-spacing:0.02em;}
+.p-multi-badge{position:absolute;bottom:8px;right:8px;background:rgba(20,21,15,0.75);color:#fff;font-size:0.6rem;font-weight:700;padding:3px 6px;border-radius:6px;}
+.p-stock-badge{position:absolute;top:8px;right:8px;font-size:0.6rem;font-weight:800;padding:3px 7px;border-radius:6px;}
+.p-stock-badge.low{background:var(--coral);color:#fff;}
+.p-stock-badge.ok{background:var(--green);color:#fff;}
+.p-body{padding:10px 11px 12px;display:flex;flex-direction:column;gap:6px;flex:1;}
+.p-name{font-size:0.8rem;font-weight:700;line-height:1.25;cursor:pointer;}
+.p-desc{font-size:0.74rem;color:#5c4a00;font-weight:700;line-height:1.35;background:rgba(242,194,48,0.22);padding:5px 8px;border-radius:7px;}
+.p-prices{display:flex;flex-direction:column;gap:3px;margin-top:auto;}
+.price-line{display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;}
+.price-line .lbl{color:var(--muted);font-weight:600;font-size:0.65rem;}
+.price-line.cash .val{font-weight:800;color:var(--green);font-size:0.95rem;}
+.price-line.card .val{font-weight:700;color:var(--coral);font-size:0.82rem;}
+.add-cart-btn{margin-top:8px;background:var(--ink);color:var(--paper);border:none;border-radius:9px;padding:9px;font-size:0.75rem;font-weight:700;text-align:center;display:block;width:100%;}
+.add-cart-btn:active{background:#000;}
+.add-cart-btn:disabled{background:#c7c9be;color:#8a8d80;}
+
+.combo-card{background:var(--ink);color:var(--paper);border-radius:var(--radius);padding:16px;margin-bottom:12px;position:relative;}
+.combo-badge{position:absolute;top:14px;right:14px;background:var(--gold);color:var(--ink);font-size:0.62rem;font-weight:800;padding:4px 8px;border-radius:7px;}
+.combo-photo{width:100%;aspect-ratio:16/9;border-radius:11px;overflow:hidden;background:#26281f;margin-bottom:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.combo-photo img{width:100%;height:100%;object-fit:cover;}
+.combo-photo .ph-empty{color:#6f7264;font-size:0.68rem;font-weight:600;}
+.combo-thumbs{display:flex;gap:6px;margin-bottom:10px;}
+.combo-thumbs img{width:44px;height:44px;object-fit:cover;border-radius:7px;cursor:pointer;}
+.combo-card h3{font-size:1.05rem;margin:0 0 6px;padding-right:70px;}
+.combo-items{font-size:0.78rem;color:#c9cbbf;margin-bottom:10px;line-height:1.4;}
+.combo-price-row{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;}
+.combo-price-row .price{font-family:'Anton',sans-serif;font-size:1.5rem;color:var(--gold);}
+.combo-price-row .old{font-size:0.78rem;color:#8d8f81;text-decoration:line-through;}
+
+.admin-panel{display:none;background:#fff8dd;border:1.5px dashed var(--gold);border-radius:12px;padding:10px;margin-top:8px;font-size:0.75rem;}
+body.edit-mode .admin-panel{display:block;}
+body.edit-mode .p-card{outline:2px solid var(--gold);}
+.admin-row{display:flex;gap:6px;margin-bottom:6px;}
+.admin-row input, .admin-row textarea, .admin-row select{flex:1;border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:0.75rem;font-family:'Inter',sans-serif;}
+.admin-row textarea{resize:vertical;min-height:38px;}
+.admin-row label{font-size:0.6rem;color:var(--muted);font-weight:700;white-space:nowrap;align-self:flex-start;width:52px;padding-top:6px;}
+.admin-photo-btn{width:100%;padding:7px;border:1px solid var(--ink);background:var(--card);border-radius:7px;font-size:0.72rem;font-weight:600;margin-bottom:6px;}
+.admin-thumb-row{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;}
+.admin-thumb{position:relative;}
+.admin-thumb img{width:40px;height:40px;object-fit:cover;border-radius:6px;}
+.admin-thumb button{position:absolute;top:-6px;right:-6px;background:var(--coral);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:0.55rem;line-height:1;padding:0;}
+.admin-delete{width:100%;background:none;border:none;color:var(--coral);font-size:0.7rem;font-weight:700;padding:5px;}
+.admin-suggest{background:none;border:1px solid var(--muted);border-radius:7px;font-size:0.65rem;padding:6px 8px;white-space:nowrap;align-self:flex-start;}
+.add-card{border:1.5px dashed var(--line);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;min-height:120px;color:var(--muted);font-weight:600;font-size:0.78rem;background:none;}
+body:not(.edit-mode) .add-card{display:none;}
+
+.settings-box{display:none;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:0 18px 20px;}
+body.edit-mode .settings-box{display:block;}
+.settings-box h3{margin:0 0 10px;font-size:0.9rem;}
+.settings-box .admin-row label{width:80px;align-self:center;padding-top:0;}
+
+.combo-builder{display:none;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:0 0 16px;}
+body.edit-mode .combo-builder{display:block;}
+.combo-builder h3{margin:0 0 10px;font-size:0.9rem;color:var(--ink);}
+.cb-item-row{display:flex;gap:6px;margin-bottom:6px;align-items:center;}
+.cb-item-row select{flex:2;border:1px solid var(--line);border-radius:7px;padding:6px;font-size:0.72rem;}
+.cb-item-row input{flex:0 0 50px;border:1px solid var(--line);border-radius:7px;padding:6px;font-size:0.72rem;}
+.cb-item-row button{border:none;background:none;color:var(--coral);font-weight:700;}
+.small-btn{border:1px solid var(--ink);background:none;border-radius:7px;padding:6px 10px;font-size:0.72rem;font-weight:600;}
+.primary-btn{background:var(--ink);color:var(--paper);border:none;border-radius:9px;padding:9px 14px;font-size:0.78rem;font-weight:700;width:100%;margin-top:6px;}
+.primary-btn:disabled{opacity:0.5;}
+
+.ventas-box{display:none;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:0 18px 20px;}
+body.edit-mode .ventas-box{display:block;}
+.ventas-box h3{margin:0 0 10px;font-size:0.9rem;}
+.vsum-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.vsum-card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 10px;}
+.vsum-card .l{font-size:0.6rem;color:var(--muted);font-weight:700;}
+.vsum-card .v{font-family:'Anton',sans-serif;font-size:1.05rem;}
+.venta-line{display:flex;justify-content:space-between;align-items:center;background:var(--paper);border-radius:8px;padding:7px 9px;margin-bottom:5px;font-size:0.7rem;}
+.venta-line button{border:none;background:none;color:var(--coral);font-size:0.65rem;font-weight:700;}
+
+.footer{text-align:center;padding:24px 18px 100px;color:var(--muted);font-size:0.72rem;}
+.status-toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:20px;font-size:0.72rem;font-weight:600;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:300;}
+.status-toast.show{opacity:1;}
+
+.cart-bar{position:fixed;left:14px;right:14px;bottom:14px;z-index:90;background:var(--ink);color:var(--paper);border-radius:14px;padding:12px 16px;display:none;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,0.25);}
+.cart-bar.show{display:flex;}
+.cart-bar .cb-info{font-size:0.78rem;font-weight:700;}
+.cart-bar .cb-total{color:var(--gold);font-family:'Anton',sans-serif;font-size:1.05rem;margin-left:8px;}
+.cart-bar .cb-open{background:var(--gold);color:var(--ink);border:none;border-radius:9px;padding:8px 12px;font-size:0.75rem;font-weight:700;}
+
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:200;background:var(--paper);border-radius:20px 20px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));max-height:82vh;overflow-y:auto;box-shadow:0 -10px 30px rgba(0,0,0,0.3);display:none;}
+.sheet.show{display:block;}
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:199;display:none;}
+.sheet-overlay.show{display:block;}
+.sheet h3{margin:0 0 12px;font-size:1.1rem;padding-right:30px;}
+.sheet-close{position:absolute;top:14px;right:16px;border:none;background:none;font-size:1.1rem;color:var(--muted);}
+
+.cart-line{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 10px;margin-bottom:8px;}
+.cl-img{width:40px;height:40px;border-radius:8px;object-fit:cover;background:#e6e4d8;flex-shrink:0;}
+.cl-img-empty{width:40px;height:40px;border-radius:8px;background:#e6e4d8;flex-shrink:0;}
+.cart-line .cl-name{flex:1;font-size:0.78rem;font-weight:600;}
+.cart-line .cl-qty{display:flex;align-items:center;gap:6px;}
+.cart-line .cl-qty button{width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:var(--paper);font-weight:700;line-height:1;}
+.cart-line .cl-price{font-size:0.78rem;font-weight:700;min-width:70px;text-align:right;}
+.cart-line .cl-remove{border:none;background:none;color:var(--coral);font-size:0.9rem;padding:2px 4px;}
+.cart-empty{color:var(--muted);font-size:0.8rem;text-align:center;padding:20px 0;}
+.cart-totals{display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;padding:10px 2px;border-top:1px dashed var(--line);margin-top:6px;}
+
+.detail-main-photo{width:100%;aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:#e6e4d8;margin-bottom:8px;display:flex;align-items:center;justify-content:center;touch-action:pan-y;}
+.detail-main-photo img{width:100%;height:100%;object-fit:cover;}
+.detail-main-photo .ph-empty{color:#a9ab9c;font-size:0.75rem;font-weight:600;}
+.detail-thumbs{display:flex;gap:8px;margin-bottom:14px;}
+.detail-thumbs img{width:56px;height:56px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent;}
+.detail-thumbs img.active{border-color:var(--gold);}
+.detail-brand{font-size:0.68rem;font-weight:700;color:var(--muted);margin-bottom:2px;}
+.detail-prices{display:flex;gap:16px;margin:10px 0 6px;}
+.detail-prices .dp{display:flex;flex-direction:column;}
+.detail-prices .dp .lbl{font-size:0.62rem;color:var(--muted);font-weight:700;}
+.detail-prices .dp.cash .val{color:var(--green);font-weight:800;font-size:1.15rem;}
+.detail-prices .dp.card .val{color:var(--coral);font-weight:700;font-size:1rem;}
+.detail-stock{font-size:0.7rem;font-weight:700;margin-bottom:10px;}
+.detail-stock.low{color:var(--coral);}
+.detail-stock.ok{color:var(--green);}
+.detail-benefits{margin-bottom:14px;}
+.benefit-line{font-size:0.85rem;font-weight:600;padding:6px 0;border-bottom:1px solid var(--line);}
+.benefit-line:last-child{border-bottom:none;}
+.detail-info details{border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:8px;background:var(--card);}
+.detail-info summary{font-size:0.72rem;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;color:var(--ink);cursor:pointer;}
+.detail-info .dbody{font-size:0.8rem;color:var(--muted);margin-top:8px;line-height:1.45;white-space:pre-line;}
+.detail-qty{display:flex;align-items:center;gap:14px;margin:14px 0;}
+.detail-qty button{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-weight:700;font-size:1.1rem;}
+.detail-qty .dq-val{font-size:1rem;font-weight:700;min-width:20px;text-align:center;}
+
+.stock-review-row{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px;margin-bottom:8px;}
+.stock-review-row .srr-name{font-size:0.72rem;color:var(--muted);margin-bottom:4px;}
+.stock-review-row select, .stock-review-row input{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:0.75rem;margin-bottom:4px;}
+
+@media(min-width:640px){
+  .grid{grid-template-columns:repeat(3,1fr);}
+  .hero h1{font-size:3rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand" id="brandLabel">TIENDA</div>
+  <div class="actions">
+    <a class="icon-btn" id="topWaBtn" href="#" target="_blank">WhatsApp</a>
+    <button class="icon-btn" id="editToggle">Editar</button>
+  </div>
+</div>
+
+<div class="hero">
+  <h1 id="heroTitle">ENERGÍA<br><span class="accent">PARA RENDIR</span></h1>
+  <p id="heroTag">Suplementos deportivos originales. Consultá stock y precios.</p>
+  <a class="hero-cta" id="heroWaBtn" href="#" target="_blank">Pedir por WhatsApp →</a>
+</div>
+
+<div class="settings-box">
+  <h3>⚙️ Configuración del sitio</h3>
+  <div class="admin-row"><label>Marca</label><input id="setBrand" placeholder="Nombre de tu marca"></div>
+  <div class="admin-row"><label>Título hero</label><input id="setHeroTitle" placeholder="Ej: ENERGÍA | PARA RENDIR (usá | para el salto de línea)"></div>
+  <div class="admin-row"><label>Bajada</label><input id="setHeroTag" placeholder="Frase corta debajo del título"></div>
+  <div class="admin-row"><label>WhatsApp</label><input id="setWhatsapp" placeholder="Solo números, ej: 5491122334455"></div>
+  <div class="admin-row"><label>Margen %</label><input id="setMarkupEf" type="number" placeholder="Efvo/Transf %" style="max-width:80px;"><input id="setMarkupTa" type="number" placeholder="Tarjeta %" style="max-width:80px;"></div>
+  <div class="admin-row"><label>Redondeo $</label><input id="setRoundTo" type="number" placeholder="Ej: 100" style="max-width:90px;"></div>
+  <div class="admin-row"><label>PIN edición</label><input id="setPin" placeholder="PIN para entrar a editar"></div>
+  <div style="font-size:0.66rem;color:var(--muted);margin-top:4px;">Los cambios se guardan solos y los ve cualquiera que abra este link.</div>
+</div>
+
+<div class="ventas-box" id="ventasBox"></div>
+
+<div class="section" id="combos">
+  <div class="section-head"><h2>Combos</h2></div>
+  <div class="combo-builder" id="comboBuilder"></div>
+  <div id="comboList"></div>
+</div>
+
+<div class="section" id="catalogo">
+  <div class="section-head"><h2>Catálogo</h2><span class="tag" id="prodCount"></span></div>
+  <div class="grid" id="productGrid"></div>
+</div>
+
+<div class="footer">Hecho con cariño para vender más rápido. 💪</div>
+
+<div class="sheet-overlay" id="sheetOverlay"></div>
+
+<div class="sheet" id="cartSheet">
+  <button class="sheet-close" data-close-sheet>✕</button>
+  <h3>Tu pedido</h3>
+  <div id="cartLines"></div>
+  <div class="cart-totals"><span>Total efectivo/transferencia</span><span id="cartTotalEf">$0</span></div>
+  <div class="cart-totals" style="border-top:none;padding-top:0;"><span>Total tarjeta</span><span id="cartTotalTa">$0</span></div>
+  <button class="primary-btn" id="cartWaBtn" style="background:var(--gold);color:var(--ink);margin-top:12px;">Confirmar por WhatsApp</button>
+</div>
+
+<div class="sheet" id="detailSheet">
+  <button class="sheet-close" data-close-sheet>✕</button>
+  <div id="detailContent"></div>
+</div>
+
+<div class="sheet" id="stockReviewSheet">
+  <button class="sheet-close" data-close-sheet>✕</button>
+  <h3>Revisá el stock detectado</h3>
+  <div id="stockReviewContent"></div>
+  <button class="primary-btn" id="stockApplyBtn">Aplicar cambios</button>
+</div>
+
+<div class="cart-bar" id="cartBar">
+  <div class="cb-info">🛒 <span id="cartCount">0</span> items<span class="cb-total" id="cartBarTotal">$0</span></div>
+  <button class="cb-open" id="cartOpenBtn">Ver pedido</button>
+</div>
+
+<div class="status-toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js"></script>
+<script>
+const money = n => "$" + Math.round(n).toLocaleString("es-AR");
+
+const DESC_RULES = [
+  [/creatina/i, "Ayuda a mejorar la fuerza y el rendimiento en entrenamientos de alta intensidad."],
+  [/whey|proteina|protein/i, "Proteína para acompañar la recuperación muscular después de entrenar."],
+  [/colageno|colágeno|collagen/i, "Aporta colágeno para el cuidado de articulaciones y piel."],
+  [/magnesio/i, "Suplemento de magnesio, útil para la función muscular y el descanso."],
+  [/bcaa/i, "Aminoácidos de cadena ramificada para ayudar en la recuperación muscular."],
+  [/electrolito/i, "Reponen sales minerales perdidas por el sudor durante el entrenamiento."],
+  [/energy gel|gel/i, "Gel energético de rápida absorción para actividades de resistencia."],
+  [/pre war|pre-entreno|pre entreno/i, "Suplemento pre-entrenamiento pensado para energía y foco."]
+];
+function suggestDesc(name){ for(const [rx, txt] of DESC_RULES){ if(rx.test(name)) return txt; } return ""; }
+
+const USO_RULES = [
+  [/creatina/i, "Diluir una medida en agua u otro líquido y consumir todos los días, incluso en días de descanso. Preferentemente después de entrenar."],
+  [/whey|proteina|protein/i, "Mezclar una medida con agua o leche. Consumir después de entrenar o entre comidas."],
+  [/magnesio/i, "Tomar según lo indicado en el envase, preferentemente con las comidas."],
+  [/electrolito/i, "Diluir un sobre o medida en agua y consumir durante o después del entrenamiento."],
+  [/energy gel|gel/i, "Consumir el contenido del sobre antes o durante la actividad física."],
+  [/pre war|pre-entreno|pre entreno/i, "Consumir una medida diluida en agua, 20-30 minutos antes de entrenar."]
+];
+function suggestUso(name){ for(const [rx, txt] of USO_RULES){ if(rx.test(name)) return txt; } return ""; }
+
+const ADVERTENCIA_DEFAULT = "Suplementa dietas insuficientes; consultá a tu médico o farmacéutico antes de consumir. No apto para embarazo o lactancia. Menores de 18 años, consumir bajo supervisión de un adulto. Mantener en lugar seco y fresco, fuera del alcance de los niños.";
+
+const BENEFICIOS_RULES = [
+  [/creatina/i, "💪 Ayuda a mejorar la fuerza y la potencia muscular\n⚡ Contribuye al rendimiento físico en esfuerzos de alta intensidad\n🔄 Favorece la recuperación entre entrenamientos\n📈 Ideal para el desarrollo y mantenimiento de masa muscular"],
+  [/whey|proteina|protein/i, "💪 Proteína de alto valor biológico para la recuperación muscular\n🥤 Fácil de preparar, con agua o leche\n📈 Acompaña tus objetivos de entrenamiento"],
+  [/colageno|colágeno|collagen/i, "🦴 Aporta colágeno para el cuidado de las articulaciones\n✨ Contribuye a la salud de la piel\n🔄 Ideal para acompañar la recuperación articular"],
+  [/magnesio/i, "⚡ Contribuye a la función muscular normal\n😴 Puede ayudar a mejorar el descanso\n💧 Fácil de incorporar a la rutina diaria"],
+  [/bcaa/i, "💪 Aminoácidos esenciales para la recuperación muscular\n🔄 Ayudan a reducir el desgaste durante el entrenamiento"],
+  [/electrolito/i, "💧 Reponen las sales minerales perdidas por el sudor\n⚡ Ayudan a mantener la hidratación durante el ejercicio"],
+  [/energy gel|gel/i, "⚡ Energía de rápida absorción\n🏃 Ideal para actividades de resistencia"],
+  [/pre war|pre-entreno|pre entreno/i, "🔥 Pensado para energía y foco antes de entrenar\n⚡ Ayuda a rendir al máximo en la sesión"]
+];
+function suggestBeneficios(name){ for(const [rx, txt] of BENEFICIOS_RULES){ if(rx.test(name)) return txt; } return ""; }
+
+function blankProduct(id){
+  return {id, name:"Nuevo producto", brand:"", costo:0, images:[], markupEf:null, markupTa:null, desc:"", modoDeUso:"", ingredientes:"", advertencias:"", beneficios:"", stock:null};
+}
+
+const DEFAULT_STATE = {
+  settings:{
+    brand:"PWR SUPLEMENTOS", heroTitle:"ENERGÍA|PARA RENDIR",
+    heroTag:"Suplementos deportivos originales. Consultá stock y precios.",
+    whatsapp:"", pin:"1234", markupEfectivo:40, markupTarjeta:48, roundTo:100
+  },
+  products:[
+    {id:1,name:"Creatina Doypack 300g - Sin Sabor",brand:"BODY ADVANCE",costo:11550},
+    {id:2,name:"Whey Protein Doypack 807g - Chocolate",brand:"BODY ADVANCE",costo:24150},
+    {id:3,name:"Creatina Micronizada Sabor Neutro 300g",brand:"ENA",costo:18999},
+    {id:4,name:"Whey Protein True Made Cookies & Cream 1LB",brand:"ENA",costo:36366},
+    {id:5,name:"Energy Gel Con Cafeína 12u - Fruit Punch",brand:"ENA",costo:20060},
+    {id:6,name:"Energy Gel Sin Cafeína 12u - Blackberry",brand:"ENA",costo:15465},
+    {id:7,name:"Whey Protein True Made Vanilla 1LB",brand:"ENA",costo:36366},
+    {id:8,name:"Colágeno Sport Naranja",brand:"ENA",costo:24049},
+    {id:9,name:"Citrato de Magnesio 60 caps",brand:"ENA",costo:10089},
+    {id:10,name:"BCAA 2:1:1 90 caps",brand:"ENA",costo:11144},
+    {id:11,name:"Sport Creatina + Electrolitos 300g - Pink Lemonade",brand:"ENA",costo:22876},
+    {id:12,name:"Electrolitos Hidratación 15 sobres - Berries Bomb",brand:"ENA",costo:11878},
+    {id:13,name:"Pre War Sabor Fruit Punch 400g",brand:"ENA",costo:23403},
+    {id:14,name:"Colágeno Hidrolizado Neutro 290g - Sin TACC",brand:"FLINT",costo:19624},
+    {id:15,name:"Creatine Monohydrate 300g",brand:"GOLD NUTRITION",costo:17325},
+    {id:16,name:"Electrolitos 60 Caps",brand:"GOLD NUTRITION",costo:10404},
+    {id:17,name:"Creatina Monohidrato EEUU 300g Doypack",brand:"STAR",costo:18999},
+    {id:18,name:"Creatina Monohidrato EEUU 150g (Vto 11/26)",brand:"STAR",costo:10621},
+    {id:19,name:"Collagen Frutos Rojos 210g",brand:"STAR",costo:15639}
+  ].map(p => Object.assign(blankProduct(p.id), p)),
+  combos:[
+    {id:1,name:"Combo Fuerza & Rendimiento",items:[{productId:3,qty:1},{productId:13,qty:1}],precio:55000,images:[]},
+    {id:2,name:"Combo Recuperación Articular",items:[{productId:8,qty:1},{productId:9,qty:1}],precio:44500,images:[]},
+    {id:3,name:"Combo Liquidación Stock",items:[{productId:18,qty:2},{productId:16,qty:1}],precio:30000,images:[]}
+  ],
+  ventas:[],
+  nextProductId:20,
+  nextComboId:4,
+  nextVentaId:1
+};
+DEFAULT_STATE.products.forEach(p => {
+  p.desc = suggestDesc(p.name);
+  p.modoDeUso = suggestUso(p.name);
+  p.beneficios = suggestBeneficios(p.name);
+  if(/creatina|colageno|colágeno|magnesio|whey|proteina|protein/i.test(p.name)) p.advertencias = ADVERTENCIA_DEFAULT;
+});
+
+let state = null;
+let editMode = false;
+let saveTimer = null;
+let storageOK = true;
+let cart = [];
+let detailActiveImgIdx = 0;
+let stockReviewRows = [];
+
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function roundPrice(n){ const step=(state.settings.roundTo&&state.settings.roundTo>0)?state.settings.roundTo:1; return Math.ceil(n/step)*step; }
+function calcProductPrices(p){
+  const mEf=(p.markupEf===null||p.markupEf===undefined)?state.settings.markupEfectivo:p.markupEf;
+  const mTa=(p.markupTa===null||p.markupTa===undefined)?state.settings.markupTarjeta:p.markupTa;
+  return { precioEf: roundPrice(p.costo*(1+mEf/100)), precioTa: roundPrice(p.costo*(1+mTa/100)) };
+}
+function waLink(number, text){ const clean=(number||"").replace(/[^0-9]/g,""); return clean ? `https://wa.me/${clean}?text=${encodeURIComponent(text)}` : "#"; }
+function escapeHtml(str){ return String(str).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function stockOf(p){ return (p.stock===null||p.stock===undefined) ? Infinity : p.stock; }
+function inCartQty(type,id){ const it=cart.find(c=>c.type===type&&c.id===id); return it?it.qty:0; }
+
+function render(){
+  document.body.classList.toggle("edit-mode", editMode);
+  document.getElementById("brandLabel").textContent = state.settings.brand;
+  const [line1, line2] = (state.settings.heroTitle||"").split("|");
+  document.getElementById("heroTitle").innerHTML = `${escapeHtml(line1||"")}<br><span class="accent">${escapeHtml(line2||"")}</span>`;
+  document.getElementById("heroTag").textContent = state.settings.heroTag;
+  document.getElementById("prodCount").textContent = state.products.length + " productos";
+
+  const genericMsg = `Hola! Quería consultar por sus suplementos 💪`;
+  document.getElementById("topWaBtn").href = waLink(state.settings.whatsapp, genericMsg);
+  document.getElementById("heroWaBtn").href = waLink(state.settings.whatsapp, genericMsg);
+
+  document.getElementById("setBrand").value = state.settings.brand;
+  document.getElementById("setHeroTitle").value = state.settings.heroTitle;
+  document.getElementById("setHeroTag").value = state.settings.heroTag;
+  document.getElementById("setWhatsapp").value = state.settings.whatsapp;
+  document.getElementById("setMarkupEf").value = state.settings.markupEfectivo;
+  document.getElementById("setMarkupTa").value = state.settings.markupTarjeta;
+  document.getElementById("setRoundTo").value = state.settings.roundTo;
+  document.getElementById("setPin").value = state.settings.pin;
+
+  renderProducts();
+  renderCombos();
+  renderCart();
+  renderVentasBox();
+}
+
+function renderProducts(){
+  const grid = document.getElementById("productGrid");
+  grid.innerHTML = "";
+  state.products.forEach(p => {
+    const {precioEf, precioTa} = calcProductPrices(p);
+    const imgs = p.images || [];
+    const stock = stockOf(p);
+    const remaining = stock === Infinity ? Infinity : Math.max(0, stock - inCartQty("product", p.id));
+    const card = document.createElement("div");
+    card.className = "p-card";
+    card.innerHTML = `
+      <div class="p-photo" data-open-detail="product:${p.id}">
+        ${imgs[0] ? `<img src="${imgs[0]}">` : `<div class="ph-empty">Sin foto</div>`}
+        <div class="p-brand-tag">${escapeHtml(p.brand||"")}</div>
+        ${imgs.length>1 ? `<div class="p-multi-badge">📷 ${imgs.length}</div>` : ""}
+        ${stock!==Infinity ? `<div class="p-stock-badge ${stock<=2?'low':'ok'}">${stock<=0?'Sin stock':'Quedan '+stock}</div>` : ""}
+      </div>
+      <div class="p-body">
+        <div class="p-name" data-open-detail="product:${p.id}">${escapeHtml(p.name)}</div>
+        ${p.desc ? `<div class="p-desc">${escapeHtml(p.desc)}</div>` : ""}
+        <div class="p-prices">
+          <div class="price-line cash"><span class="lbl">EFECTIVO/TRANSF.</span><span class="val">${money(precioEf)}</span></div>
+          <div class="price-line card"><span class="lbl">TARJETA</span><span class="val">${money(precioTa)}</span></div>
+        </div>
+        <button class="add-cart-btn" data-add-product="${p.id}" ${remaining<=0?'disabled':''}>${remaining<=0?'Sin stock':'+ Agregar al pedido'}</button>
+        <div class="admin-panel">
+          <button class="admin-photo-btn" data-photo-id="${p.id}">📷 Subir fotos (hasta 4, varias juntas)</button>
+          <input type="file" accept="image/*" multiple data-photo-input="${p.id}" style="display:none;">
+          <div class="admin-thumb-row">${imgs.map((im,i)=>`<div class="admin-thumb"><img src="${im}"><button data-photo-remove="${p.id}" data-img-idx="${i}">✕</button></div>`).join("")}</div>
+          <div class="admin-row"><label>Nombre</label><input data-field="name" data-id="${p.id}" value="${escapeHtml(p.name)}"></div>
+          <div class="admin-row"><label>Marca</label><input data-field="brand" data-id="${p.id}" value="${escapeHtml(p.brand)}"></div>
+          <div class="admin-row"><label>Costo</label><input type="number" data-field="costo" data-id="${p.id}" value="${p.costo}"></div>
+          <div class="admin-row"><label>Stock</label><input type="number" data-field="stock" data-id="${p.id}" value="${p.stock===null?'':p.stock}" placeholder="sin control"></div>
+          <div class="admin-row"><label>Marg. Ef/Tr %</label><input type="number" data-field="markupEf" data-id="${p.id}" value="${p.markupEf===null?'':p.markupEf}" placeholder="${state.settings.markupEfectivo}"></div>
+          <div class="admin-row"><label>Marg. Tar %</label><input type="number" data-field="markupTa" data-id="${p.id}" value="${p.markupTa===null?'':p.markupTa}" placeholder="${state.settings.markupTarjeta}"></div>
+          <div class="admin-row"><label>Para qué sirve</label><textarea data-field="desc" data-id="${p.id}">${escapeHtml(p.desc||"")}</textarea><button type="button" class="admin-suggest" data-suggest="${p.id}">Sugerir</button></div>
+          <div class="admin-row"><label>Beneficios</label><textarea data-field="beneficios" data-id="${p.id}" placeholder="Uno por línea, con emoji">${escapeHtml(p.beneficios||"")}</textarea></div>
+          <div class="admin-row"><label>Modo de uso</label><textarea data-field="modoDeUso" data-id="${p.id}">${escapeHtml(p.modoDeUso||"")}</textarea></div>
+          <div class="admin-row"><label>Ingredientes</label><textarea data-field="ingredientes" data-id="${p.id}">${escapeHtml(p.ingredientes||"")}</textarea></div>
+          <div class="admin-row"><label>Advertencias</label><textarea data-field="advertencias" data-id="${p.id}">${escapeHtml(p.advertencias||"")}</textarea></div>
+          <button class="admin-delete" data-delete-product="${p.id}">Eliminar producto</button>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+  const addCard = document.createElement("button");
+  addCard.className = "add-card";
+  addCard.textContent = "+ Agregar producto";
+  addCard.id = "addProductBtn";
+  grid.appendChild(addCard);
+  attachProductListeners();
+}
+
+function renderCombos(){
+  const list = document.getElementById("comboList");
+  list.innerHTML = "";
+  state.combos.forEach(c => {
+    let costo=0, valorIndividual=0, itemsText=[];
+    c.items.forEach(it => {
+      const prod = state.products.find(p => p.id === it.productId);
+      if(!prod) return;
+      costo += prod.costo * it.qty;
+      valorIndividual += calcProductPrices(prod).precioEf * it.qty;
+      itemsText.push(`${it.qty}x ${prod.name}`);
+    });
+    const ahorro = valorIndividual - c.precio;
+    const images = c.images || [];
+    const card = document.createElement("div");
+    card.className = "combo-card";
+    card.innerHTML = `
+      ${ahorro>0 ? `<div class="combo-badge">Ahorrás ${money(ahorro)}</div>` : ""}
+      <div class="combo-photo" data-open-detail="combo:${c.id}">${images[0] ? `<img src="${images[0]}">` : `<div class="ph-empty">Sin foto</div>`}</div>
+      ${images.length>1 ? `<div class="combo-thumbs">${images.slice(1).map(im=>`<img src="${im}" data-open-detail="combo:${c.id}">`).join("")}</div>` : ""}
+      <h3>${escapeHtml(c.name)}</h3>
+      <div class="combo-items">${itemsText.map(escapeHtml).join(" + ")}</div>
+      <div class="combo-price-row"><span class="price">${money(c.precio)}</span>${valorIndividual>c.precio ? `<span class="old">${money(valorIndividual)}</span>` : ""}</div>
+      <button class="add-cart-btn" style="background:var(--gold);color:var(--ink);" data-add-combo="${c.id}">+ Agregar al pedido</button>
+      <div class="admin-panel" style="background:#fff;color:var(--ink);margin-top:10px;">
+        <div class="admin-row"><label>Nombre</label><input data-combo-field="name" data-combo-id="${c.id}" value="${escapeHtml(c.name)}"></div>
+        <div class="admin-row"><label>Precio</label><input type="number" data-combo-field="precio" data-combo-id="${c.id}" value="${c.precio}"></div>
+        <div style="font-size:0.65rem;color:var(--muted);margin:2px 0 6px;">Costo del combo: ${money(costo)}</div>
+        <button class="admin-photo-btn" data-combo-photo-id="${c.id}">📷 Subir fotos (hasta 4, varias juntas)</button>
+        <input type="file" accept="image/*" multiple data-combo-photo-input="${c.id}" style="display:none;">
+        <div class="admin-thumb-row">${images.map((im,i)=>`<div class="admin-thumb"><img src="${im}"><button data-combo-remove-img="${c.id}" data-img-idx="${i}">✕</button></div>`).join("")}</div>
+        <button class="admin-delete" data-delete-combo="${c.id}">Eliminar combo</button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+  renderComboBuilder();
+  attachComboListeners();
+}
+
+let builderItems = [];
+function renderComboBuilder(){
+  const box = document.getElementById("comboBuilder");
+  const optionsHtml = state.products.map(p => `<option value="${p.id}">${escapeHtml(p.brand)} - ${escapeHtml(p.name)}</option>`).join("");
+  box.innerHTML = `
+    <h3>+ Nuevo combo</h3>
+    <div class="admin-row"><label>Nombre</label><input id="newComboName" placeholder="Ej: Combo Recuperación"></div>
+    <div id="builderItems"></div>
+    <button class="small-btn" id="addBuilderItem">+ Agregar producto al combo</button>
+    <div class="admin-row" style="margin-top:8px;"><label>Precio combo</label><input type="number" id="newComboPrice" placeholder="Precio de venta"></div>
+    <button class="primary-btn" id="saveComboBtn">Crear combo</button>
+  `;
+  renderBuilderItems();
+  document.getElementById("addBuilderItem").onclick = () => { builderItems.push({productId: state.products[0]?.id, qty:1}); renderBuilderItems(); };
+  document.getElementById("saveComboBtn").onclick = () => {
+    const name = document.getElementById("newComboName").value.trim();
+    const precio = Number(document.getElementById("newComboPrice").value);
+    if(!name || !precio || builderItems.length===0){ showToast("Completá nombre, precio y al menos un producto"); return; }
+    state.combos.push({id: state.nextComboId++, name, items: clone(builderItems), precio, images:[]});
+    builderItems = [];
+    document.getElementById("newComboName").value = "";
+    document.getElementById("newComboPrice").value = "";
+    render(); scheduleSave();
+  };
+  function renderBuilderItems(){
+    const wrap = document.getElementById("builderItems");
+    wrap.innerHTML = builderItems.map((it, idx) => `
+      <div class="cb-item-row">
+        <select data-b-idx="${idx}" data-b-field="productId">${optionsHtml}</select>
+        <input type="number" min="1" value="${it.qty}" data-b-idx="${idx}" data-b-field="qty">
+        <button data-b-remove="${idx}">✕</button>
+      </div>`).join("");
+    wrap.querySelectorAll("select").forEach(sel => {
+      sel.value = builderItems[Number(sel.dataset.bIdx)].productId;
+      sel.onchange = e => { builderItems[Number(e.target.dataset.bIdx)].productId = Number(e.target.value); };
+    });
+    wrap.querySelectorAll('input[type="number"]').forEach(inp => {
+      inp.onchange = e => { builderItems[Number(e.target.dataset.bIdx)].qty = Number(e.target.value)||1; };
+    });
+    wrap.querySelectorAll("button[data-b-remove]").forEach(btn => {
+      btn.onclick = e => { builderItems.splice(Number(e.target.dataset.bRemove),1); renderBuilderItems(); };
+    });
+  }
+}
+
+function attachProductListeners(){
+  document.querySelectorAll("[data-field]").forEach(el => {
+    el.addEventListener("change", e => {
+      const id = Number(e.target.dataset.id);
+      const field = e.target.dataset.field;
+      const prod = state.products.find(p => p.id === id);
+      if(!prod) return;
+      let val = e.target.value;
+      if(field === "costo"){ prod.costo = Number(val)||0; }
+      else if(field === "stock"){ prod.stock = val === "" ? null : Number(val); }
+      else if(field === "markupEf" || field === "markupTa"){ prod[field] = val === "" ? null : Number(val); }
+      else { prod[field] = val; }
+      renderProducts(); renderCombos(); scheduleSave();
+    });
+  });
+  document.querySelectorAll("[data-suggest]").forEach(btn => {
+    btn.addEventListener("click", e => {
+      const id = Number(e.target.dataset.suggest);
+      const prod = state.products.find(p => p.id === id);
+      if(!prod) return;
+      prod.desc = suggestDesc(prod.name) || prod.desc;
+      renderProducts(); scheduleSave();
+    });
+  });
+  document.querySelectorAll("[data-delete-product]").forEach(btn => {
+    btn.addEventListener("click", e => {
+      const id = Number(e.target.dataset.deleteProduct);
+      if(!confirm("¿Eliminar este producto?")) return;
+      state.products = state.products.filter(p => p.id !== id);
+      state.combos.forEach(c => c.items = c.items.filter(it => it.productId !== id));
+      render(); scheduleSave();
+    });
+  });
+  document.querySelectorAll("[data-photo-id]").forEach(btn => {
+    btn.addEventListener("click", e => { document.querySelector(`[data-photo-input="${e.target.dataset.photoId}"]`).click(); });
+  });
+  document.querySelectorAll("[data-photo-input]").forEach(input => {
+    input.addEventListener("change", e => {
+      const files = e.target.files;
+      if(!files || !files.length) return;
+      const id = Number(e.target.dataset.photoInput);
+      const prod = state.products.find(p => p.id === id);
+      if(!prod) return;
+      prod.images = prod.images || [];
+      if(prod.images.length >= 4){ showToast("Máximo 4 fotos por producto"); return; }
+      addMultipleImages(files, prod.images, 4, () => { renderProducts(); scheduleSave(); });
+    });
+  });
+  document.querySelectorAll("[data-photo-remove]").forEach(btn => {
+    btn.addEventListener("click", e => {
+      const id = Number(e.target.dataset.photoRemove);
+      const idx = Number(e.target.dataset.imgIdx);
+      const prod = state.products.find(p => p.id === id);
+      if(!prod) return;
+      prod.images.splice(idx,1);
+      renderProducts(); scheduleSave();
+    });
+  });
+  document.getElementById("addProductBtn").addEventListener("click", () => {
+    state.products.push(blankProduct(state.nextProductId++));
+    render(); scheduleSave();
+  });
+  document.querySelectorAll("[data-add-product]").forEach(btn => {
+    btn.addEventListener("click", e => { addToCart("product", Number(e.target.dataset.addProduct), 1); });
+  });
+  document.querySelectorAll("[data-open-detail^='product:']").forEach(el => {
+    el.addEventListener("click", e => { openDetail("product", Number(e.currentTarget.dataset.openDetail.split(":")[1])); });
+  });
+}
+
+function attachComboListeners(){
+  document.querySelectorAll("[data-combo-field]").forEach(el => {
+    el.addEventListener("change", e => {
+      const id = Number(e.target.dataset.comboId);
+      const field = e.target.dataset.comboField;
+      const combo = state.combos.find(c => c.id === id);
+      if(!combo) return;
+      combo[field] = field === "precio" ? Number(e.target.value)||0 : e.target.value;
+      renderCombos(); scheduleSave();
+    });
+  });
+  document.querySelectorAll("[data-delete-combo]").forEach(btn => {
+    btn.addEventListener("click", e => {
+      const id = Number(e.target.dataset.deleteCombo);
+      if(!confirm("¿Eliminar este combo?")) return;
+      state.combos = state.combos.filter(c => c.id !== id);
+      renderCombos(); scheduleSave();
+    });
+  });
+  document.querySelectorAll("[data-combo-photo-id]").forEach(btn => {
+    btn.addEventListener("click", e => { document.querySelector(`[data-combo-photo-input="${e.target.dataset.comboPhotoId}"]`).click(); });
+  });
+  document.querySelectorAll("[data-combo-photo-input]").forEach(input => {
+    input.addEventListener("change", e => {
+      const files = e.target.files;
+      if(!files || !files.length) return;
+      const id = Number(e.target.dataset.comboPhotoInput);
+      const combo = state.combos.find(c => c.id === id);
+      if(!combo) return;
+      combo.images = combo.images || [];
+      if(combo.images.length >= 4){ showToast("Máximo 4 fotos por combo"); return; }
+      addMultipleImages(files, combo.images, 4, () => { renderCombos(); scheduleSave(); });
+    });
+  });
+  document.querySelectorAll("[data-combo-remove-img]").forEach(btn => {
+    btn.addEventListener("click", e => {
+      const id = Number(e.target.dataset.comboRemoveImg);
+      const idx = Number(e.target.dataset.imgIdx);
+      const combo = state.combos.find(c => c.id === id);
+      if(!combo) return;
+      combo.images.splice(idx,1);
+      renderCombos(); scheduleSave();
+    });
+  });
+  document.querySelectorAll("[data-add-combo]").forEach(btn => {
+    btn.addEventListener("click", e => { addToCart("combo", Number(e.target.dataset.addCombo), 1); });
+  });
+  document.querySelectorAll("[data-open-detail^='combo:']").forEach(el => {
+    el.addEventListener("click", e => { openDetail("combo", Number(e.currentTarget.dataset.openDetail.split(":")[1])); });
+  });
+}
+
+function compressImage(file, cb){
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 700;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width * scale; canvas.height = img.height * scale;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      cb(canvas.toDataURL("image/jpeg", 0.72));
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function compressImageP(file){ return new Promise(resolve => compressImage(file, resolve)); }
+async function addMultipleImages(fileList, targetArr, max, onDone){
+  const files = Array.from(fileList);
+  const room = Math.max(0, max - targetArr.length);
+  if(files.length > room){ showToast(`Se subieron ${room} de ${files.length} (máximo ${max} fotos)`); }
+  for(const file of files.slice(0, room)){ targetArr.push(await compressImageP(file)); }
+  onDone();
+}
+
+/* ---------- DETAIL SHEET ---------- */
+function openDetail(type, id){ detailActiveImgIdx = 0; renderDetail(type, id); openSheet("detailSheet"); }
+
+function renderDetail(type, id){
+  const box = document.getElementById("detailContent");
+  if(type === "product"){
+    const p = state.products.find(pp => pp.id === id);
+    if(!p) return;
+    const imgs = p.images || [];
+    const {precioEf, precioTa} = calcProductPrices(p);
+    const stock = stockOf(p);
+    const remaining = stock === Infinity ? Infinity : Math.max(0, stock - inCartQty("product", p.id));
+    const sections = [["Modo de uso", p.modoDeUso],["Ingredientes", p.ingredientes],["Advertencias", p.advertencias]].filter(([_,v]) => v && v.trim());
+    const benefitsHtml = (p.beneficios||"").split("\n").filter(l=>l.trim()).map(l=>`<div class="benefit-line">${escapeHtml(l)}</div>`).join("");
+    box.innerHTML = `
+      <div class="detail-brand">${escapeHtml(p.brand||"")}</div>
+      <h3>${escapeHtml(p.name)}</h3>
+      <div class="detail-main-photo">${imgs[detailActiveImgIdx] ? `<img src="${imgs[detailActiveImgIdx]}">` : `<div class="ph-empty">Sin foto</div>`}</div>
+      ${imgs.length>1 ? `<div class="detail-thumbs">${imgs.map((im,i)=>`<img src="${im}" class="${i===detailActiveImgIdx?'active':''}" data-set-main="${i}">`).join("")}</div>` : ""}
+      <div class="detail-prices">
+        <div class="dp cash"><span class="lbl">EFECTIVO / TRANSFERENCIA</span><span class="val">${money(precioEf)}</span></div>
+        <div class="dp card"><span class="lbl">TARJETA</span><span class="val">${money(precioTa)}</span></div>
+      </div>
+      ${stock!==Infinity ? `<div class="detail-stock ${stock<=2?'low':'ok'}">${stock<=0?'Sin stock disponible':'Quedan '+stock+' unidades'}</div>` : ""}
+      ${benefitsHtml ? `<div class="detail-benefits">${benefitsHtml}</div>` : (p.desc ? `<div class="detail-benefits"><div class="benefit-line">${escapeHtml(p.desc)}</div></div>` : "")}
+      <div class="detail-info">${sections.map(([title,body])=>`<details><summary>${title}</summary><div class="dbody">${escapeHtml(body)}</div></details>`).join("")}</div>
+      <div class="detail-qty">
+        <button data-detail-qty-dec>−</button>
+        <span class="dq-val" id="detailQtyVal">1</span>
+        <button data-detail-qty-inc>+</button>
+      </div>
+      <button class="primary-btn" id="detailAddBtn" ${remaining<=0?'disabled':''}>${remaining<=0?'Sin stock':'Agregar al pedido'}</button>
+    `;
+    wireDetailQty("product", id, remaining);
+  } else {
+    const c = state.combos.find(cc => cc.id === id);
+    if(!c) return;
+    const imgs = c.images || [];
+    let itemsText = [];
+    c.items.forEach(it => { const prod = state.products.find(pp => pp.id === it.productId); if(prod) itemsText.push(`${it.qty}x ${prod.name}`); });
+    box.innerHTML = `
+      <h3>${escapeHtml(c.name)}</h3>
+      <div class="detail-main-photo">${imgs[detailActiveImgIdx] ? `<img src="${imgs[detailActiveImgIdx]}">` : `<div class="ph-empty">Sin foto</div>`}</div>
+      ${imgs.length>1 ? `<div class="detail-thumbs">${imgs.map((im,i)=>`<img src="${im}" class="${i===detailActiveImgIdx?'active':''}" data-set-main="${i}">`).join("")}</div>` : ""}
+      <div class="detail-benefits"><div class="benefit-line">${itemsText.map(escapeHtml).join(" + ")}</div></div>
+      <div class="detail-prices"><div class="dp cash"><span class="lbl">PRECIO</span><span class="val">${money(c.precio)}</span></div></div>
+      <div class="detail-qty">
+        <button data-detail-qty-dec>−</button>
+        <span class="dq-val" id="detailQtyVal">1</span>
+        <button data-detail-qty-inc>+</button>
+      </div>
+      <button class="primary-btn" id="detailAddBtn">Agregar al pedido</button>
+    `;
+    wireDetailQty("combo", id, Infinity);
+  }
+  box.querySelectorAll("[data-set-main]").forEach(el => {
+    el.addEventListener("click", e => { detailActiveImgIdx = Number(e.target.dataset.setMain); renderDetail(type, id); });
+  });
+  const imgsForSwipe = type === "product" ? (state.products.find(pp=>pp.id===id)?.images||[]) : (state.combos.find(cc=>cc.id===id)?.images||[]);
+  if(imgsForSwipe.length > 1){
+    const mainPhoto = box.querySelector(".detail-main-photo");
+    let startX = null;
+    mainPhoto.addEventListener("touchstart", e => { startX = e.touches[0].clientX; }, {passive:true});
+    mainPhoto.addEventListener("touchend", e => {
+      if(startX === null) return;
+      const diff = e.changedTouches[0].clientX - startX;
+      startX = null;
+      if(Math.abs(diff) < 35) return;
+      detailActiveImgIdx = diff < 0 ? (detailActiveImgIdx+1)%imgsForSwipe.length : (detailActiveImgIdx-1+imgsForSwipe.length)%imgsForSwipe.length;
+      renderDetail(type, id);
+    });
+  }
+}
+
+function wireDetailQty(type, id, maxQty){
+  let qty = 1;
+  const valEl = document.getElementById("detailQtyVal");
+  document.querySelector("[data-detail-qty-inc]").onclick = () => { if(qty < maxQty){ qty++; valEl.textContent = qty; } else { showToast("No hay más stock disponible"); } };
+  document.querySelector("[data-detail-qty-dec]").onclick = () => { if(qty>1){ qty--; valEl.textContent = qty; } };
+  const addBtn = document.getElementById("detailAddBtn");
+  if(addBtn && !addBtn.disabled){
+    addBtn.onclick = () => { addToCart(type, id, qty); closeSheet("detailSheet"); };
+  }
+}
+
+/* ---------- CART ---------- */
+function addToCart(type, id, qty){
+  qty = qty || 1;
+  if(type === "product"){
+    const p = state.products.find(pp => pp.id === id);
+    if(!p) return;
+    const stock = stockOf(p);
+    if(stock !== Infinity){
+      const already = inCartQty("product", id);
+      if(already + qty > stock){
+        const room = Math.max(0, stock - already);
+        if(room <= 0){ showToast("Sin stock disponible"); return; }
+        qty = room;
+        showToast(`Solo quedan ${stock} — se agregaron ${room}`);
+      }
+    }
+  }
+  const existing = cart.find(it => it.type===type && it.id===id);
+  if(existing){ existing.qty += qty; } else { cart.push({type, id, qty}); }
+  renderCart(); renderProducts();
+  showToast("Agregado al pedido");
+}
+
+function cartLineInfo(item){
+  if(item.type === "product"){
+    const p = state.products.find(pp => pp.id === item.id);
+    if(!p) return null;
+    const {precioEf, precioTa} = calcProductPrices(p);
+    return {name:p.name, unitEf:precioEf, unitTa:precioTa, image:(p.images&&p.images[0])||""};
+  } else {
+    const c = state.combos.find(cc => cc.id === item.id);
+    if(!c) return null;
+    return {name:c.name, unitEf:c.precio, unitTa:c.precio, image:(c.images&&c.images[0])||""};
+  }
+}
+
+function renderCart(){
+  const lines = document.getElementById("cartLines");
+  let totalEf=0, totalTa=0, count=0;
+  if(cart.length === 0){
+    lines.innerHTML = `<div class="cart-empty">Todavía no agregaste nada</div>`;
+  } else {
+    lines.innerHTML = cart.map((item, idx) => {
+      const info = cartLineInfo(item);
+      if(!info) return "";
+      totalEf += info.unitEf*item.qty; totalTa += info.unitTa*item.qty; count += item.qty;
+      return `
+        <div class="cart-line">
+          ${info.image ? `<img class="cl-img" src="${info.image}">` : `<div class="cl-img-empty"></div>`}
+          <div class="cl-name">${escapeHtml(info.name)}</div>
+          <div class="cl-qty"><button data-cart-dec="${idx}">−</button><span>${item.qty}</span><button data-cart-inc="${idx}">+</button></div>
+          <div class="cl-price">${money(info.unitEf*item.qty)}</div>
+          <button class="cl-remove" data-cart-remove="${idx}">✕</button>
+        </div>`;
+    }).join("");
+  }
+  document.getElementById("cartTotalEf").textContent = money(totalEf);
+  document.getElementById("cartTotalTa").textContent = money(totalTa);
+  document.getElementById("cartCount").textContent = count;
+  document.getElementById("cartBarTotal").textContent = money(totalEf);
+  document.getElementById("cartBar").classList.toggle("show", count > 0);
+
+  lines.querySelectorAll("[data-cart-inc]").forEach(b => b.onclick = e => {
+    const idx = Number(e.target.dataset.cartInc);
+    const item = cart[idx];
+    if(item.type === "product"){
+      const p = state.products.find(pp=>pp.id===item.id);
+      const stock = stockOf(p);
+      if(stock !== Infinity && item.qty+1 > stock){ showToast("No hay más stock disponible"); return; }
+    }
+    item.qty++; renderCart(); renderProducts();
+  });
+  lines.querySelectorAll("[data-cart-dec]").forEach(b => b.onclick = e => {
+    const idx = Number(e.target.dataset.cartDec);
+    cart[idx].qty--;
+    if(cart[idx].qty <= 0) cart.splice(idx,1);
+    renderCart(); renderProducts();
+  });
+  lines.querySelectorAll("[data-cart-remove]").forEach(b => b.onclick = e => { cart.splice(Number(e.target.dataset.cartRemove),1); renderCart(); renderProducts(); });
+
+  const waBtn = document.getElementById("cartWaBtn");
+  let msg = "Hola! Quiero hacer este pedido:\n";
+  cart.forEach(item => { const info = cartLineInfo(item); if(info) msg += `- ${item.qty}x ${info.name} (${money(info.unitEf*item.qty)})\n`; });
+  msg += `\nTotal efectivo/transferencia: ${money(totalEf)}\nTotal tarjeta: ${money(totalTa)}`;
+  waBtn.onclick = () => { window.open(waLink(state.settings.whatsapp, msg), "_blank"); };
+}
+
+/* ---------- SHEETS ---------- */
+function openSheet(sheetId){ document.getElementById(sheetId).classList.add("show"); document.getElementById("sheetOverlay").classList.add("show"); }
+function closeSheet(sheetId){ document.getElementById(sheetId).classList.remove("show"); document.getElementById("sheetOverlay").classList.remove("show"); }
+function closeAllSheets(){ document.querySelectorAll(".sheet").forEach(s => s.classList.remove("show")); document.getElementById("sheetOverlay").classList.remove("show"); }
+document.getElementById("cartOpenBtn").addEventListener("click", () => openSheet("cartSheet"));
+document.querySelectorAll("[data-close-sheet]").forEach(btn => btn.addEventListener("click", closeAllSheets));
+document.getElementById("sheetOverlay").addEventListener("click", closeAllSheets);
+
+/* ---------- VENTAS / CONTROL ---------- */
+function renderVentasBox(){
+  const box = document.getElementById("ventasBox");
+  const invertido = state.products.reduce((sum,p) => sum + p.costo * (stockOf(p)===Infinity?0:stockOf(p)), 0);
+  let vendidoEf=0, vendidoTa=0, ganancia=0;
+  state.ventas.forEach(v => {
+    if(v.metodo === "efectivo") vendidoEf += v.total; else vendidoTa += v.total;
+    ganancia += v.ganancia;
+  });
+  const optionsHtml = state.products.map(p => `<option value="${p.id}">${escapeHtml(p.brand)} - ${escapeHtml(p.name)}</option>`).join("");
+  box.innerHTML = `
+    <h3>📊 Control de ventas</h3>
+    <div class="vsum-grid">
+      <div class="vsum-card"><div class="l">INVERTIDO (stock actual)</div><div class="v">${money(invertido)}</div></div>
+      <div class="vsum-card"><div class="l">GANANCIA TOTAL</div><div class="v">${money(ganancia)}</div></div>
+      <div class="vsum-card"><div class="l">VENDIDO EFECTIVO</div><div class="v">${money(vendidoEf)}</div></div>
+      <div class="vsum-card"><div class="l">VENDIDO TARJETA</div><div class="v">${money(vendidoTa)}</div></div>
+    </div>
+    <div class="admin-row"><label>Producto</label><select id="ventaProducto">${optionsHtml}</select></div>
+    <div class="admin-row"><label>Cantidad</label><input type="number" id="ventaCantidad" value="1" min="1"></div>
+    <div class="admin-row"><label>Método</label><select id="ventaMetodo"><option value="efectivo">Efectivo/Transferencia</option><option value="tarjeta">Tarjeta</option></select></div>
+    <button class="primary-btn" id="registrarVentaBtn">Registrar venta</button>
+    <button class="admin-photo-btn" id="stockFileBtn" style="margin-top:12px;">📥 Actualizar stock desde Excel, PDF o foto</button>
+    <input type="file" id="stockFileInput" accept=".csv,.xlsx,.xls,application/pdf,image/*" style="display:none;">
+    <div style="margin-top:12px;font-size:0.68rem;color:var(--muted);font-weight:700;">Últimas ventas</div>
+    <div id="ventasList" style="margin-top:6px;"></div>
+  `;
+  const list = document.getElementById("ventasList");
+  const recent = state.ventas.slice(-10).reverse();
+  list.innerHTML = recent.length ? recent.map(v => `
+    <div class="venta-line">
+      <span>${v.fecha} — ${escapeHtml(v.itemNombre)} x${v.cantidad} (${v.metodo}) — ${money(v.total)}</span>
+      <button data-undo-venta="${v.id}">Deshacer</button>
+    </div>`).join("") : `<div style="font-size:0.7rem;color:var(--muted);">Sin ventas registradas todavía.</div>`;
+
+  document.getElementById("registrarVentaBtn").onclick = () => registrarVenta();
+  list.querySelectorAll("[data-undo-venta]").forEach(btn => {
+    btn.onclick = e => deshacerVenta(Number(e.target.dataset.undoVenta));
+  });
+  document.getElementById("stockFileBtn").onclick = () => document.getElementById("stockFileInput").click();
+  document.getElementById("stockFileInput").onchange = e => { if(e.target.files[0]) handleStockFile(e.target.files[0]); e.target.value=""; };
+}
+
+function registrarVenta(){
+  const prodId = Number(document.getElementById("ventaProducto").value);
+  const cantidad = Number(document.getElementById("ventaCantidad").value)||1;
+  const metodo = document.getElementById("ventaMetodo").value;
+  const p = state.products.find(pp => pp.id === prodId);
+  if(!p) return;
+  const {precioEf, precioTa} = calcProductPrices(p);
+  const precioUnit = metodo === "efectivo" ? precioEf : precioTa;
+  const total = precioUnit * cantidad;
+  const ganancia = (precioUnit - p.costo) * cantidad;
+  state.ventas.push({
+    id: state.nextVentaId++, fecha: new Date().toLocaleDateString("es-AR"),
+    productId: prodId, itemNombre: p.name, cantidad, metodo, precioUnit, costoUnit: p.costo, total, ganancia
+  });
+  if(p.stock !== null && p.stock !== undefined){ p.stock = Math.max(0, p.stock - cantidad); }
+  render(); scheduleSave();
+  showToast("Venta registrada");
+}
+
+function deshacerVenta(ventaId){
+  const idx = state.ventas.findIndex(v => v.id === ventaId);
+  if(idx === -1) return;
+  const v = state.ventas[idx];
+  const p = state.products.find(pp => pp.id === v.productId);
+  if(p && p.stock !== null && p.stock !== undefined){ p.stock += v.cantidad; }
+  state.ventas.splice(idx,1);
+  render(); scheduleSave();
+  showToast("Venta deshecha");
+}
+
+/* ---------- STOCK FROM FILE ---------- */
+async function handleStockFile(file){
+  showToast("Leyendo archivo...");
+  try{
+    const ext = file.name.split(".").pop().toLowerCase();
+    let rows = [];
+    if(["csv","xlsx","xls"].includes(ext)){
+      rows = await parseSpreadsheet(file);
+    } else {
+      rows = await parseWithAI(file);
+    }
+    if(!rows.length){ showToast("No se encontraron productos en el archivo"); return; }
+    openStockReview(rows);
+  }catch(err){
+    showToast("No se pudo leer el archivo. Probá con otra foto o cargá el stock a mano.");
+  }
+}
+
+function parseSpreadsheet(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try{
+        const wb = XLSX.read(e.target.result, {type:"binary"});
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet, {defval:""});
+        const rows = json.map(row => {
+          const keys = Object.keys(row);
+          const nameKey = keys.find(k => /produc|nombre|item|articulo/i.test(k)) || keys[0];
+          const qtyKey = keys.find(k => /cant|stock|unidad/i.test(k)) || keys[1];
+          return { producto: String(row[nameKey]||"").trim(), cantidad: Number(row[qtyKey])||0 };
+        }).filter(r => r.producto);
+        resolve(rows);
+      }catch(err){ reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsBinaryString(file);
+  });
+}
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function parseWithAI(file){
+  const base64 = await fileToBase64(file);
+  const isPdf = file.type === "application/pdf";
+  const contentBlock = isPdf
+    ? { type:"document", source:{ type:"base64", media_type:"application/pdf", data: base64 } }
+    : { type:"image", source:{ type:"base64", media_type: file.type || "image/jpeg", data: base64 } };
+  const prompt = "Esta imagen o documento muestra una lista de stock de suplementos deportivos. Extraé todos los productos con su cantidad disponible. Respondé ÚNICAMENTE con un array JSON válido, sin texto adicional ni markdown, con este formato exacto: [{\"producto\":\"nombre del producto\",\"cantidad\":numero}]. Si no podés determinar la cantidad de algún producto, usá 1.";
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1000,
+      messages: [{ role:"user", content:[contentBlock, {type:"text", text:prompt}] }]
+    })
+  });
+  const data = await response.json();
+  const text = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
+  const clean = text.replace(/```json|```/g,"").trim();
+  const parsed = JSON.parse(clean);
+  return Array.isArray(parsed) ? parsed.map(r => ({producto:String(r.producto||"").trim(), cantidad:Number(r.cantidad)||1})).filter(r=>r.producto) : [];
+}
+
+function bestMatchProductId(name){
+  const n = name.toLowerCase();
+  let best = null, bestScore = 0;
+  state.products.forEach(p => {
+    const full = (p.brand+" "+p.name).toLowerCase();
+    let score = 0;
+    if(full.includes(n) || n.includes(p.name.toLowerCase())) score = 2;
+    else {
+      const words = n.split(/\s+/).filter(w=>w.length>3);
+      score = words.filter(w => full.includes(w)).length;
+    }
+    if(score > bestScore){ bestScore = score; best = p.id; }
+  });
+  return bestScore > 0 ? best : null;
+}
+
+function openStockReview(rows){
+  stockReviewRows = rows.map(r => ({ detectedName:r.producto, cantidad:r.cantidad, productId: bestMatchProductId(r.producto) }));
+  renderStockReview();
+  openSheet("stockReviewSheet");
+}
+
+function renderStockReview(){
+  const box = document.getElementById("stockReviewContent");
+  const optionsHtml = (selectedId) => `<option value="">— no asignar —</option>` + state.products.map(p => `<option value="${p.id}" ${p.id===selectedId?'selected':''}>${escapeHtml(p.brand)} - ${escapeHtml(p.name)}</option>`).join("");
+  box.innerHTML = stockReviewRows.map((r, idx) => `
+    <div class="stock-review-row">
+      <div class="srr-name">Detectado: "${escapeHtml(r.detectedName)}"</div>
+      <select data-review-idx="${idx}" data-review-field="productId">${optionsHtml(r.productId)}</select>
+      <input type="number" min="0" value="${r.cantidad}" data-review-idx="${idx}" data-review-field="cantidad" placeholder="Cantidad">
+    </div>`).join("");
+  box.querySelectorAll("select").forEach(sel => {
+    sel.onchange = e => { stockReviewRows[Number(e.target.dataset.reviewIdx)].productId = e.target.value ? Number(e.target.value) : null; };
+  });
+  box.querySelectorAll('input[type="number"]').forEach(inp => {
+    inp.onchange = e => { stockReviewRows[Number(e.target.dataset.reviewIdx)].cantidad = Number(e.target.value)||0; };
+  });
+}
+
+document.getElementById("stockApplyBtn").addEventListener("click", () => {
+  let applied = 0;
+  stockReviewRows.forEach(r => {
+    if(r.productId){
+      const p = state.products.find(pp => pp.id === r.productId);
+      if(p){ p.stock = r.cantidad; applied++; }
+    }
+  });
+  closeSheet("stockReviewSheet");
+  render(); scheduleSave();
+  showToast(`Stock actualizado en ${applied} producto(s)`);
+});
+
+document.getElementById("editToggle").addEventListener("click", () => {
+  if(editMode){ editMode = false; render(); return; }
+  const pin = prompt("PIN para editar el catálogo:");
+  if(pin === state.settings.pin){ editMode = true; render(); }
+  else if(pin !== null){ showToast("PIN incorrecto"); }
+});
+
+["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setMarkupEf","setMarkupTa","setRoundTo","setPin"].forEach(id => {
+  document.getElementById(id).addEventListener("change", e => {
+    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setMarkupEf:"markupEfectivo",setMarkupTa:"markupTarjeta",setRoundTo:"roundTo",setPin:"pin"};
+    const key = map[id];
+    let val = e.target.value;
+    if(key === "markupEfectivo" || key === "markupTarjeta" || key === "roundTo") val = Number(val)||0;
+    state.settings[key] = val;
+    render(); scheduleSave();
+  });
+});
+
+function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveState, 600); }
+async function saveState(){
+  if(!storageOK) return;
+  try{ const res = await window.storage.set('catalogo-suplementos', JSON.stringify(state), true); showToast(res ? "Guardado ✓" : "No se pudo guardar"); }
+  catch(err){ showToast("No se pudo guardar"); }
+}
+function showToast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1800); }
+
+async function loadState(){
+  try{
+    const res = await window.storage.get('catalogo-suplementos', true);
+    if(res && res.value){
+      state = JSON.parse(res.value);
+      if(state.settings.roundTo === undefined) state.settings.roundTo = 100;
+      if(!state.ventas) state.ventas = [];
+      if(!state.nextVentaId) state.nextVentaId = 1;
+      state.products.forEach(p => {
+        if(!p.images){ p.images = p.image ? [p.image] : []; }
+        if(!p.desc) p.desc = suggestDesc(p.name);
+        if(p.modoDeUso === undefined) p.modoDeUso = suggestUso(p.name);
+        if(p.ingredientes === undefined) p.ingredientes = "";
+        if(p.advertencias === undefined) p.advertencias = "";
+        if(p.beneficios === undefined) p.beneficios = suggestBeneficios(p.name);
+        if(p.stock === undefined) p.stock = null;
+      });
+      state.combos.forEach(c => { if(!c.images) c.images = []; });
+    } else {
+      state = clone(DEFAULT_STATE);
+    }
+  }catch(err){ state = clone(DEFAULT_STATE); }
+  render();
+}
+loadState();
+</script>
+</body>
+</html>
