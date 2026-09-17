@@ -13,13 +13,18 @@
   --card:#ffffff;
   --line:#d9d6c7;
   --muted:#6b6f63;
-  --gold:#f2c230;
+  --gold:#baf22e;
   --coral:#e8543a;
   --green:#3f7d4f;
   --radius:16px;
 }
 *{box-sizing:border-box;}
-html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
+html,body{margin:0;padding:0;color:var(--ink);font-family:'Inter',sans-serif;}
+body{
+  background-color:var(--paper);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cg fill='none' stroke='%23c9cdb8' stroke-width='5' stroke-linecap='round' opacity='0.8'%3E%3Cg transform='translate(10 20) rotate(-18)'%3E%3Cline x1='35' y1='40' x2='95' y2='40'/%3E%3Crect x='22' y='24' width='16' height='32' rx='5'/%3E%3Crect x='92' y='24' width='16' height='32' rx='5'/%3E%3C/g%3E%3Cg transform='translate(150 40)'%3E%3Ccircle cx='30' cy='40' r='26'/%3E%3Cpath d='M18 18 Q30 -4 42 18' /%3E%3C/g%3E%3Cg transform='translate(40 140)'%3E%3Ccircle cx='14' cy='10' r='9'/%3E%3Cpath d='M14 19 L8 46 M14 19 L26 40 M8 46 L2 70 M8 46 L20 62 M26 40 L34 58'/%3E%3C/g%3E%3Cg transform='translate(155 150) rotate(10)'%3E%3Cline x1='30' y1='35' x2='80' y2='35'/%3E%3Ccircle cx='24' cy='35' r='13'/%3E%3Ccircle cx='86' cy='35' r='13'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-repeat:repeat;
+}
 h1,h2,h3,.headline{font-family:'Anton',sans-serif;font-weight:400;letter-spacing:0.01em;}
 img{max-width:100%;display:block;}
 button{font-family:'Inter',sans-serif;cursor:pointer;}
@@ -29,9 +34,14 @@ button{font-family:'Inter',sans-serif;cursor:pointer;}
 .topbar .actions{display:flex;gap:8px;align-items:center;}
 .icon-btn{background:none;border:1px solid #3a3c31;color:var(--paper);border-radius:9px;padding:7px 10px;font-size:0.75rem;font-weight:600;}
 .icon-btn.active{background:var(--gold);color:var(--ink);border-color:var(--gold);}
+.shipping-bar{background:var(--gold);color:var(--ink);text-align:center;font-size:0.72rem;font-weight:800;padding:8px 14px;letter-spacing:0.01em;}
+#editToggle{display:none;}
+#editToggle.unlocked{display:inline-block;}
 
 .hero{background:var(--ink);color:var(--paper);padding:38px 20px 46px;position:relative;overflow:hidden;}
 .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:var(--gold);opacity:0.14;}
+.hero-illustration{position:absolute;right:-20px;bottom:-10px;width:230px;opacity:0.9;transform:rotate(-8deg);pointer-events:none;}
+.hero-content{position:relative;z-index:2;}
 .hero h1{font-size:2.5rem;line-height:0.98;margin:0 0 10px;max-width:11ch;}
 .hero .accent{color:var(--gold);}
 .hero p{margin:0 0 20px;font-size:0.95rem;color:#c9cbbf;max-width:32ch;}
@@ -41,6 +51,15 @@ button{font-family:'Inter',sans-serif;cursor:pointer;}
 .section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;}
 .section-head h2{font-size:1.5rem;margin:0;}
 .section-head .tag{font-size:0.72rem;color:var(--muted);font-weight:600;}
+.filter-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px;}
+.filter-chip{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:6px 12px;font-size:0.7rem;font-weight:700;color:var(--ink);}
+.filter-chip.active{background:var(--ink);color:var(--gold);border-color:var(--ink);}
+.filter-chip.with-logo{display:flex;align-items:center;gap:6px;padding:5px 12px 5px 5px;}
+.filter-chip.with-logo img{width:26px;height:26px;border-radius:50%;object-fit:cover;background:#fff;}
+.brand-logo-admin{display:flex;align-items:center;gap:8px;background:var(--paper);border-radius:9px;padding:6px 8px;margin-bottom:6px;}
+.brand-logo-admin img{width:32px;height:32px;border-radius:50%;object-fit:cover;background:#fff;}
+.brand-logo-admin .bla-name{flex:1;font-size:0.72rem;font-weight:700;}
+.brand-logo-admin button{font-size:0.65rem;border:1px solid var(--ink);background:var(--card);border-radius:6px;padding:4px 8px;}
 
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .p-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;}
@@ -54,7 +73,7 @@ button{font-family:'Inter',sans-serif;cursor:pointer;}
 .p-stock-badge.ok{background:var(--green);color:#fff;}
 .p-body{padding:10px 11px 12px;display:flex;flex-direction:column;gap:6px;flex:1;}
 .p-name{font-size:0.8rem;font-weight:700;line-height:1.25;cursor:pointer;}
-.p-desc{font-size:0.74rem;color:#5c4a00;font-weight:700;line-height:1.35;background:rgba(242,194,48,0.22);padding:5px 8px;border-radius:7px;}
+.p-desc{font-size:0.74rem;color:#3a4a08;font-weight:700;line-height:1.35;background:rgba(186,242,46,0.28);padding:5px 8px;border-radius:7px;}
 .p-prices{display:flex;flex-direction:column;gap:3px;margin-top:auto;}
 .price-line{display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;}
 .price-line .lbl{color:var(--muted);font-weight:600;font-size:0.65rem;}
@@ -93,6 +112,8 @@ body.edit-mode .p-card{outline:2px solid var(--gold);}
 .admin-suggest{background:none;border:1px solid var(--muted);border-radius:7px;font-size:0.65rem;padding:6px 8px;white-space:nowrap;align-self:flex-start;}
 .add-card{border:1.5px dashed var(--line);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;min-height:120px;color:var(--muted);font-weight:600;font-size:0.78rem;background:none;}
 body:not(.edit-mode) .add-card{display:none;}
+.brand-logo-box{display:none;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-bottom:14px;}
+body.edit-mode .brand-logo-box{display:block;}
 
 .settings-box{display:none;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:0 18px 20px;}
 body.edit-mode .settings-box{display:block;}
@@ -193,10 +214,25 @@ body.edit-mode .ventas-box{display:block;}
   </div>
 </div>
 
+<div class="shipping-bar" id="shippingBar"></div>
+
 <div class="hero">
-  <h1 id="heroTitle">ENERGÍA<br><span class="accent">PARA RENDIR</span></h1>
-  <p id="heroTag">Suplementos deportivos originales. Consultá stock y precios.</p>
-  <a class="hero-cta" id="heroWaBtn" href="#" target="_blank">Pedir por WhatsApp →</a>
+  <svg class="hero-illustration" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+    <g fill="none" stroke="#f2c230" stroke-width="16" stroke-linecap="round" opacity="0.5">
+      <line x1="70" y1="100" x2="330" y2="100"/>
+    </g>
+    <g fill="#f2c230" opacity="0.55">
+      <rect x="40" y="45" width="34" height="110" rx="10"/>
+      <rect x="16" y="62" width="24" height="76" rx="8"/>
+      <rect x="326" y="45" width="34" height="110" rx="10"/>
+      <rect x="360" y="62" width="24" height="76" rx="8"/>
+    </g>
+  </svg>
+  <div class="hero-content">
+    <h1 id="heroTitle">ENERGÍA<br><span class="accent">PARA RENDIR</span></h1>
+    <p id="heroTag">Suplementos deportivos originales. Consultá stock y precios.</p>
+    <a class="hero-cta" id="heroWaBtn" href="#" target="_blank">Pedir por WhatsApp →</a>
+  </div>
 </div>
 
 <div class="settings-box">
@@ -204,6 +240,7 @@ body.edit-mode .ventas-box{display:block;}
   <div class="admin-row"><label>Marca</label><input id="setBrand" placeholder="Nombre de tu marca"></div>
   <div class="admin-row"><label>Título hero</label><input id="setHeroTitle" placeholder="Ej: ENERGÍA | PARA RENDIR (usá | para el salto de línea)"></div>
   <div class="admin-row"><label>Bajada</label><input id="setHeroTag" placeholder="Frase corta debajo del título"></div>
+  <div class="admin-row"><label>Envíos</label><input id="setEnvio" placeholder="Ej: 🚚 Envíos a José C. Paz, San Miguel y Grand Bourg"></div>
   <div class="admin-row"><label>WhatsApp</label><input id="setWhatsapp" placeholder="Solo números, ej: 5491122334455"></div>
   <div class="admin-row"><label>Margen %</label><input id="setMarkupEf" type="number" placeholder="Efvo/Transf %" style="max-width:80px;"><input id="setMarkupTa" type="number" placeholder="Tarjeta %" style="max-width:80px;"></div>
   <div class="admin-row"><label>Redondeo $</label><input id="setRoundTo" type="number" placeholder="Ej: 100" style="max-width:90px;"></div>
@@ -214,13 +251,16 @@ body.edit-mode .ventas-box{display:block;}
 <div class="ventas-box" id="ventasBox"></div>
 
 <div class="section" id="combos">
-  <div class="section-head"><h2>Combos</h2></div>
+  <div class="section-head"><h2>🏋️ Combos</h2></div>
   <div class="combo-builder" id="comboBuilder"></div>
   <div id="comboList"></div>
 </div>
 
 <div class="section" id="catalogo">
-  <div class="section-head"><h2>Catálogo</h2><span class="tag" id="prodCount"></span></div>
+  <div class="section-head"><h2>💪 Catálogo</h2><span class="tag" id="prodCount"></span></div>
+  <div class="brand-logo-box" id="brandLogoBox"></div>
+  <div class="filter-row" id="brandFilterRow"></div>
+  <div class="filter-row" id="categoryFilterRow"></div>
   <div class="grid" id="productGrid"></div>
 </div>
 
@@ -296,14 +336,29 @@ const BENEFICIOS_RULES = [
 ];
 function suggestBeneficios(name){ for(const [rx, txt] of BENEFICIOS_RULES){ if(rx.test(name)) return txt; } return ""; }
 
+const CATEGORY_RULES = [
+  [/creatina/i,"Creatina"],
+  [/whey|proteina|protein/i,"Proteína"],
+  [/colageno|colágeno|collagen/i,"Colágeno"],
+  [/magnesio/i,"Magnesio"],
+  [/bcaa/i,"BCAA"],
+  [/electrolito/i,"Electrolitos"],
+  [/energy gel/i,"Energy Gel"],
+  [/pre war|pre-entreno|pre entreno/i,"Pre-entreno"]
+];
+function categoryOf(name){ for(const [rx,label] of CATEGORY_RULES){ if(rx.test(name)) return label; } return "Otros"; }
+let filterBrand = null;
+let filterCategory = null;
+
 function blankProduct(id){
-  return {id, name:"Nuevo producto", brand:"", costo:0, images:[], markupEf:null, markupTa:null, desc:"", modoDeUso:"", ingredientes:"", advertencias:"", beneficios:"", stock:null};
+  return {id, name:"Nuevo producto", brand:"", costo:0, images:[], markupEf:null, markupTa:null, precioEfManual:null, precioTaManual:null, desc:"", modoDeUso:"", ingredientes:"", advertencias:"", beneficios:"", stock:null};
 }
 
 const DEFAULT_STATE = {
   settings:{
     brand:"PWR SUPLEMENTOS", heroTitle:"ENERGÍA|PARA RENDIR",
     heroTag:"Suplementos deportivos originales. Consultá stock y precios.",
+    envioTexto:"🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas",
     whatsapp:"", pin:"1234", markupEfectivo:40, markupTarjeta:48, roundTo:100
   },
   products:[
@@ -333,9 +388,12 @@ const DEFAULT_STATE = {
     {id:3,name:"Combo Liquidación Stock",items:[{productId:18,qty:2},{productId:16,qty:1}],precio:30000,images:[]}
   ],
   ventas:[],
+  pedidos:[],
+  brandLogos:{},
   nextProductId:20,
   nextComboId:4,
-  nextVentaId:1
+  nextVentaId:1,
+  nextPedidoId:1
 };
 DEFAULT_STATE.products.forEach(p => {
   p.desc = suggestDesc(p.name);
@@ -357,7 +415,9 @@ function roundPrice(n){ const step=(state.settings.roundTo&&state.settings.round
 function calcProductPrices(p){
   const mEf=(p.markupEf===null||p.markupEf===undefined)?state.settings.markupEfectivo:p.markupEf;
   const mTa=(p.markupTa===null||p.markupTa===undefined)?state.settings.markupTarjeta:p.markupTa;
-  return { precioEf: roundPrice(p.costo*(1+mEf/100)), precioTa: roundPrice(p.costo*(1+mTa/100)) };
+  const precioEf = (p.precioEfManual!==null && p.precioEfManual!==undefined && p.precioEfManual!=="") ? Number(p.precioEfManual) : roundPrice(p.costo*(1+mEf/100));
+  const precioTa = (p.precioTaManual!==null && p.precioTaManual!==undefined && p.precioTaManual!=="") ? Number(p.precioTaManual) : roundPrice(p.costo*(1+mTa/100));
+  return { precioEf, precioTa };
 }
 function waLink(number, text){ const clean=(number||"").replace(/[^0-9]/g,""); return clean ? `https://wa.me/${clean}?text=${encodeURIComponent(text)}` : "#"; }
 function escapeHtml(str){ return String(str).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
@@ -370,7 +430,8 @@ function render(){
   const [line1, line2] = (state.settings.heroTitle||"").split("|");
   document.getElementById("heroTitle").innerHTML = `${escapeHtml(line1||"")}<br><span class="accent">${escapeHtml(line2||"")}</span>`;
   document.getElementById("heroTag").textContent = state.settings.heroTag;
-  document.getElementById("prodCount").textContent = state.products.length + " productos";
+  document.getElementById("shippingBar").textContent = state.settings.envioTexto || "";
+  document.getElementById("shippingBar").style.display = state.settings.envioTexto ? "block" : "none";
 
   const genericMsg = `Hola! Quería consultar por sus suplementos 💪`;
   document.getElementById("topWaBtn").href = waLink(state.settings.whatsapp, genericMsg);
@@ -379,6 +440,7 @@ function render(){
   document.getElementById("setBrand").value = state.settings.brand;
   document.getElementById("setHeroTitle").value = state.settings.heroTitle;
   document.getElementById("setHeroTag").value = state.settings.heroTag;
+  document.getElementById("setEnvio").value = state.settings.envioTexto || "";
   document.getElementById("setWhatsapp").value = state.settings.whatsapp;
   document.getElementById("setMarkupEf").value = state.settings.markupEfectivo;
   document.getElementById("setMarkupTa").value = state.settings.markupTarjeta;
@@ -391,10 +453,67 @@ function render(){
   renderVentasBox();
 }
 
+function renderFilters(){
+  const brands = [...new Set(state.products.map(p => p.brand).filter(Boolean))].sort();
+  const cats = [...new Set(state.products.map(p => categoryOf(p.name)))].sort();
+  const brandRow = document.getElementById("brandFilterRow");
+  const catRow = document.getElementById("categoryFilterRow");
+  brandRow.innerHTML = `<button class="filter-chip ${!filterBrand?'active':''}" data-filter-brand="">Todas las marcas</button>` +
+    brands.map(b => {
+      const logo = state.brandLogos[b];
+      return `<button class="filter-chip ${logo?'with-logo':''} ${filterBrand===b?'active':''}" data-filter-brand="${escapeHtml(b)}">${logo?`<img src="${logo}">`:''}${escapeHtml(b)}</button>`;
+    }).join("");
+  catRow.innerHTML = `<button class="filter-chip ${!filterCategory?'active':''}" data-filter-cat="">Todo tipo</button>` +
+    cats.map(c => `<button class="filter-chip ${filterCategory===c?'active':''}" data-filter-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join("");
+  brandRow.querySelectorAll("[data-filter-brand]").forEach(btn => {
+    btn.onclick = () => { filterBrand = btn.dataset.filterBrand || null; renderProducts(); };
+  });
+  catRow.querySelectorAll("[data-filter-cat]").forEach(btn => {
+    btn.onclick = () => { filterCategory = btn.dataset.filterCat || null; renderProducts(); };
+  });
+  renderBrandLogoBox(brands);
+}
+
+function renderBrandLogoBox(brands){
+  const box = document.getElementById("brandLogoBox");
+  box.innerHTML = `<div style="font-size:0.72rem;font-weight:700;margin-bottom:8px;">🏷️ Logo de cada marca</div>` +
+    brands.map(b => {
+      const logo = state.brandLogos[b];
+      return `
+        <div class="brand-logo-admin">
+          ${logo ? `<img src="${logo}">` : `<div style="width:32px;height:32px;border-radius:50%;background:var(--line);"></div>`}
+          <div class="bla-name">${escapeHtml(b)}</div>
+          <button data-logo-upload="${escapeHtml(b)}">Subir logo</button>
+          <input type="file" accept="image/*" data-logo-input="${escapeHtml(b)}" style="display:none;">
+          ${logo ? `<button data-logo-remove="${escapeHtml(b)}">Quitar</button>` : ''}
+        </div>`;
+    }).join("");
+  box.querySelectorAll("[data-logo-upload]").forEach(btn => {
+    btn.onclick = e => box.querySelector(`[data-logo-input="${e.target.dataset.logoUpload}"]`).click();
+  });
+  box.querySelectorAll("[data-logo-input]").forEach(input => {
+    input.onchange = e => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const brand = e.target.dataset.logoInput;
+      compressImage(file, dataUrl => { state.brandLogos[brand] = dataUrl; renderProducts(); scheduleSave(); });
+    };
+  });
+  box.querySelectorAll("[data-logo-remove]").forEach(btn => {
+    btn.onclick = e => { delete state.brandLogos[e.target.dataset.logoRemove]; renderProducts(); scheduleSave(); };
+  });
+}
+
 function renderProducts(){
+  renderFilters();
   const grid = document.getElementById("productGrid");
   grid.innerHTML = "";
-  state.products.forEach(p => {
+  const filtered = state.products.filter(p =>
+    (!filterBrand || p.brand === filterBrand) &&
+    (!filterCategory || categoryOf(p.name) === filterCategory)
+  );
+  document.getElementById("prodCount").textContent = `${filtered.length} de ${state.products.length} productos`;
+  filtered.forEach(p => {
     const {precioEf, precioTa} = calcProductPrices(p);
     const imgs = p.images || [];
     const stock = stockOf(p);
@@ -426,6 +545,8 @@ function renderProducts(){
           <div class="admin-row"><label>Stock</label><input type="number" data-field="stock" data-id="${p.id}" value="${p.stock===null?'':p.stock}" placeholder="sin control"></div>
           <div class="admin-row"><label>Marg. Ef/Tr %</label><input type="number" data-field="markupEf" data-id="${p.id}" value="${p.markupEf===null?'':p.markupEf}" placeholder="${state.settings.markupEfectivo}"></div>
           <div class="admin-row"><label>Marg. Tar %</label><input type="number" data-field="markupTa" data-id="${p.id}" value="${p.markupTa===null?'':p.markupTa}" placeholder="${state.settings.markupTarjeta}"></div>
+          <div class="admin-row"><label>Precio manual Ef/Tr</label><input type="number" data-field="precioEfManual" data-id="${p.id}" value="${p.precioEfManual===null?'':p.precioEfManual}" placeholder="automático"></div>
+          <div class="admin-row"><label>Precio manual Tarj.</label><input type="number" data-field="precioTaManual" data-id="${p.id}" value="${p.precioTaManual===null?'':p.precioTaManual}" placeholder="automático"></div>
           <div class="admin-row"><label>Para qué sirve</label><textarea data-field="desc" data-id="${p.id}">${escapeHtml(p.desc||"")}</textarea><button type="button" class="admin-suggest" data-suggest="${p.id}">Sugerir</button></div>
           <div class="admin-row"><label>Beneficios</label><textarea data-field="beneficios" data-id="${p.id}" placeholder="Uno por línea, con emoji">${escapeHtml(p.beneficios||"")}</textarea></div>
           <div class="admin-row"><label>Modo de uso</label><textarea data-field="modoDeUso" data-id="${p.id}">${escapeHtml(p.modoDeUso||"")}</textarea></div>
@@ -541,6 +662,7 @@ function attachProductListeners(){
       if(field === "costo"){ prod.costo = Number(val)||0; }
       else if(field === "stock"){ prod.stock = val === "" ? null : Number(val); }
       else if(field === "markupEf" || field === "markupTa"){ prod[field] = val === "" ? null : Number(val); }
+      else if(field === "precioEfManual" || field === "precioTaManual"){ prod[field] = val === "" ? null : Number(val); }
       else { prod[field] = val; }
       renderProducts(); renderCombos(); scheduleSave();
     });
@@ -844,10 +966,26 @@ function renderCart(){
   lines.querySelectorAll("[data-cart-remove]").forEach(b => b.onclick = e => { cart.splice(Number(e.target.dataset.cartRemove),1); renderCart(); renderProducts(); });
 
   const waBtn = document.getElementById("cartWaBtn");
-  let msg = "Hola! Quiero hacer este pedido:\n";
-  cart.forEach(item => { const info = cartLineInfo(item); if(info) msg += `- ${item.qty}x ${info.name} (${money(info.unitEf*item.qty)})\n`; });
-  msg += `\nTotal efectivo/transferencia: ${money(totalEf)}\nTotal tarjeta: ${money(totalTa)}`;
-  waBtn.onclick = () => { window.open(waLink(state.settings.whatsapp, msg), "_blank"); };
+  waBtn.disabled = cart.length === 0;
+  waBtn.onclick = () => {
+    if(cart.length === 0) return;
+    let msg = "Hola! Quiero hacer este pedido:\n";
+    const pedidoItems = [];
+    cart.forEach(item => {
+      const info = cartLineInfo(item);
+      if(!info) return;
+      msg += `- ${item.qty}x ${info.name} (${money(info.unitEf*item.qty)})\n`;
+      pedidoItems.push({type:item.type, id:item.id, name:info.name, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
+    });
+    msg += `\nTotal efectivo/transferencia: ${money(totalEf)}\nTotal tarjeta: ${money(totalTa)}`;
+    state.pedidos.push({id: state.nextPedidoId++, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente"});
+    scheduleSave();
+    window.open(waLink(state.settings.whatsapp, msg), "_blank");
+    cart = [];
+    renderCart(); renderProducts();
+    closeAllSheets();
+    showToast("Pedido enviado — vas a poder confirmarlo desde el modo edición");
+  };
 }
 
 /* ---------- SHEETS ---------- */
@@ -880,11 +1018,14 @@ function renderVentasBox(){
     <div class="admin-row"><label>Cantidad</label><input type="number" id="ventaCantidad" value="1" min="1"></div>
     <div class="admin-row"><label>Método</label><select id="ventaMetodo"><option value="efectivo">Efectivo/Transferencia</option><option value="tarjeta">Tarjeta</option></select></div>
     <button class="primary-btn" id="registrarVentaBtn">Registrar venta</button>
-    <button class="admin-photo-btn" id="stockFileBtn" style="margin-top:12px;">📥 Actualizar stock desde Excel, PDF o foto</button>
+    <button class="admin-photo-btn" id="stockFileBtn" style="margin-top:12px;">📥 Actualizar stock y costos desde Excel, PDF o foto</button>
     <input type="file" id="stockFileInput" accept=".csv,.xlsx,.xls,application/pdf,image/*" style="display:none;">
+    <div style="margin-top:14px;font-size:0.68rem;color:var(--muted);font-weight:700;">Pedidos pendientes de confirmar</div>
+    <div id="pedidosList" style="margin-top:6px;"></div>
     <div style="margin-top:12px;font-size:0.68rem;color:var(--muted);font-weight:700;">Últimas ventas</div>
     <div id="ventasList" style="margin-top:6px;"></div>
   `;
+  renderPedidosList();
   const list = document.getElementById("ventasList");
   const recent = state.ventas.slice(-10).reverse();
   list.innerHTML = recent.length ? recent.map(v => `
@@ -899,6 +1040,66 @@ function renderVentasBox(){
   });
   document.getElementById("stockFileBtn").onclick = () => document.getElementById("stockFileInput").click();
   document.getElementById("stockFileInput").onchange = e => { if(e.target.files[0]) handleStockFile(e.target.files[0]); e.target.value=""; };
+}
+
+function renderPedidosList(){
+  const box = document.getElementById("pedidosList");
+  const pendientes = state.pedidos.filter(p => p.status === "pendiente");
+  if(!pendientes.length){ box.innerHTML = `<div style="font-size:0.7rem;color:var(--muted);">No hay pedidos pendientes.</div>`; return; }
+  box.innerHTML = pendientes.map(p => `
+    <div class="venta-line" style="flex-direction:column;align-items:stretch;gap:6px;">
+      <div><strong>${p.fecha}</strong> — ${p.items.map(it=>`${it.qty}x ${escapeHtml(it.name)}`).join(", ")}</div>
+      <div>Efvo/Transf: ${money(p.totalEf)} · Tarjeta: ${money(p.totalTa)}</div>
+      <div class="admin-row" style="margin:0;"><label style="width:auto;">Cobrado con</label><select data-pedido-metodo="${p.id}"><option value="efectivo">Efectivo/Transferencia</option><option value="tarjeta">Tarjeta</option></select></div>
+      <div style="display:flex;gap:6px;">
+        <button class="small-btn" data-confirm-pedido="${p.id}" style="flex:1;">✅ Confirmar (descuenta stock)</button>
+        <button class="small-btn" data-reject-pedido="${p.id}" style="flex:1;color:var(--coral);">❌ Rechazar</button>
+      </div>
+    </div>`).join("");
+  box.querySelectorAll("[data-confirm-pedido]").forEach(btn => {
+    btn.onclick = e => {
+      const id = Number(e.target.dataset.confirmPedido);
+      const metodo = box.querySelector(`[data-pedido-metodo="${id}"]`).value;
+      confirmarPedido(id, metodo);
+    };
+  });
+  box.querySelectorAll("[data-reject-pedido]").forEach(btn => {
+    btn.onclick = e => rechazarPedido(Number(e.target.dataset.rejectPedido));
+  });
+}
+
+function confirmarPedido(pedidoId, metodo){
+  const pedido = state.pedidos.find(p => p.id === pedidoId);
+  if(!pedido) return;
+  pedido.items.forEach(it => {
+    if(it.type === "product"){
+      const p = state.products.find(pp => pp.id === it.id);
+      if(!p) return;
+      const precioUnit = metodo === "efectivo" ? it.precioEfUnit : it.precioTaUnit;
+      const ganancia = (precioUnit - p.costo) * it.qty;
+      state.ventas.push({id:state.nextVentaId++, fecha:new Date().toLocaleDateString("es-AR"), productId:p.id, itemNombre:p.name, cantidad:it.qty, metodo, precioUnit, costoUnit:p.costo, total:precioUnit*it.qty, ganancia});
+      if(p.stock !== null && p.stock !== undefined){ p.stock = Math.max(0, p.stock - it.qty); }
+    } else {
+      const c = state.combos.find(cc => cc.id === it.id);
+      if(!c) return;
+      let costo = 0;
+      c.items.forEach(ci => { const prod = state.products.find(pp => pp.id === ci.productId); if(prod) costo += prod.costo * ci.qty; });
+      const precioUnit = c.precio;
+      const ganancia = (precioUnit - costo) * it.qty;
+      state.ventas.push({id:state.nextVentaId++, fecha:new Date().toLocaleDateString("es-AR"), productId:null, itemNombre:c.name, cantidad:it.qty, metodo, precioUnit, costoUnit:costo, total:precioUnit*it.qty, ganancia});
+    }
+  });
+  pedido.status = "confirmado";
+  render(); scheduleSave();
+  showToast("Pedido confirmado y stock actualizado");
+}
+
+function rechazarPedido(pedidoId){
+  const pedido = state.pedidos.find(p => p.id === pedidoId);
+  if(!pedido) return;
+  pedido.status = "rechazado";
+  render(); scheduleSave();
+  showToast("Pedido rechazado (no se tocó el stock)");
 }
 
 function registrarVenta(){
@@ -961,7 +1162,10 @@ function parseSpreadsheet(file){
           const keys = Object.keys(row);
           const nameKey = keys.find(k => /produc|nombre|item|articulo/i.test(k)) || keys[0];
           const qtyKey = keys.find(k => /cant|stock|unidad/i.test(k)) || keys[1];
-          return { producto: String(row[nameKey]||"").trim(), cantidad: Number(row[qtyKey])||0 };
+          const costKey = keys.find(k => /costo|precio|price/i.test(k));
+          const out = { producto: String(row[nameKey]||"").trim(), cantidad: Number(row[qtyKey])||0 };
+          if(costKey){ const c = Number(row[costKey]); if(c>0) out.costo = c; }
+          return out;
         }).filter(r => r.producto);
         resolve(rows);
       }catch(err){ reject(err); }
@@ -986,7 +1190,7 @@ async function parseWithAI(file){
   const contentBlock = isPdf
     ? { type:"document", source:{ type:"base64", media_type:"application/pdf", data: base64 } }
     : { type:"image", source:{ type:"base64", media_type: file.type || "image/jpeg", data: base64 } };
-  const prompt = "Esta imagen o documento muestra una lista de stock de suplementos deportivos. Extraé todos los productos con su cantidad disponible. Respondé ÚNICAMENTE con un array JSON válido, sin texto adicional ni markdown, con este formato exacto: [{\"producto\":\"nombre del producto\",\"cantidad\":numero}]. Si no podés determinar la cantidad de algún producto, usá 1.";
+  const prompt = "Esta imagen o documento muestra una lista de stock o precios de suplementos deportivos. Extraé todos los productos con su cantidad disponible y, si figura, su precio de costo. Respondé ÚNICAMENTE con un array JSON válido, sin texto adicional ni markdown, con este formato exacto: [{\"producto\":\"nombre del producto\",\"cantidad\":numero,\"costo\":numero_o_null}]. Si no podés determinar la cantidad de algún producto, usá 1. Si no hay costo visible, usá null.";
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
@@ -1000,7 +1204,11 @@ async function parseWithAI(file){
   const text = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
   const clean = text.replace(/```json|```/g,"").trim();
   const parsed = JSON.parse(clean);
-  return Array.isArray(parsed) ? parsed.map(r => ({producto:String(r.producto||"").trim(), cantidad:Number(r.cantidad)||1})).filter(r=>r.producto) : [];
+  return Array.isArray(parsed) ? parsed.map(r => {
+    const out = {producto:String(r.producto||"").trim(), cantidad:Number(r.cantidad)||1};
+    if(r.costo !== null && r.costo !== undefined && Number(r.costo) > 0) out.costo = Number(r.costo);
+    return out;
+  }).filter(r=>r.producto) : [];
 }
 
 function bestMatchProductId(name){
@@ -1020,7 +1228,7 @@ function bestMatchProductId(name){
 }
 
 function openStockReview(rows){
-  stockReviewRows = rows.map(r => ({ detectedName:r.producto, cantidad:r.cantidad, productId: bestMatchProductId(r.producto) }));
+  stockReviewRows = rows.map(r => ({ detectedName:r.producto, cantidad:r.cantidad, costo: r.costo || null, productId: bestMatchProductId(r.producto) }));
   renderStockReview();
   openSheet("stockReviewSheet");
 }
@@ -1032,13 +1240,17 @@ function renderStockReview(){
     <div class="stock-review-row">
       <div class="srr-name">Detectado: "${escapeHtml(r.detectedName)}"</div>
       <select data-review-idx="${idx}" data-review-field="productId">${optionsHtml(r.productId)}</select>
-      <input type="number" min="0" value="${r.cantidad}" data-review-idx="${idx}" data-review-field="cantidad" placeholder="Cantidad">
+      <input type="number" min="0" value="${r.cantidad}" data-review-idx="${idx}" data-review-field="cantidad" placeholder="Cantidad en stock">
+      <input type="number" min="0" value="${r.costo||''}" data-review-idx="${idx}" data-review-field="costo" placeholder="Costo (opcional)">
     </div>`).join("");
   box.querySelectorAll("select").forEach(sel => {
     sel.onchange = e => { stockReviewRows[Number(e.target.dataset.reviewIdx)].productId = e.target.value ? Number(e.target.value) : null; };
   });
-  box.querySelectorAll('input[type="number"]').forEach(inp => {
+  box.querySelectorAll('input[data-review-field="cantidad"]').forEach(inp => {
     inp.onchange = e => { stockReviewRows[Number(e.target.dataset.reviewIdx)].cantidad = Number(e.target.value)||0; };
+  });
+  box.querySelectorAll('input[data-review-field="costo"]').forEach(inp => {
+    inp.onchange = e => { stockReviewRows[Number(e.target.dataset.reviewIdx)].costo = e.target.value === "" ? null : Number(e.target.value); };
   });
 }
 
@@ -1047,7 +1259,11 @@ document.getElementById("stockApplyBtn").addEventListener("click", () => {
   stockReviewRows.forEach(r => {
     if(r.productId){
       const p = state.products.find(pp => pp.id === r.productId);
-      if(p){ p.stock = r.cantidad; applied++; }
+      if(p){
+        p.stock = r.cantidad;
+        if(r.costo && r.costo > 0) p.costo = r.costo;
+        applied++;
+      }
     }
   });
   closeSheet("stockReviewSheet");
@@ -1062,9 +1278,25 @@ document.getElementById("editToggle").addEventListener("click", () => {
   else if(pin !== null){ showToast("PIN incorrecto"); }
 });
 
-["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setMarkupEf","setMarkupTa","setRoundTo","setPin"].forEach(id => {
+// Secret unlock: tap the brand name 5 times to reveal the admin button (hidden from customers by default).
+let brandTapCount = 0, brandTapTimer = null;
+document.getElementById("brandLabel").addEventListener("click", () => {
+  brandTapCount++;
+  clearTimeout(brandTapTimer);
+  brandTapTimer = setTimeout(() => { brandTapCount = 0; }, 1500);
+  if(brandTapCount >= 5){
+    brandTapCount = 0;
+    document.getElementById("editToggle").classList.add("unlocked");
+    showToast("Modo administrador disponible");
+  }
+});
+if(window.location.hash === "#admin"){
+  document.getElementById("editToggle").classList.add("unlocked");
+}
+
+["setBrand","setHeroTitle","setHeroTag","setEnvio","setWhatsapp","setMarkupEf","setMarkupTa","setRoundTo","setPin"].forEach(id => {
   document.getElementById(id).addEventListener("change", e => {
-    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setMarkupEf:"markupEfectivo",setMarkupTa:"markupTarjeta",setRoundTo:"roundTo",setPin:"pin"};
+    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setEnvio:"envioTexto",setWhatsapp:"whatsapp",setMarkupEf:"markupEfectivo",setMarkupTa:"markupTarjeta",setRoundTo:"roundTo",setPin:"pin"};
     const key = map[id];
     let val = e.target.value;
     if(key === "markupEfectivo" || key === "markupTarjeta" || key === "roundTo") val = Number(val)||0;
@@ -1087,8 +1319,12 @@ async function loadState(){
     if(res && res.value){
       state = JSON.parse(res.value);
       if(state.settings.roundTo === undefined) state.settings.roundTo = 100;
+      if(state.settings.envioTexto === undefined) state.settings.envioTexto = "🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas";
       if(!state.ventas) state.ventas = [];
       if(!state.nextVentaId) state.nextVentaId = 1;
+      if(!state.pedidos) state.pedidos = [];
+      if(!state.nextPedidoId) state.nextPedidoId = 1;
+      if(!state.brandLogos) state.brandLogos = {};
       state.products.forEach(p => {
         if(!p.images){ p.images = p.image ? [p.image] : []; }
         if(!p.desc) p.desc = suggestDesc(p.name);
@@ -1097,6 +1333,8 @@ async function loadState(){
         if(p.advertencias === undefined) p.advertencias = "";
         if(p.beneficios === undefined) p.beneficios = suggestBeneficios(p.name);
         if(p.stock === undefined) p.stock = null;
+        if(p.precioEfManual === undefined) p.precioEfManual = null;
+        if(p.precioTaManual === undefined) p.precioTaManual = null;
       });
       state.combos.forEach(c => { if(!c.images) c.images = []; });
     } else {
