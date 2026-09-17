@@ -297,7 +297,22 @@ body.edit-mode .ventas-box{display:block;}
 <div class="status-toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
+/* ======= CONFIGURACIÓN DE FIREBASE (ya completa con tus datos) ======= */
+const firebaseConfig = {
+  apiKey: "AIzaSyBFeipg9vDG-RLOPn-Oepzzblhq4ptwAuU",
+  authDomain: "suplementos-ori.firebaseapp.com",
+  projectId: "suplementos-ori",
+  storageBucket: "suplementos-ori.firebasestorage.app",
+  messagingSenderId: "737452425360",
+  appId: "1:737452425360:web:d6b9acf306b690f12e5815"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const catalogoRef = db.collection("tienda").doc("catalogo");
+
 const money = n => "$" + Math.round(n).toLocaleString("es-AR");
 
 const DESC_RULES = [
@@ -1307,17 +1322,21 @@ if(window.location.hash === "#admin"){
 
 function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveState, 600); }
 async function saveState(){
-  if(!storageOK) return;
-  try{ const res = await window.storage.set('catalogo-suplementos', JSON.stringify(state), true); showToast(res ? "Guardado ✓" : "No se pudo guardar"); }
-  catch(err){ showToast("No se pudo guardar"); }
+  try{
+    await catalogoRef.set(state);
+    showToast("Guardado ✓");
+  }catch(err){
+    console.error(err);
+    showToast("No se pudo guardar — revisá la configuración de Firebase");
+  }
 }
 function showToast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1800); }
 
 async function loadState(){
   try{
-    const res = await window.storage.get('catalogo-suplementos', true);
-    if(res && res.value){
-      state = JSON.parse(res.value);
+    const doc = await catalogoRef.get();
+    if(doc.exists){
+      state = doc.data();
       if(state.settings.roundTo === undefined) state.settings.roundTo = 100;
       if(state.settings.envioTexto === undefined) state.settings.envioTexto = "🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas";
       if(!state.ventas) state.ventas = [];
@@ -1339,8 +1358,13 @@ async function loadState(){
       state.combos.forEach(c => { if(!c.images) c.images = []; });
     } else {
       state = clone(DEFAULT_STATE);
+      await catalogoRef.set(state);
     }
-  }catch(err){ state = clone(DEFAULT_STATE); }
+  }catch(err){
+    console.error(err);
+    state = clone(DEFAULT_STATE);
+    showToast("No se pudo conectar con Firebase — revisá la configuración");
+  }
   render();
 }
 loadState();
