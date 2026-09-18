@@ -242,6 +242,7 @@ body.edit-mode .ventas-box{display:block;}
   <div class="admin-row"><label>Bajada</label><input id="setHeroTag" placeholder="Frase corta debajo del título"></div>
   <div class="admin-row"><label>Envíos</label><input id="setEnvio" placeholder="Ej: 🚚 Envíos a José C. Paz, San Miguel y Grand Bourg"></div>
   <div class="admin-row"><label>WhatsApp</label><input id="setWhatsapp" placeholder="Solo números, ej: 5491122334455"></div>
+  <div class="admin-row"><label>Alias transf.</label><input id="setAlias" placeholder="Ej: mi.alias.mp"></div>
   <div class="admin-row"><label>Margen %</label><input id="setMarkupEf" type="number" placeholder="Efvo/Transf %" style="max-width:80px;"><input id="setMarkupTa" type="number" placeholder="Tarjeta %" style="max-width:80px;"></div>
   <div class="admin-row"><label>Redondeo $</label><input id="setRoundTo" type="number" placeholder="Ej: 100" style="max-width:90px;"></div>
   <div class="admin-row"><label>PIN edición</label><input id="setPin" placeholder="PIN para entrar a editar"></div>
@@ -274,6 +275,13 @@ body.edit-mode .ventas-box{display:block;}
   <div id="cartLines"></div>
   <div class="cart-totals"><span>Total efectivo/transferencia</span><span id="cartTotalEf">$0</span></div>
   <div class="cart-totals" style="border-top:none;padding-top:0;"><span>Total tarjeta</span><span id="cartTotalTa">$0</span></div>
+  <div id="aliasBox" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:10px;">
+    <div style="font-size:0.68rem;color:var(--muted);font-weight:700;">¿PAGÁS POR TRANSFERENCIA? Copiá el alias:</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+      <div id="aliasValue" style="font-weight:800;font-size:0.9rem;flex:1;"></div>
+      <button class="small-btn" id="copyAliasBtn">Copiar</button>
+    </div>
+  </div>
   <button class="primary-btn" id="cartWaBtn" style="background:var(--gold);color:var(--ink);margin-top:12px;">Confirmar por WhatsApp</button>
 </div>
 
@@ -374,7 +382,7 @@ const DEFAULT_STATE = {
     brand:"PWR SUPLEMENTOS", heroTitle:"ENERGÍA|PARA RENDIR",
     heroTag:"Suplementos deportivos originales. Consultá stock y precios.",
     envioTexto:"🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas",
-    whatsapp:"", pin:"1234", markupEfectivo:40, markupTarjeta:48, roundTo:100
+    whatsapp:"", pin:"1234", markupEfectivo:40, markupTarjeta:48, roundTo:100, aliasTransferencia:""
   },
   products:[
     {id:1,name:"Creatina Doypack 300g - Sin Sabor",brand:"BODY ADVANCE",costo:11550},
@@ -457,6 +465,7 @@ function render(){
   document.getElementById("setHeroTag").value = state.settings.heroTag;
   document.getElementById("setEnvio").value = state.settings.envioTexto || "";
   document.getElementById("setWhatsapp").value = state.settings.whatsapp;
+  document.getElementById("setAlias").value = state.settings.aliasTransferencia || "";
   document.getElementById("setMarkupEf").value = state.settings.markupEfectivo;
   document.getElementById("setMarkupTa").value = state.settings.markupTarjeta;
   document.getElementById("setRoundTo").value = state.settings.roundTo;
@@ -962,6 +971,20 @@ function renderCart(){
   document.getElementById("cartBarTotal").textContent = money(totalEf);
   document.getElementById("cartBar").classList.toggle("show", count > 0);
 
+  const aliasBox = document.getElementById("aliasBox");
+  if(state.settings.aliasTransferencia){
+    aliasBox.style.display = "block";
+    document.getElementById("aliasValue").textContent = state.settings.aliasTransferencia;
+    document.getElementById("copyAliasBtn").onclick = () => {
+      navigator.clipboard.writeText(state.settings.aliasTransferencia).then(
+        () => showToast("Alias copiado ✓"),
+        () => showToast("No se pudo copiar, copialo a mano")
+      );
+    };
+  } else {
+    aliasBox.style.display = "none";
+  }
+
   lines.querySelectorAll("[data-cart-inc]").forEach(b => b.onclick = e => {
     const idx = Number(e.target.dataset.cartInc);
     const item = cart[idx];
@@ -993,6 +1016,7 @@ function renderCart(){
       pedidoItems.push({type:item.type, id:item.id, name:info.name, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
     });
     msg += `\nTotal efectivo/transferencia: ${money(totalEf)}\nTotal tarjeta: ${money(totalTa)}`;
+    if(state.settings.aliasTransferencia){ msg += `\n\nSi pagás por transferencia, el alias es: ${state.settings.aliasTransferencia}\nMandame el comprobante para confirmar el pedido.`; }
     state.pedidos.push({id: state.nextPedidoId++, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente"});
     scheduleSave();
     window.open(waLink(state.settings.whatsapp, msg), "_blank");
@@ -1033,8 +1057,12 @@ function renderVentasBox(){
     <div class="admin-row"><label>Cantidad</label><input type="number" id="ventaCantidad" value="1" min="1"></div>
     <div class="admin-row"><label>Método</label><select id="ventaMetodo"><option value="efectivo">Efectivo/Transferencia</option><option value="tarjeta">Tarjeta</option></select></div>
     <button class="primary-btn" id="registrarVentaBtn">Registrar venta</button>
-    <button class="admin-photo-btn" id="stockFileBtn" style="margin-top:12px;">📥 Actualizar stock y costos desde Excel, PDF o foto</button>
-    <input type="file" id="stockFileInput" accept=".csv,.xlsx,.xls,application/pdf,image/*" style="display:none;">
+    <button class="admin-photo-btn" id="stockFileBtn" style="margin-top:12px;">📥 Actualizar stock y costos desde Excel o CSV</button>
+    <input type="file" id="stockFileInput" accept=".csv,.xlsx,.xls" style="display:none;">
+    <div style="display:flex;gap:6px;">
+      <button class="admin-photo-btn" id="exportVentasBtn" style="flex:1;">📤 Excel de ventas</button>
+      <button class="admin-photo-btn" id="printVentasBtn" style="flex:1;">🖨️ PDF de ventas</button>
+    </div>
     <div style="margin-top:14px;font-size:0.68rem;color:var(--muted);font-weight:700;">Pedidos pendientes de confirmar</div>
     <div id="pedidosList" style="margin-top:6px;"></div>
     <div style="margin-top:12px;font-size:0.68rem;color:var(--muted);font-weight:700;">Últimas ventas</div>
@@ -1055,6 +1083,48 @@ function renderVentasBox(){
   });
   document.getElementById("stockFileBtn").onclick = () => document.getElementById("stockFileInput").click();
   document.getElementById("stockFileInput").onchange = e => { if(e.target.files[0]) handleStockFile(e.target.files[0]); e.target.value=""; };
+  document.getElementById("exportVentasBtn").onclick = () => exportVentasExcel();
+  document.getElementById("printVentasBtn").onclick = () => printVentas();
+}
+
+function exportVentasExcel(){
+  if(!state.ventas.length){ showToast("Todavía no hay ventas registradas"); return; }
+  const rows = state.ventas.map(v => ({
+    Fecha: v.fecha, Producto: v.itemNombre, Cantidad: v.cantidad, Metodo: v.metodo,
+    "Precio unitario": v.precioUnit, "Costo unitario": v.costoUnit, Total: v.total, Ganancia: v.ganancia
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+  XLSX.writeFile(wb, `ventas_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function printVentas(){
+  if(!state.ventas.length){ showToast("Todavía no hay ventas registradas"); return; }
+  let totalEf=0, totalTa=0, ganancia=0;
+  const rowsHtml = state.ventas.map(v => {
+    if(v.metodo==="efectivo") totalEf+=v.total; else totalTa+=v.total;
+    ganancia += v.ganancia;
+    return `<tr><td>${v.fecha}</td><td>${escapeHtml(v.itemNombre)}</td><td>${v.cantidad}</td><td>${v.metodo}</td><td>${money(v.total)}</td><td>${money(v.ganancia)}</td></tr>`;
+  }).join("");
+  const html = `
+    <html><head><title>Ventas — ${escapeHtml(state.settings.brand)}</title>
+    <style>
+      body{font-family:Arial,sans-serif;padding:20px;color:#111;}
+      h1{font-size:1.2rem;} table{width:100%;border-collapse:collapse;margin-top:12px;}
+      th,td{border:1px solid #ccc;padding:6px 8px;font-size:0.8rem;text-align:left;}
+      th{background:#eee;} .totals{margin-top:14px;font-weight:bold;}
+    </style></head><body>
+    <h1>Ventas — ${escapeHtml(state.settings.brand)}</h1>
+    <div>Generado: ${new Date().toLocaleString("es-AR")}</div>
+    <table><thead><tr><th>Fecha</th><th>Producto</th><th>Cant.</th><th>Método</th><th>Total</th><th>Ganancia</th></tr></thead>
+    <tbody>${rowsHtml}</tbody></table>
+    <div class="totals">Total efectivo/transferencia: ${money(totalEf)}<br>Total tarjeta: ${money(totalTa)}<br>Ganancia total: ${money(ganancia)}</div>
+    </body></html>`;
+  const w = window.open("", "_blank");
+  w.document.write(html);
+  w.document.close();
+  w.onload = () => w.print();
 }
 
 function renderPedidosList(){
@@ -1152,17 +1222,31 @@ async function handleStockFile(file){
   showToast("Leyendo archivo...");
   try{
     const ext = file.name.split(".").pop().toLowerCase();
-    let rows = [];
-    if(["csv","xlsx","xls"].includes(ext)){
-      rows = await parseSpreadsheet(file);
-    } else {
-      rows = await parseWithAI(file);
+    if(!["csv","xlsx","xls"].includes(ext)){
+      showToast("Por ahora solo puedo leer Excel o CSV en la página publicada. Subí el archivo .xlsx o .csv.");
+      return;
     }
-    if(!rows.length){ showToast("No se encontraron productos en el archivo"); return; }
+    const rows = await parseSpreadsheet(file);
+    if(!rows.length){ showToast("No se encontraron productos — revisá que el Excel tenga columnas de producto y cantidad"); return; }
     openStockReview(rows);
   }catch(err){
-    showToast("No se pudo leer el archivo. Probá con otra foto o cargá el stock a mano.");
+    console.error(err);
+    showToast("No se pudo leer el archivo. Probá guardarlo como .xlsx o .csv, o cargá el stock a mano.");
   }
+}
+
+function stripAccents(s){ return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
+function parseNumberAR(val){
+  if(typeof val === "number") return val;
+  if(val === null || val === undefined || val === "") return 0;
+  let s = String(val).trim().replace(/[^0-9,.\-]/g,"");
+  if(s.includes(".") && s.includes(",")){ s = s.replace(/\./g,"").replace(",", "."); }
+  else if(s.includes(",") && !s.includes(".")){ s = s.replace(",", "."); }
+  else if(s.includes(".")){
+    const parts = s.split(".");
+    if(parts.length > 1 && parts[parts.length-1].length === 3){ s = s.replace(/\./g,""); }
+  }
+  return Number(s)||0;
 }
 
 function parseSpreadsheet(file){
@@ -1170,60 +1254,26 @@ function parseSpreadsheet(file){
     const reader = new FileReader();
     reader.onload = e => {
       try{
-        const wb = XLSX.read(e.target.result, {type:"binary"});
+        const wb = XLSX.read(new Uint8Array(e.target.result), {type:"array"});
         const sheet = wb.Sheets[wb.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json(sheet, {defval:""});
         const rows = json.map(row => {
-          const keys = Object.keys(row);
-          const nameKey = keys.find(k => /produc|nombre|item|articulo/i.test(k)) || keys[0];
-          const qtyKey = keys.find(k => /cant|stock|unidad/i.test(k)) || keys[1];
-          const costKey = keys.find(k => /costo|precio|price/i.test(k));
-          const out = { producto: String(row[nameKey]||"").trim(), cantidad: Number(row[qtyKey])||0 };
-          if(costKey){ const c = Number(row[costKey]); if(c>0) out.costo = c; }
+          const rawRow = {};
+          Object.keys(row).forEach(k => { rawRow[k.trim()] = row[k]; });
+          const keys = Object.keys(rawRow);
+          const nameKey = keys.find(k => /produc|nombre|item|articulo|detalle/i.test(stripAccents(k))) || keys[0];
+          const qtyKey = keys.find(k => /cant|stock|unidad/i.test(stripAccents(k))) || keys[1];
+          const costKey = keys.find(k => /costo|precio|price/i.test(stripAccents(k)));
+          const out = { producto: String(rawRow[nameKey]||"").trim(), cantidad: parseNumberAR(rawRow[qtyKey]) };
+          if(costKey){ const c = parseNumberAR(rawRow[costKey]); if(c>0) out.costo = c; }
           return out;
         }).filter(r => r.producto);
         resolve(rows);
       }catch(err){ reject(err); }
     };
     reader.onerror = reject;
-    reader.readAsBinaryString(file);
+    reader.readAsArrayBuffer(file);
   });
-}
-
-function fileToBase64(file){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(",")[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function parseWithAI(file){
-  const base64 = await fileToBase64(file);
-  const isPdf = file.type === "application/pdf";
-  const contentBlock = isPdf
-    ? { type:"document", source:{ type:"base64", media_type:"application/pdf", data: base64 } }
-    : { type:"image", source:{ type:"base64", media_type: file.type || "image/jpeg", data: base64 } };
-  const prompt = "Esta imagen o documento muestra una lista de stock o precios de suplementos deportivos. Extraé todos los productos con su cantidad disponible y, si figura, su precio de costo. Respondé ÚNICAMENTE con un array JSON válido, sin texto adicional ni markdown, con este formato exacto: [{\"producto\":\"nombre del producto\",\"cantidad\":numero,\"costo\":numero_o_null}]. Si no podés determinar la cantidad de algún producto, usá 1. Si no hay costo visible, usá null.";
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1000,
-      messages: [{ role:"user", content:[contentBlock, {type:"text", text:prompt}] }]
-    })
-  });
-  const data = await response.json();
-  const text = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
-  const clean = text.replace(/```json|```/g,"").trim();
-  const parsed = JSON.parse(clean);
-  return Array.isArray(parsed) ? parsed.map(r => {
-    const out = {producto:String(r.producto||"").trim(), cantidad:Number(r.cantidad)||1};
-    if(r.costo !== null && r.costo !== undefined && Number(r.costo) > 0) out.costo = Number(r.costo);
-    return out;
-  }).filter(r=>r.producto) : [];
 }
 
 function bestMatchProductId(name){
@@ -1309,9 +1359,9 @@ if(window.location.hash === "#admin"){
   document.getElementById("editToggle").classList.add("unlocked");
 }
 
-["setBrand","setHeroTitle","setHeroTag","setEnvio","setWhatsapp","setMarkupEf","setMarkupTa","setRoundTo","setPin"].forEach(id => {
+["setBrand","setHeroTitle","setHeroTag","setEnvio","setWhatsapp","setAlias","setMarkupEf","setMarkupTa","setRoundTo","setPin"].forEach(id => {
   document.getElementById(id).addEventListener("change", e => {
-    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setEnvio:"envioTexto",setWhatsapp:"whatsapp",setMarkupEf:"markupEfectivo",setMarkupTa:"markupTarjeta",setRoundTo:"roundTo",setPin:"pin"};
+    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setEnvio:"envioTexto",setWhatsapp:"whatsapp",setAlias:"aliasTransferencia",setMarkupEf:"markupEfectivo",setMarkupTa:"markupTarjeta",setRoundTo:"roundTo",setPin:"pin"};
     const key = map[id];
     let val = e.target.value;
     if(key === "markupEfectivo" || key === "markupTarjeta" || key === "roundTo") val = Number(val)||0;
@@ -1339,6 +1389,7 @@ async function loadState(){
       state = doc.data();
       if(state.settings.roundTo === undefined) state.settings.roundTo = 100;
       if(state.settings.envioTexto === undefined) state.settings.envioTexto = "🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas";
+      if(state.settings.aliasTransferencia === undefined) state.settings.aliasTransferencia = "";
       if(!state.ventas) state.ventas = [];
       if(!state.nextVentaId) state.nextVentaId = 1;
       if(!state.pedidos) state.pedidos = [];
