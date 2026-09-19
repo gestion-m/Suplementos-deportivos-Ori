@@ -330,7 +330,6 @@ body.edit-mode .ventas-box{display:block;}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
 /* ======= CONFIGURACIÓN DE FIREBASE (ya completa con tus datos) ======= */
 const firebaseConfig = {
@@ -343,8 +342,17 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const storage = firebase.storage();
-const catalogoRef = db.collection("tienda").doc("catalogo");
+
+/* Cada tipo de dato vive en su propio lugar en vez de un solo archivo gigante,
+   así ninguno se pasa nunca del límite de 1 MB por documento (plan gratis). */
+const configRef = db.collection("catalogo").doc("config");
+const heroImageRef = db.collection("catalogo").doc("heroImage");
+const logoRef = db.collection("catalogo").doc("logo");
+const brandLogosRef = db.collection("catalogo").doc("brandLogos");
+const productsCol = db.collection("productos");
+const combosCol = db.collection("combos");
+const ventasCol = db.collection("ventas");
+const pedidosCol = db.collection("pedidos");
 
 const money = n => "$" + Math.round(n).toLocaleString("es-AR");
 
@@ -572,12 +580,11 @@ function renderBrandLogoBox(brands){
       if(!file) return;
       const brand = e.target.dataset.logoInput;
       try{
-        const url = await uploadImageToStorage(file, "logos", 300);
-        state.brandLogos[brand] = url;
+        state.brandLogos[brand] = await compressImageP(file, 220, 0.7);
         renderProducts(); scheduleSave();
       }catch(err){
         console.error(err);
-        showToast("No se pudo subir el logo — revisá Firebase Storage");
+        showToast("No se pudo procesar el logo, probá con otra imagen");
       }
     };
   });
@@ -764,6 +771,7 @@ function attachProductListeners(){
       if(!confirm("¿Eliminar este producto?")) return;
       state.products = state.products.filter(p => p.id !== id);
       state.combos.forEach(c => c.items = c.items.filter(it => it.productId !== id));
+      productsCol.doc(String(id)).delete().catch(err => console.error(err));
       render(); scheduleSave();
     });
   });
@@ -779,7 +787,7 @@ function attachProductListeners(){
       if(!prod) return;
       prod.images = prod.images || [];
       if(prod.images.length >= 4){ showToast("Máximo 4 fotos por producto"); return; }
-      addMultipleImages(files, prod.images, 4, () => { renderProducts(); scheduleSave(); }, `productos/${id}`);
+      addMultipleImages(files, prod.images, 4, () => { renderProducts(); scheduleSave(); });
     });
   });
   document.querySelectorAll("[data-photo-remove]").forEach(btn => {
@@ -820,6 +828,7 @@ function attachComboListeners(){
       const id = Number(e.target.dataset.deleteCombo);
       if(!confirm("¿Eliminar este combo?")) return;
       state.combos = state.combos.filter(c => c.id !== id);
+      combosCol.doc(String(id)).delete().catch(err => console.error(err));
       renderCombos(); scheduleSave();
     });
   });
@@ -835,7 +844,7 @@ function attachComboListeners(){
       if(!combo) return;
       combo.images = combo.images || [];
       if(combo.images.length >= 4){ showToast("Máximo 4 fotos por combo"); return; }
-      addMultipleImages(files, combo.images, 4, () => { renderCombos(); scheduleSave(); }, `combos/${id}`);
+      addMultipleImages(files, combo.images, 4, () => { renderCombos(); scheduleSave(); });
     });
   });
   document.querySelectorAll("[data-combo-remove-img]").forEach(btn => {
@@ -856,18 +865,18 @@ function attachComboListeners(){
   });
 }
 
-function compressImageToBlob(file, maxW){
+function compressImageP(file, maxW, quality){
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = ev => {
       const img = new Image();
       img.onload = () => {
-        const scale = Math.min(1, (maxW||700) / img.width);
+        const scale = Math.min(1, (maxW||500) / img.width);
         const canvas = document.createElement("canvas");
         canvas.width = img.width * scale; canvas.height = img.height * scale;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("No se pudo procesar la imagen")), "image/jpeg", 0.75);
+        resolve(canvas.toDataURL("image/jpeg", quality||0.6));
       };
       img.onerror = reject;
       img.src = ev.target.result;
@@ -877,27 +886,18 @@ function compressImageToBlob(file, maxW){
   });
 }
 
-async function uploadImageToStorage(file, folder, maxW){
-  const blob = await compressImageToBlob(file, maxW);
-  const filename = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.jpg`;
-  const ref = storage.ref().child(filename);
-  await ref.put(blob);
-  return await ref.getDownloadURL();
-}
-
-async function addMultipleImages(fileList, targetArr, max, onDone, folder){
+async function addMultipleImages(fileList, targetArr, max, onDone){
   const files = Array.from(fileList);
   const room = Math.max(0, max - targetArr.length);
   if(files.length > room){ showToast(`Se subieron ${room} de ${files.length} (máximo ${max} fotos)`); }
   try{
     for(const file of files.slice(0, room)){
-      const url = await uploadImageToStorage(file, folder || "otros");
-      targetArr.push(url);
+      targetArr.push(await compressImageP(file, 500, 0.6));
     }
     onDone();
   }catch(err){
     console.error(err);
-    showToast("No se pudieron subir las fotos — revisá que Firebase Storage esté habilitado");
+    showToast("No se pudieron procesar las fotos, probá con otra imagen");
   }
 }
 
@@ -1290,6 +1290,7 @@ function deshacerVenta(ventaId){
   const p = state.products.find(pp => pp.id === v.productId);
   if(p && p.stock !== null && p.stock !== undefined){ p.stock += v.cantidad; }
   state.ventas.splice(idx,1);
+  ventasCol.doc(String(v.id)).delete().catch(err => console.error(err));
   render(); scheduleSave();
   showToast("Venta deshecha");
 }
@@ -1446,12 +1447,11 @@ document.getElementById("heroImageInput").addEventListener("change", async e => 
   const file = e.target.files[0];
   if(!file) return;
   try{
-    const url = await uploadImageToStorage(file, "hero", 1200);
-    state.settings.heroImage = url;
+    state.settings.heroImage = await compressImageP(file, 900, 0.55);
     render(); scheduleSave();
   }catch(err){
     console.error(err);
-    showToast("No se pudo subir la foto — revisá Firebase Storage");
+    showToast("No se pudo procesar la foto, probá con otra imagen");
   }
   e.target.value = "";
 });
@@ -1469,12 +1469,11 @@ document.getElementById("logoUploadInput").addEventListener("change", async e =>
   const file = e.target.files[0];
   if(!file) return;
   try{
-    const url = await uploadImageToStorage(file, "marca", 300);
-    state.settings.logoImage = url;
+    state.settings.logoImage = await compressImageP(file, 260, 0.7);
     render(); scheduleSave();
   }catch(err){
     console.error(err);
-    showToast("No se pudo subir el logo — revisá Firebase Storage");
+    showToast("No se pudo procesar el logo, probá con otra imagen");
   }
   e.target.value = "";
 });
@@ -1518,9 +1517,24 @@ if(window.location.hash === "#admin"){
 });
 
 function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveState, 600); }
+
 async function saveState(){
   try{
-    await catalogoRef.set(state);
+    const batch = db.batch();
+    const { heroImage, logoImage, ...settingsRest } = state.settings;
+    batch.set(configRef, {
+      settings: settingsRest,
+      nextProductId: state.nextProductId, nextComboId: state.nextComboId,
+      nextVentaId: state.nextVentaId, nextPedidoId: state.nextPedidoId
+    });
+    batch.set(heroImageRef, {image: heroImage || null});
+    batch.set(logoRef, {image: logoImage || null});
+    batch.set(brandLogosRef, {logos: state.brandLogos || {}});
+    state.products.forEach(p => batch.set(productsCol.doc(String(p.id)), p));
+    state.combos.forEach(c => batch.set(combosCol.doc(String(c.id)), c));
+    state.ventas.forEach(v => batch.set(ventasCol.doc(String(v.id)), v));
+    state.pedidos.forEach(p => batch.set(pedidosCol.doc(String(p.id)), p));
+    await batch.commit();
     showToast("Guardado ✓");
   }catch(err){
     console.error(err);
@@ -1529,38 +1543,67 @@ async function saveState(){
 }
 function showToast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1800); }
 
+async function seedDefaults(){
+  const batch = db.batch();
+  const { heroImage, logoImage, ...settingsRest } = DEFAULT_STATE.settings;
+  batch.set(configRef, {
+    settings: settingsRest,
+    nextProductId: DEFAULT_STATE.nextProductId, nextComboId: DEFAULT_STATE.nextComboId,
+    nextVentaId: DEFAULT_STATE.nextVentaId, nextPedidoId: DEFAULT_STATE.nextPedidoId
+  });
+  batch.set(heroImageRef, {image: heroImage || null});
+  batch.set(logoRef, {image: logoImage || null});
+  batch.set(brandLogosRef, {logos: {}});
+  DEFAULT_STATE.products.forEach(p => batch.set(productsCol.doc(String(p.id)), p));
+  DEFAULT_STATE.combos.forEach(c => batch.set(combosCol.doc(String(c.id)), c));
+  await batch.commit();
+}
+
 async function loadState(){
   try{
-    const doc = await catalogoRef.get();
-    if(doc.exists){
-      state = doc.data();
-      if(state.settings.roundTo === undefined) state.settings.roundTo = 100;
-      if(state.settings.envioTexto === undefined) state.settings.envioTexto = "🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas";
-      if(state.settings.aliasTransferencia === undefined) state.settings.aliasTransferencia = "";
-      if(state.settings.heroImage === undefined) state.settings.heroImage = null;
-      if(state.settings.accentColor === undefined) state.settings.accentColor = "#c6ff2e";
-      if(state.settings.logoImage === undefined) state.settings.logoImage = null;
-      if(!state.ventas) state.ventas = [];
-      if(!state.nextVentaId) state.nextVentaId = 1;
-      if(!state.pedidos) state.pedidos = [];
-      if(!state.nextPedidoId) state.nextPedidoId = 1;
-      if(!state.brandLogos) state.brandLogos = {};
-      state.products.forEach(p => {
-        if(!p.images){ p.images = p.image ? [p.image] : []; }
-        if(!p.desc) p.desc = suggestDesc(p.name);
-        if(p.modoDeUso === undefined) p.modoDeUso = suggestUso(p.name);
-        if(p.ingredientes === undefined) p.ingredientes = "";
-        if(p.advertencias === undefined) p.advertencias = "";
-        if(p.beneficios === undefined) p.beneficios = suggestBeneficios(p.name);
-        if(p.stock === undefined) p.stock = null;
-        if(p.precioEfManual === undefined) p.precioEfManual = null;
-        if(p.precioTaManual === undefined) p.precioTaManual = null;
-      });
-      state.combos.forEach(c => { if(!c.images) c.images = []; });
-    } else {
+    const configDoc = await configRef.get();
+    if(!configDoc.exists){
+      await seedDefaults();
       state = clone(DEFAULT_STATE);
-      await catalogoRef.set(state);
+      render();
+      return;
     }
+    const [heroDoc, logoDoc, brandLogosDoc, productsSnap, combosSnap, ventasSnap, pedidosSnap] = await Promise.all([
+      heroImageRef.get(), logoRef.get(), brandLogosRef.get(),
+      productsCol.get(), combosCol.get(), ventasCol.get(), pedidosCol.get()
+    ]);
+    const cfg = configDoc.data();
+    state = {
+      settings: cfg.settings || {},
+      nextProductId: cfg.nextProductId || 1,
+      nextComboId: cfg.nextComboId || 1,
+      nextVentaId: cfg.nextVentaId || 1,
+      nextPedidoId: cfg.nextPedidoId || 1,
+      products: productsSnap.docs.map(d => d.data()).sort((a,b)=>a.id-b.id),
+      combos: combosSnap.docs.map(d => d.data()).sort((a,b)=>a.id-b.id),
+      ventas: ventasSnap.docs.map(d => d.data()).sort((a,b)=>a.id-b.id),
+      pedidos: pedidosSnap.docs.map(d => d.data()).sort((a,b)=>a.id-b.id),
+      brandLogos: (brandLogosDoc.exists && brandLogosDoc.data().logos) || {}
+    };
+    state.settings.heroImage = (heroDoc.exists && heroDoc.data().image) || null;
+    state.settings.logoImage = (logoDoc.exists && logoDoc.data().image) || null;
+
+    if(state.settings.roundTo === undefined) state.settings.roundTo = 100;
+    if(state.settings.envioTexto === undefined) state.settings.envioTexto = "🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas";
+    if(state.settings.aliasTransferencia === undefined) state.settings.aliasTransferencia = "";
+    if(state.settings.accentColor === undefined) state.settings.accentColor = "#c6ff2e";
+    state.products.forEach(p => {
+      if(!p.images){ p.images = p.image ? [p.image] : []; }
+      if(!p.desc) p.desc = suggestDesc(p.name);
+      if(p.modoDeUso === undefined) p.modoDeUso = suggestUso(p.name);
+      if(p.ingredientes === undefined) p.ingredientes = "";
+      if(p.advertencias === undefined) p.advertencias = "";
+      if(p.beneficios === undefined) p.beneficios = suggestBeneficios(p.name);
+      if(p.stock === undefined) p.stock = null;
+      if(p.precioEfManual === undefined) p.precioEfManual = null;
+      if(p.precioTaManual === undefined) p.precioTaManual = null;
+    });
+    state.combos.forEach(c => { if(!c.images) c.images = []; });
   }catch(err){
     console.error(err);
     state = clone(DEFAULT_STATE);
