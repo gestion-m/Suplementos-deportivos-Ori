@@ -518,11 +518,9 @@ function render(){
   if(state.settings.logoImage){
     logoEl.src = state.settings.logoImage;
     logoEl.style.display = "block";
-    document.getElementById("brandLabel").style.display = "none";
-    document.getElementById("logoRemoveBtn").style.display = "inline-block";
+    document.getElementById("logoRemoveBtn").style.display = editMode ? "inline-block" : "none";
   } else {
     logoEl.style.display = "none";
-    document.getElementById("brandLabel").style.display = "block";
     document.getElementById("logoRemoveBtn").style.display = "none";
   }
   document.getElementById("setMarkupEf").value = state.settings.markupEfectivo;
