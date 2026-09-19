@@ -327,7 +327,6 @@ body.edit-mode .ventas-box{display:block;}
 
 <div class="status-toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
@@ -1162,8 +1161,9 @@ function renderVentasBox(){
   document.getElementById("printVentasBtn").onclick = () => printVentas();
 }
 
-function exportVentasExcel(){
+async function exportVentasExcel(){
   if(!state.ventas.length){ showToast("Todavía no hay ventas registradas"); return; }
+  if(!(await ensureXLSX())){ showToast("No se pudo cargar la librería de Excel — probá de nuevo en un momento.", 6000); return; }
   const rows = state.ventas.map(v => ({
     Fecha: v.fecha, Producto: v.itemNombre, Cantidad: v.cantidad, Metodo: v.metodo,
     "Precio unitario": v.precioUnit, "Costo unitario": v.costoUnit, Total: v.total, Ganancia: v.ganancia
@@ -1293,12 +1293,43 @@ function deshacerVenta(ventaId){
   showToast("Venta deshecha");
 }
 
+/* ---------- CARGA DE LA LIBRERÍA DE EXCEL (con respaldos) ---------- */
+const XLSX_SOURCES = [
+  "./xlsx.full.min.js",
+  "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js",
+  "https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"
+];
+let xlsxPromise = null;
+function loadScriptOnce(src){
+  return new Promise((resolve, reject) => {
+    const el = document.createElement("script");
+    el.src = src;
+    el.onload = () => resolve();
+    el.onerror = () => { el.remove(); reject(new Error("No cargó " + src)); };
+    document.head.appendChild(el);
+  });
+}
+function ensureXLSX(){
+  if(typeof XLSX !== "undefined") return Promise.resolve(true);
+  if(xlsxPromise) return xlsxPromise;
+  xlsxPromise = (async () => {
+    for(const src of XLSX_SOURCES){
+      try{ await loadScriptOnce(src); if(typeof XLSX !== "undefined") return true; }
+      catch(e){ console.warn(e.message); }
+    }
+    xlsxPromise = null;
+    return false;
+  })();
+  return xlsxPromise;
+}
+
 /* ---------- STOCK FROM FILE ---------- */
 async function handleStockFile(file){
   showToast("Leyendo archivo...");
   try{
-    if(typeof XLSX === "undefined"){
-      showToast("No se pudo cargar la librería de Excel (revisá tu conexión) — probá de nuevo en un momento.");
+    if(!(await ensureXLSX())){
+      showToast("No se pudo cargar la librería de Excel (revisá tu conexión) — probá de nuevo en un momento.", 6000);
       return;
     }
     const ext = file.name.split(".").pop().toLowerCase();
