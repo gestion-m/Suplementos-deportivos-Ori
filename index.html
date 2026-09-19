@@ -13,7 +13,7 @@
   --card:#ffffff;
   --line:#d9d6c7;
   --muted:#6b6f63;
-  --gold:#baf22e;
+  --gold:#c6ff2e;
   --coral:#e8543a;
   --green:#3f7d4f;
   --radius:16px;
@@ -38,11 +38,18 @@ button{font-family:'Inter',sans-serif;cursor:pointer;}
 #editToggle{display:none;}
 #editToggle.unlocked{display:inline-block;}
 
-.hero{background:var(--ink);color:var(--paper);padding:38px 20px 46px;position:relative;overflow:hidden;}
+.hero{background:var(--ink);color:var(--paper);padding:38px 20px 46px;position:relative;overflow:hidden;background-size:cover;background-position:center;}
+.hero.has-image::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg, rgba(20,21,15,0.55), rgba(20,21,15,0.92));}
 .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:var(--gold);opacity:0.14;}
-.hero-illustration{position:absolute;right:-20px;bottom:-10px;width:230px;opacity:0.9;transform:rotate(-8deg);pointer-events:none;}
+.hero-illustration{position:absolute;right:-20px;bottom:-10px;width:230px;opacity:0.9;transform:rotate(-8deg);pointer-events:none;z-index:1;}
+.hero-illustration g{fill:var(--gold);stroke:var(--gold);}
+.hero-illustration.hidden{display:none;}
 .hero-content{position:relative;z-index:2;}
 .hero h1{font-size:2.5rem;line-height:0.98;margin:0 0 10px;max-width:11ch;}
+.hero-badges{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
+.hero-badge{display:flex;flex-direction:column;align-items:center;gap:4px;width:70px;}
+.hero-badge .ic{width:38px;height:38px;border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+.hero-badge .lbl{font-size:0.58rem;font-weight:800;text-align:center;color:var(--paper);letter-spacing:0.01em;line-height:1.15;}
 .hero .accent{color:var(--gold);}
 .hero p{margin:0 0 20px;font-size:0.95rem;color:#c9cbbf;max-width:32ch;}
 .hero-cta{display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:var(--ink);font-weight:700;font-size:0.88rem;padding:12px 18px;border-radius:11px;border:none;text-decoration:none;}
@@ -86,7 +93,7 @@ button{font-family:'Inter',sans-serif;cursor:pointer;}
 .combo-card{background:var(--ink);color:var(--paper);border-radius:var(--radius);padding:16px;margin-bottom:12px;position:relative;}
 .combo-badge{position:absolute;top:14px;right:14px;background:var(--gold);color:var(--ink);font-size:0.62rem;font-weight:800;padding:4px 8px;border-radius:7px;}
 .combo-photo{width:100%;aspect-ratio:16/9;border-radius:11px;overflow:hidden;background:#26281f;margin-bottom:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
-.combo-photo img{width:100%;height:100%;object-fit:cover;}
+.combo-photo img{width:100%;height:100%;object-fit:contain;background:#0e0f0a;}
 .combo-photo .ph-empty{color:#6f7264;font-size:0.68rem;font-weight:600;}
 .combo-thumbs{display:flex;gap:6px;margin-bottom:10px;}
 .combo-thumbs img{width:44px;height:44px;object-fit:cover;border-radius:7px;cursor:pointer;}
@@ -170,7 +177,7 @@ body.edit-mode .ventas-box{display:block;}
 .cart-totals{display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;padding:10px 2px;border-top:1px dashed var(--line);margin-top:6px;}
 
 .detail-main-photo{width:100%;aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:#e6e4d8;margin-bottom:8px;display:flex;align-items:center;justify-content:center;touch-action:pan-y;}
-.detail-main-photo img{width:100%;height:100%;object-fit:cover;}
+.detail-main-photo img{width:100%;height:100%;object-fit:contain;}
 .detail-main-photo .ph-empty{color:#a9ab9c;font-size:0.75rem;font-weight:600;}
 .detail-thumbs{display:flex;gap:8px;margin-bottom:14px;}
 .detail-thumbs img{width:56px;height:56px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent;}
@@ -207,7 +214,11 @@ body.edit-mode .ventas-box{display:block;}
 <body>
 
 <div class="topbar">
-  <div class="brand" id="brandLabel">TIENDA</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="brand" id="brandLabel">TIENDA</div>
+    <img id="brandLogoImg" style="display:none;height:30px;max-width:110px;object-fit:contain;" alt="logo">
+    <button class="icon-btn" id="logoRemoveBtn" style="display:none;font-size:0.62rem;padding:5px 7px;">Quitar logo</button>
+  </div>
   <div class="actions">
     <a class="icon-btn" id="topWaBtn" href="#" target="_blank">WhatsApp</a>
     <button class="icon-btn" id="editToggle">Editar</button>
@@ -217,7 +228,7 @@ body.edit-mode .ventas-box{display:block;}
 <div class="shipping-bar" id="shippingBar"></div>
 
 <div class="hero">
-  <svg class="hero-illustration" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+  <svg class="hero-illustration" id="heroIllustration" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
     <g fill="none" stroke="#f2c230" stroke-width="16" stroke-linecap="round" opacity="0.5">
       <line x1="70" y1="100" x2="330" y2="100"/>
     </g>
@@ -232,6 +243,12 @@ body.edit-mode .ventas-box{display:block;}
     <h1 id="heroTitle">ENERGÍA<br><span class="accent">PARA RENDIR</span></h1>
     <p id="heroTag">Suplementos deportivos originales. Consultá stock y precios.</p>
     <a class="hero-cta" id="heroWaBtn" href="#" target="_blank">Pedir por WhatsApp →</a>
+    <div class="hero-badges">
+      <div class="hero-badge"><div class="ic">🏋️</div><div class="lbl">ENTRENA HOY</div></div>
+      <div class="hero-badge"><div class="ic">❤️</div><div class="lbl">CUIDA TU SALUD</div></div>
+      <div class="hero-badge"><div class="ic">🚩</div><div class="lbl">SUPÉRATE SIEMPRE</div></div>
+      <div class="hero-badge"><div class="ic">👑</div><div class="lbl">TU MEJOR VERSIÓN</div></div>
+    </div>
   </div>
 </div>
 
@@ -243,6 +260,12 @@ body.edit-mode .ventas-box{display:block;}
   <div class="admin-row"><label>Envíos</label><input id="setEnvio" placeholder="Ej: 🚚 Envíos a José C. Paz, San Miguel y Grand Bourg"></div>
   <div class="admin-row"><label>WhatsApp</label><input id="setWhatsapp" placeholder="Solo números, ej: 5491122334455"></div>
   <div class="admin-row"><label>Alias transf.</label><input id="setAlias" placeholder="Ej: mi.alias.mp"></div>
+  <button class="admin-photo-btn" id="heroImageBtn">🖼️ Subir foto de fondo del hero (gente entrenando)</button>
+  <input type="file" accept="image/*" id="heroImageInput" style="display:none;">
+  <button class="admin-delete" id="heroImageRemoveBtn" style="display:none;">Quitar foto de fondo</button>
+  <div class="admin-row" style="margin-top:8px;"><label>Color</label><input type="color" id="setAccentColor" style="max-width:60px;padding:2px;"></div>
+  <button class="admin-photo-btn" id="logoUploadBtn">🖼️ Subir logo de tu marca</button>
+  <input type="file" accept="image/*" id="logoUploadInput" style="display:none;">
   <div class="admin-row"><label>Margen %</label><input id="setMarkupEf" type="number" placeholder="Efvo/Transf %" style="max-width:80px;"><input id="setMarkupTa" type="number" placeholder="Tarjeta %" style="max-width:80px;"></div>
   <div class="admin-row"><label>Redondeo $</label><input id="setRoundTo" type="number" placeholder="Ej: 100" style="max-width:90px;"></div>
   <div class="admin-row"><label>PIN edición</label><input id="setPin" placeholder="PIN para entrar a editar"></div>
@@ -307,6 +330,7 @@ body.edit-mode .ventas-box{display:block;}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
 /* ======= CONFIGURACIÓN DE FIREBASE (ya completa con tus datos) ======= */
 const firebaseConfig = {
@@ -319,6 +343,7 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const storage = firebase.storage();
 const catalogoRef = db.collection("tienda").doc("catalogo");
 
 const money = n => "$" + Math.round(n).toLocaleString("es-AR");
@@ -382,7 +407,7 @@ const DEFAULT_STATE = {
     brand:"PWR SUPLEMENTOS", heroTitle:"ENERGÍA|PARA RENDIR",
     heroTag:"Suplementos deportivos originales. Consultá stock y precios.",
     envioTexto:"🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas",
-    whatsapp:"", pin:"1234", markupEfectivo:40, markupTarjeta:48, roundTo:100, aliasTransferencia:""
+    whatsapp:"", pin:"1234", markupEfectivo:40, markupTarjeta:48, roundTo:100, aliasTransferencia:"", heroImage:null, accentColor:"#c6ff2e", logoImage:null
   },
   products:[
     {id:1,name:"Creatina Doypack 300g - Sin Sabor",brand:"BODY ADVANCE",costo:11550},
@@ -466,6 +491,32 @@ function render(){
   document.getElementById("setEnvio").value = state.settings.envioTexto || "";
   document.getElementById("setWhatsapp").value = state.settings.whatsapp;
   document.getElementById("setAlias").value = state.settings.aliasTransferencia || "";
+  const heroEl = document.querySelector(".hero");
+  const heroIllustration = document.getElementById("heroIllustration");
+  if(state.settings.heroImage){
+    heroEl.style.backgroundImage = `url(${state.settings.heroImage})`;
+    heroEl.classList.add("has-image");
+    document.getElementById("heroImageRemoveBtn").style.display = "block";
+    heroIllustration.classList.add("hidden");
+  } else {
+    heroEl.style.backgroundImage = "";
+    heroEl.classList.remove("has-image");
+    document.getElementById("heroImageRemoveBtn").style.display = "none";
+    heroIllustration.classList.remove("hidden");
+  }
+  document.documentElement.style.setProperty("--gold", state.settings.accentColor || "#c6ff2e");
+  document.getElementById("setAccentColor").value = state.settings.accentColor || "#c6ff2e";
+  const logoEl = document.getElementById("brandLogoImg");
+  if(state.settings.logoImage){
+    logoEl.src = state.settings.logoImage;
+    logoEl.style.display = "block";
+    document.getElementById("brandLabel").style.display = "none";
+    document.getElementById("logoRemoveBtn").style.display = "inline-block";
+  } else {
+    logoEl.style.display = "none";
+    document.getElementById("brandLabel").style.display = "block";
+    document.getElementById("logoRemoveBtn").style.display = "none";
+  }
   document.getElementById("setMarkupEf").value = state.settings.markupEfectivo;
   document.getElementById("setMarkupTa").value = state.settings.markupTarjeta;
   document.getElementById("setRoundTo").value = state.settings.roundTo;
@@ -516,11 +567,18 @@ function renderBrandLogoBox(brands){
     btn.onclick = e => box.querySelector(`[data-logo-input="${e.target.dataset.logoUpload}"]`).click();
   });
   box.querySelectorAll("[data-logo-input]").forEach(input => {
-    input.onchange = e => {
+    input.onchange = async e => {
       const file = e.target.files[0];
       if(!file) return;
       const brand = e.target.dataset.logoInput;
-      compressImage(file, dataUrl => { state.brandLogos[brand] = dataUrl; renderProducts(); scheduleSave(); });
+      try{
+        const url = await uploadImageToStorage(file, "logos", 300);
+        state.brandLogos[brand] = url;
+        renderProducts(); scheduleSave();
+      }catch(err){
+        console.error(err);
+        showToast("No se pudo subir el logo — revisá Firebase Storage");
+      }
     };
   });
   box.querySelectorAll("[data-logo-remove]").forEach(btn => {
@@ -721,7 +779,7 @@ function attachProductListeners(){
       if(!prod) return;
       prod.images = prod.images || [];
       if(prod.images.length >= 4){ showToast("Máximo 4 fotos por producto"); return; }
-      addMultipleImages(files, prod.images, 4, () => { renderProducts(); scheduleSave(); });
+      addMultipleImages(files, prod.images, 4, () => { renderProducts(); scheduleSave(); }, `productos/${id}`);
     });
   });
   document.querySelectorAll("[data-photo-remove]").forEach(btn => {
@@ -777,7 +835,7 @@ function attachComboListeners(){
       if(!combo) return;
       combo.images = combo.images || [];
       if(combo.images.length >= 4){ showToast("Máximo 4 fotos por combo"); return; }
-      addMultipleImages(files, combo.images, 4, () => { renderCombos(); scheduleSave(); });
+      addMultipleImages(files, combo.images, 4, () => { renderCombos(); scheduleSave(); }, `combos/${id}`);
     });
   });
   document.querySelectorAll("[data-combo-remove-img]").forEach(btn => {
@@ -798,30 +856,49 @@ function attachComboListeners(){
   });
 }
 
-function compressImage(file, cb){
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const img = new Image();
-    img.onload = () => {
-      const maxW = 700;
-      const scale = Math.min(1, maxW / img.width);
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width * scale; canvas.height = img.height * scale;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      cb(canvas.toDataURL("image/jpeg", 0.72));
+function compressImageToBlob(file, maxW){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, (maxW||700) / img.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width * scale; canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("No se pudo procesar la imagen")), "image/jpeg", 0.75);
+      };
+      img.onerror = reject;
+      img.src = ev.target.result;
     };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
-function compressImageP(file){ return new Promise(resolve => compressImage(file, resolve)); }
-async function addMultipleImages(fileList, targetArr, max, onDone){
+
+async function uploadImageToStorage(file, folder, maxW){
+  const blob = await compressImageToBlob(file, maxW);
+  const filename = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.jpg`;
+  const ref = storage.ref().child(filename);
+  await ref.put(blob);
+  return await ref.getDownloadURL();
+}
+
+async function addMultipleImages(fileList, targetArr, max, onDone, folder){
   const files = Array.from(fileList);
   const room = Math.max(0, max - targetArr.length);
   if(files.length > room){ showToast(`Se subieron ${room} de ${files.length} (máximo ${max} fotos)`); }
-  for(const file of files.slice(0, room)){ targetArr.push(await compressImageP(file)); }
-  onDone();
+  try{
+    for(const file of files.slice(0, room)){
+      const url = await uploadImageToStorage(file, folder || "otros");
+      targetArr.push(url);
+    }
+    onDone();
+  }catch(err){
+    console.error(err);
+    showToast("No se pudieron subir las fotos — revisá que Firebase Storage esté habilitado");
+  }
 }
 
 /* ---------- DETAIL SHEET ---------- */
@@ -1255,19 +1332,47 @@ function parseSpreadsheet(file){
     reader.onload = e => {
       try{
         const wb = XLSX.read(new Uint8Array(e.target.result), {type:"array"});
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(sheet, {defval:""});
-        const rows = json.map(row => {
-          const rawRow = {};
-          Object.keys(row).forEach(k => { rawRow[k.trim()] = row[k]; });
-          const keys = Object.keys(rawRow);
-          const nameKey = keys.find(k => /produc|nombre|item|articulo|detalle/i.test(stripAccents(k))) || keys[0];
-          const qtyKey = keys.find(k => /cant|stock|unidad/i.test(stripAccents(k))) || keys[1];
-          const costKey = keys.find(k => /costo|precio|price/i.test(stripAccents(k)));
-          const out = { producto: String(rawRow[nameKey]||"").trim(), cantidad: parseNumberAR(rawRow[qtyKey]) };
-          if(costKey){ const c = parseNumberAR(rawRow[costKey]); if(c>0) out.costo = c; }
-          return out;
-        }).filter(r => r.producto);
+        // Prefer a sheet whose name suggests prices/stock if there's more than one.
+        const preferredName = wb.SheetNames.find(n => /precio|costo|stock|margen/i.test(stripAccents(n)));
+        const sheet = wb.Sheets[preferredName || wb.SheetNames[0]];
+        // Read as a raw grid (no header assumption) so we can find the real header row,
+        // even if there's a title or blank rows above it.
+        const grid = XLSX.utils.sheet_to_json(sheet, {header:1, defval:""});
+
+        const NAME_RX = /produc|nombre|item|articulo|detalle/i;
+        const QTY_RX = /cant|stock|unidad/i;
+        const COST_RX = /costo|precio|price/i;
+
+        let headerRowIdx = -1, nameCol = -1, qtyCol = -1, costCol = -1;
+        for(let r = 0; r < Math.min(grid.length, 15); r++){
+          const row = grid[r];
+          let nCol=-1, qCol=-1, cCol=-1;
+          row.forEach((cell, c) => {
+            const s = stripAccents(String(cell||""));
+            if(nCol===-1 && NAME_RX.test(s)) nCol = c;
+            if(qCol===-1 && QTY_RX.test(s)) qCol = c;
+            if(cCol===-1 && COST_RX.test(s)) cCol = c;
+          });
+          if(nCol !== -1 && (qCol !== -1 || cCol !== -1)){
+            headerRowIdx = r; nameCol = nCol; qtyCol = qCol; costCol = cCol;
+            break;
+          }
+        }
+
+        if(headerRowIdx === -1){
+          // No recognizable header row — fall back to columns 0,1,2 starting from row 0.
+          headerRowIdx = 0; nameCol = 0; qtyCol = 1; costCol = 2;
+        }
+
+        const rows = [];
+        for(let r = headerRowIdx+1; r < grid.length; r++){
+          const row = grid[r];
+          const producto = String(row[nameCol]||"").trim();
+          if(!producto) continue;
+          const out = { producto, cantidad: qtyCol!==-1 ? parseNumberAR(row[qtyCol]) : 0 };
+          if(costCol !== -1){ const c = parseNumberAR(row[costCol]); if(c>0) out.costo = c; }
+          rows.push(out);
+        }
         resolve(rows);
       }catch(err){ reject(err); }
     };
@@ -1336,6 +1441,48 @@ document.getElementById("stockApplyBtn").addEventListener("click", () => {
   showToast(`Stock actualizado en ${applied} producto(s)`);
 });
 
+document.getElementById("heroImageBtn").addEventListener("click", () => document.getElementById("heroImageInput").click());
+document.getElementById("heroImageInput").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    const url = await uploadImageToStorage(file, "hero", 1200);
+    state.settings.heroImage = url;
+    render(); scheduleSave();
+  }catch(err){
+    console.error(err);
+    showToast("No se pudo subir la foto — revisá Firebase Storage");
+  }
+  e.target.value = "";
+});
+document.getElementById("heroImageRemoveBtn").addEventListener("click", () => {
+  state.settings.heroImage = null;
+  render(); scheduleSave();
+});
+document.getElementById("setAccentColor").addEventListener("input", e => {
+  state.settings.accentColor = e.target.value;
+  document.documentElement.style.setProperty("--gold", e.target.value);
+  scheduleSave();
+});
+document.getElementById("logoUploadBtn").addEventListener("click", () => document.getElementById("logoUploadInput").click());
+document.getElementById("logoUploadInput").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    const url = await uploadImageToStorage(file, "marca", 300);
+    state.settings.logoImage = url;
+    render(); scheduleSave();
+  }catch(err){
+    console.error(err);
+    showToast("No se pudo subir el logo — revisá Firebase Storage");
+  }
+  e.target.value = "";
+});
+document.getElementById("logoRemoveBtn").addEventListener("click", () => {
+  state.settings.logoImage = null;
+  render(); scheduleSave();
+});
+
 document.getElementById("editToggle").addEventListener("click", () => {
   if(editMode){ editMode = false; render(); return; }
   const pin = prompt("PIN para editar el catálogo:");
@@ -1390,6 +1537,9 @@ async function loadState(){
       if(state.settings.roundTo === undefined) state.settings.roundTo = 100;
       if(state.settings.envioTexto === undefined) state.settings.envioTexto = "🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas";
       if(state.settings.aliasTransferencia === undefined) state.settings.aliasTransferencia = "";
+      if(state.settings.heroImage === undefined) state.settings.heroImage = null;
+      if(state.settings.accentColor === undefined) state.settings.accentColor = "#c6ff2e";
+      if(state.settings.logoImage === undefined) state.settings.logoImage = null;
       if(!state.ventas) state.ventas = [];
       if(!state.nextVentaId) state.nextVentaId = 1;
       if(!state.pedidos) state.pedidos = [];
