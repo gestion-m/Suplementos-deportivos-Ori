@@ -1297,6 +1297,10 @@ function deshacerVenta(ventaId){
 async function handleStockFile(file){
   showToast("Leyendo archivo...");
   try{
+    if(typeof XLSX === "undefined"){
+      showToast("No se pudo cargar la librería de Excel (revisá tu conexión) — probá de nuevo en un momento.");
+      return;
+    }
     const ext = file.name.split(".").pop().toLowerCase();
     if(!["csv","xlsx","xls"].includes(ext)){
       showToast("Por ahora solo puedo leer Excel o CSV en la página publicada. Subí el archivo .xlsx o .csv.");
@@ -1307,7 +1311,7 @@ async function handleStockFile(file){
     openStockReview(rows);
   }catch(err){
     console.error(err);
-    showToast("No se pudo leer el archivo. Probá guardarlo como .xlsx o .csv, o cargá el stock a mano.");
+    showToast("Error real: " + (err && err.message ? err.message : String(err)), 8000);
   }
 }
 
@@ -1539,7 +1543,7 @@ async function saveState(){
     showToast("No se pudo guardar — revisá la configuración de Firebase");
   }
 }
-function showToast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1800); }
+function showToast(msg, duration){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), duration||1800); }
 
 async function seedDefaults(){
   const batch = db.batch();
