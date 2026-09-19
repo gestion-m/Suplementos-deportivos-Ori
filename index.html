@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tienda de Suplementos</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Bangers&family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@800&family=Oswald:wght@700&family=Pacifico&family=Permanent+Marker&family=Playfair+Display:wght@900&family=Righteous&family=Russo+One&display=swap');
 
 :root{
   --ink:#14150f;
@@ -17,6 +17,10 @@
   --coral:#e8543a;
   --green:#3f7d4f;
   --radius:16px;
+  --f-brand:'Anton',sans-serif; --w-brand:400;
+  --f-hero:'Anton',sans-serif; --w-hero:400;
+  --f-sections:'Anton',sans-serif; --w-sections:400;
+  --f-prices:'Anton',sans-serif; --w-prices:400;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;color:var(--ink);font-family:'Inter',sans-serif;}
@@ -25,12 +29,13 @@ body{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cg fill='none' stroke='%23c9cdb8' stroke-width='5' stroke-linecap='round' opacity='0.8'%3E%3Cg transform='translate(10 20) rotate(-18)'%3E%3Cline x1='35' y1='40' x2='95' y2='40'/%3E%3Crect x='22' y='24' width='16' height='32' rx='5'/%3E%3Crect x='92' y='24' width='16' height='32' rx='5'/%3E%3C/g%3E%3Cg transform='translate(150 40)'%3E%3Ccircle cx='30' cy='40' r='26'/%3E%3Cpath d='M18 18 Q30 -4 42 18' /%3E%3C/g%3E%3Cg transform='translate(40 140)'%3E%3Ccircle cx='14' cy='10' r='9'/%3E%3Cpath d='M14 19 L8 46 M14 19 L26 40 M8 46 L2 70 M8 46 L20 62 M26 40 L34 58'/%3E%3C/g%3E%3Cg transform='translate(155 150) rotate(10)'%3E%3Cline x1='30' y1='35' x2='80' y2='35'/%3E%3Ccircle cx='24' cy='35' r='13'/%3E%3Ccircle cx='86' cy='35' r='13'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   background-repeat:repeat;
 }
-h1,h2,h3,.headline{font-family:'Anton',sans-serif;font-weight:400;letter-spacing:0.01em;}
+h1,h2,h3,.headline{font-family:var(--f-sections);font-weight:var(--w-sections);letter-spacing:0.01em;}
+.hero h1{font-family:var(--f-hero);font-weight:var(--w-hero);}
 img{max-width:100%;display:block;}
 button{font-family:'Inter',sans-serif;cursor:pointer;}
 
 .topbar{position:sticky;top:0;z-index:50;background:var(--ink);color:var(--paper);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;}
-.topbar .brand{font-family:'Anton',sans-serif;font-size:1.15rem;letter-spacing:0.02em;}
+.topbar .brand{font-family:var(--f-brand);font-weight:var(--w-brand);font-size:1.15rem;letter-spacing:0.02em;}
 .topbar .actions{display:flex;gap:8px;align-items:center;}
 .icon-btn{background:none;border:1px solid #3a3c31;color:var(--paper);border-radius:9px;padding:7px 10px;font-size:0.75rem;font-weight:600;}
 .icon-btn.active{background:var(--gold);color:var(--ink);border-color:var(--gold);}
@@ -100,7 +105,7 @@ button{font-family:'Inter',sans-serif;cursor:pointer;}
 .combo-card h3{font-size:1.05rem;margin:0 0 6px;padding-right:70px;}
 .combo-items{font-size:0.78rem;color:#c9cbbf;margin-bottom:10px;line-height:1.4;}
 .combo-price-row{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;}
-.combo-price-row .price{font-family:'Anton',sans-serif;font-size:1.5rem;color:var(--gold);}
+.combo-price-row .price{font-family:var(--f-prices);font-weight:var(--w-prices);font-size:1.5rem;color:var(--gold);}
 .combo-price-row .old{font-size:0.78rem;color:#8d8f81;text-decoration:line-through;}
 
 .admin-panel{display:none;background:#fff8dd;border:1.5px dashed var(--gold);border-radius:12px;padding:10px;margin-top:8px;font-size:0.75rem;}
@@ -126,6 +131,15 @@ body.edit-mode .brand-logo-box{display:block;}
 body.edit-mode .settings-box{display:block;}
 .settings-box h3{margin:0 0 10px;font-size:0.9rem;}
 .settings-box .admin-row label{width:80px;align-self:center;padding-top:0;}
+.admin-only{display:none !important;}
+body.edit-mode .admin-only{display:block !important;}
+.set-title{font-size:0.72rem;font-weight:800;margin:14px 0 6px;}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;}
+.opt-chip{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;font-size:1rem;line-height:1.1;}
+.opt-chip.sel{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.opt-chip.plain{font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:600;}
+.font-sub{font-size:0.66rem;color:var(--muted);font-weight:700;margin:8px 0 4px;}
+#pageBg{position:fixed;inset:0;z-index:-1;display:none;background-position:center;}
 
 .combo-builder{display:none;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:0 0 16px;}
 body.edit-mode .combo-builder{display:block;}
@@ -144,7 +158,7 @@ body.edit-mode .ventas-box{display:block;}
 .vsum-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
 .vsum-card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 10px;}
 .vsum-card .l{font-size:0.6rem;color:var(--muted);font-weight:700;}
-.vsum-card .v{font-family:'Anton',sans-serif;font-size:1.05rem;}
+.vsum-card .v{font-family:var(--f-prices);font-weight:var(--w-prices);font-size:1.05rem;}
 .venta-line{display:flex;justify-content:space-between;align-items:center;background:var(--paper);border-radius:8px;padding:7px 9px;margin-bottom:5px;font-size:0.7rem;}
 .venta-line button{border:none;background:none;color:var(--coral);font-size:0.65rem;font-weight:700;}
 
@@ -155,7 +169,7 @@ body.edit-mode .ventas-box{display:block;}
 .cart-bar{position:fixed;left:14px;right:14px;bottom:14px;z-index:90;background:var(--ink);color:var(--paper);border-radius:14px;padding:12px 16px;display:none;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,0.25);}
 .cart-bar.show{display:flex;}
 .cart-bar .cb-info{font-size:0.78rem;font-weight:700;}
-.cart-bar .cb-total{color:var(--gold);font-family:'Anton',sans-serif;font-size:1.05rem;margin-left:8px;}
+.cart-bar .cb-total{color:var(--gold);font-family:var(--f-prices);font-weight:var(--w-prices);font-size:1.05rem;margin-left:8px;}
 .cart-bar .cb-open{background:var(--gold);color:var(--ink);border:none;border-radius:9px;padding:8px 12px;font-size:0.75rem;font-weight:700;}
 
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:200;background:var(--paper);border-radius:20px 20px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));max-height:82vh;overflow-y:auto;box-shadow:0 -10px 30px rgba(0,0,0,0.3);display:none;}
@@ -225,7 +239,6 @@ body.edit-mode .ventas-box{display:block;}
   </div>
 </div>
 
-<div class="shipping-bar" id="shippingBar"></div>
 
 <div class="hero">
   <svg class="hero-illustration" id="heroIllustration" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
@@ -243,12 +256,6 @@ body.edit-mode .ventas-box{display:block;}
     <h1 id="heroTitle">ENERGÍA<br><span class="accent">PARA RENDIR</span></h1>
     <p id="heroTag">Suplementos deportivos originales. Consultá stock y precios.</p>
     <a class="hero-cta" id="heroWaBtn" href="#" target="_blank">Pedir por WhatsApp →</a>
-    <div class="hero-badges">
-      <div class="hero-badge"><div class="ic">🏋️</div><div class="lbl">ENTRENA HOY</div></div>
-      <div class="hero-badge"><div class="ic">❤️</div><div class="lbl">CUIDA TU SALUD</div></div>
-      <div class="hero-badge"><div class="ic">🚩</div><div class="lbl">SUPÉRATE SIEMPRE</div></div>
-      <div class="hero-badge"><div class="ic">👑</div><div class="lbl">TU MEJOR VERSIÓN</div></div>
-    </div>
   </div>
 </div>
 
@@ -257,7 +264,6 @@ body.edit-mode .ventas-box{display:block;}
   <div class="admin-row"><label>Marca</label><input id="setBrand" placeholder="Nombre de tu marca"></div>
   <div class="admin-row"><label>Título hero</label><input id="setHeroTitle" placeholder="Ej: ENERGÍA | PARA RENDIR (usá | para el salto de línea)"></div>
   <div class="admin-row"><label>Bajada</label><input id="setHeroTag" placeholder="Frase corta debajo del título"></div>
-  <div class="admin-row"><label>Envíos</label><input id="setEnvio" placeholder="Ej: 🚚 Envíos a José C. Paz, San Miguel y Grand Bourg"></div>
   <div class="admin-row"><label>WhatsApp</label><input id="setWhatsapp" placeholder="Solo números, ej: 5491122334455"></div>
   <div class="admin-row"><label>Alias transf.</label><input id="setAlias" placeholder="Ej: mi.alias.mp"></div>
   <button class="admin-photo-btn" id="heroImageBtn">🖼️ Subir foto de fondo del hero (gente entrenando)</button>
@@ -266,6 +272,14 @@ body.edit-mode .ventas-box{display:block;}
   <div class="admin-row" style="margin-top:8px;"><label>Color</label><input type="color" id="setAccentColor" style="max-width:60px;padding:2px;"></div>
   <button class="admin-photo-btn" id="logoUploadBtn">🖼️ Subir logo de tu marca</button>
   <input type="file" accept="image/*" id="logoUploadInput" style="display:none;">
+  <div class="set-title">🔤 Tipografías — tocá un estilo para probarlo</div>
+  <div id="fontPickers"></div>
+  <div class="set-title">🖼️ Fondo de la página</div>
+  <div class="chip-row" id="bgPresetRow"></div>
+  <div class="chip-row" id="bgFitRow" style="display:none;"></div>
+  <button class="admin-photo-btn" id="bgUploadBtn">📷 Subir mi propia imagen de fondo</button>
+  <input type="file" accept="image/*" id="bgUploadInput" style="display:none;">
+  <div class="admin-row"><label>Color fondo</label><input type="color" id="setBgColor" style="max-width:60px;padding:2px;"><button type="button" class="admin-suggest" id="bgColorReset" style="align-self:center;">Color original</button></div>
   <div class="admin-row"><label>Margen %</label><input id="setMarkupEf" type="number" placeholder="Efvo/Transf %" style="max-width:80px;"><input id="setMarkupTa" type="number" placeholder="Tarjeta %" style="max-width:80px;"></div>
   <div class="admin-row"><label>Redondeo $</label><input id="setRoundTo" type="number" placeholder="Ej: 100" style="max-width:90px;"></div>
   <div class="admin-row"><label>PIN edición</label><input id="setPin" placeholder="PIN para entrar a editar"></div>
@@ -325,6 +339,7 @@ body.edit-mode .ventas-box{display:block;}
   <button class="cb-open" id="cartOpenBtn">Ver pedido</button>
 </div>
 
+<div id="pageBg"></div>
 <div class="status-toast" id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -347,6 +362,7 @@ const db = firebase.firestore();
 const configRef = db.collection("catalogo").doc("config");
 const heroImageRef = db.collection("catalogo").doc("heroImage");
 const logoRef = db.collection("catalogo").doc("logo");
+const bgImageRef = db.collection("catalogo").doc("bgImage");
 const brandLogosRef = db.collection("catalogo").doc("brandLogos");
 const productsCol = db.collection("productos");
 const combosCol = db.collection("combos");
@@ -414,7 +430,8 @@ const DEFAULT_STATE = {
     brand:"PWR SUPLEMENTOS", heroTitle:"ENERGÍA|PARA RENDIR",
     heroTag:"Suplementos deportivos originales. Consultá stock y precios.",
     envioTexto:"🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas",
-    whatsapp:"", pin:"1234", markupEfectivo:40, markupTarjeta:48, roundTo:100, aliasTransferencia:"", heroImage:null, accentColor:"#c6ff2e", logoImage:null
+    whatsapp:"", pin:"1234", markupEfectivo:40, markupTarjeta:48, roundTo:100, aliasTransferencia:"", heroImage:null, accentColor:"#c6ff2e", logoImage:null,
+    fonts:{brand:"anton",hero:"anton",sections:"anton",prices:"anton"}, bgMode:"default", bgFit:"cover", bgColor:"", bgImage:null
   },
   products:[
     {id:1,name:"Creatina Doypack 300g - Sin Sabor",brand:"BODY ADVANCE",costo:11550},
@@ -485,8 +502,6 @@ function render(){
   const [line1, line2] = (state.settings.heroTitle||"").split("|");
   document.getElementById("heroTitle").innerHTML = `${escapeHtml(line1||"")}<br><span class="accent">${escapeHtml(line2||"")}</span>`;
   document.getElementById("heroTag").textContent = state.settings.heroTag;
-  document.getElementById("shippingBar").textContent = state.settings.envioTexto || "";
-  document.getElementById("shippingBar").style.display = state.settings.envioTexto ? "block" : "none";
 
   const genericMsg = `Hola! Quería consultar por sus suplementos 💪`;
   document.getElementById("topWaBtn").href = waLink(state.settings.whatsapp, genericMsg);
@@ -495,7 +510,6 @@ function render(){
   document.getElementById("setBrand").value = state.settings.brand;
   document.getElementById("setHeroTitle").value = state.settings.heroTitle;
   document.getElementById("setHeroTag").value = state.settings.heroTag;
-  document.getElementById("setEnvio").value = state.settings.envioTexto || "";
   document.getElementById("setWhatsapp").value = state.settings.whatsapp;
   document.getElementById("setAlias").value = state.settings.aliasTransferencia || "";
   const heroEl = document.querySelector(".hero");
@@ -526,6 +540,9 @@ function render(){
   document.getElementById("setMarkupTa").value = state.settings.markupTarjeta;
   document.getElementById("setRoundTo").value = state.settings.roundTo;
   document.getElementById("setPin").value = state.settings.pin;
+
+  applyFonts(); renderFontPickers();
+  applyBackground(); renderBgControls();
 
   renderProducts();
   renderCombos();
@@ -611,7 +628,7 @@ function renderProducts(){
         ${imgs[0] ? `<img src="${imgs[0]}">` : `<div class="ph-empty">Sin foto</div>`}
         <div class="p-brand-tag">${escapeHtml(p.brand||"")}</div>
         ${imgs.length>1 ? `<div class="p-multi-badge">📷 ${imgs.length}</div>` : ""}
-        ${stock!==Infinity ? `<div class="p-stock-badge ${stock<=2?'low':'ok'}">${stock<=0?'Sin stock':'Quedan '+stock}</div>` : ""}
+        ${stock!==Infinity ? `<div class="p-stock-badge admin-only ${stock<=2?'low':'ok'}">${stock<=0?'Sin stock':'Quedan '+stock}</div>` : ""}
       </div>
       <div class="p-body">
         <div class="p-name" data-open-detail="product:${p.id}">${escapeHtml(p.name)}</div>
@@ -921,7 +938,7 @@ function renderDetail(type, id){
         <div class="dp cash"><span class="lbl">EFECTIVO / TRANSFERENCIA</span><span class="val">${money(precioEf)}</span></div>
         <div class="dp card"><span class="lbl">TARJETA</span><span class="val">${money(precioTa)}</span></div>
       </div>
-      ${stock!==Infinity ? `<div class="detail-stock ${stock<=2?'low':'ok'}">${stock<=0?'Sin stock disponible':'Quedan '+stock+' unidades'}</div>` : ""}
+      ${stock!==Infinity ? `<div class="detail-stock admin-only ${stock<=2?'low':'ok'}">${stock<=0?'Sin stock disponible':'Quedan '+stock+' unidades'}</div>` : ""}
       ${benefitsHtml ? `<div class="detail-benefits">${benefitsHtml}</div>` : (p.desc ? `<div class="detail-benefits"><div class="benefit-line">${escapeHtml(p.desc)}</div></div>` : "")}
       <div class="detail-info">${sections.map(([title,body])=>`<details><summary>${title}</summary><div class="dbody">${escapeHtml(body)}</div></details>`).join("")}</div>
       <div class="detail-qty">
@@ -996,7 +1013,7 @@ function addToCart(type, id, qty){
         const room = Math.max(0, stock - already);
         if(room <= 0){ showToast("Sin stock disponible"); return; }
         qty = room;
-        showToast(`Solo quedan ${stock} — se agregaron ${room}`);
+        showToast(editMode ? `Solo quedan ${stock} — se agregaron ${room}` : "Se agregó el máximo disponible");
       }
     }
   }
@@ -1384,9 +1401,13 @@ function parseSpreadsheet(file){
           row.forEach((cell, c) => {
             const s = stripAccents(String(cell||""));
             if(nCol===-1 && NAME_RX.test(s)) nCol = c;
-            if(qCol===-1 && QTY_RX.test(s)) qCol = c;
             if(cCol===-1 && COST_RX.test(s)) cCol = c;
           });
+          // Cantidad: primero columnas que digan stock/existencia/disponible; recién después "cantidad"/"unidades"
+          for(const rx of [/existencia|disponible|stock/i, QTY_RX]){
+            const found = row.findIndex(cell => rx.test(stripAccents(String(cell||""))));
+            if(found !== -1){ qCol = found; break; }
+          }
           if(nCol !== -1 && (qCol !== -1 || cCol !== -1)){
             headerRowIdx = r; nameCol = nCol; qtyCol = qCol; costCol = cCol;
             break;
@@ -1415,20 +1436,26 @@ function parseSpreadsheet(file){
   });
 }
 
+function tokensOf(str){
+  return new Set(stripAccents(String(str)).toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 1));
+}
 function bestMatchProductId(name){
-  const n = name.toLowerCase();
+  const n = stripAccents(name).toLowerCase().trim();
+  const nTok = tokensOf(name);
   let best = null, bestScore = 0;
   state.products.forEach(p => {
-    const full = (p.brand+" "+p.name).toLowerCase();
+    const full = stripAccents(p.brand+" "+p.name).toLowerCase().trim();
     let score = 0;
-    if(full.includes(n) || n.includes(p.name.toLowerCase())) score = 2;
+    if(full === n || stripAccents(p.name).toLowerCase().trim() === n){ score = 10; }
     else {
-      const words = n.split(/\s+/).filter(w=>w.length>3);
-      score = words.filter(w => full.includes(w)).length;
+      const pTok = tokensOf(p.brand+" "+p.name);
+      let shared = 0; nTok.forEach(w => { if(pTok.has(w)) shared++; });
+      const union = new Set([...nTok, ...pTok]).size || 1;
+      score = shared / union;
     }
     if(score > bestScore){ bestScore = score; best = p.id; }
   });
-  return bestScore > 0 ? best : null;
+  return bestScore >= 0.4 ? best : null;
 }
 
 function openStockReview(rows){
@@ -1440,15 +1467,22 @@ function openStockReview(rows){
 function renderStockReview(){
   const box = document.getElementById("stockReviewContent");
   const optionsHtml = (selectedId) => `<option value="">— no asignar —</option>` + state.products.map(p => `<option value="${p.id}" ${p.id===selectedId?'selected':''}>${escapeHtml(p.brand)} - ${escapeHtml(p.name)}</option>`).join("");
-  box.innerHTML = stockReviewRows.map((r, idx) => `
+  const dupCount = {};
+  stockReviewRows.forEach(r => { if(r.productId){ dupCount[r.productId] = (dupCount[r.productId]||0) + 1; } });
+  box.innerHTML = stockReviewRows.map((r, idx) => {
+    const prod = r.productId ? state.products.find(pp => pp.id === r.productId) : null;
+    const actual = prod ? ((prod.stock===null||prod.stock===undefined) ? "sin control" : prod.stock) : "—";
+    const dupWarn = (r.productId && dupCount[r.productId] > 1) ? `<div style="font-size:0.66rem;color:var(--coral);font-weight:700;margin-bottom:4px;">⚠️ Este producto aparece ${dupCount[r.productId]} veces en la lista — se va a aplicar el último</div>` : "";
+    return `
     <div class="stock-review-row">
-      <div class="srr-name">Detectado: "${escapeHtml(r.detectedName)}"</div>
+      <div class="srr-name">Detectado: "${escapeHtml(r.detectedName)}" · <b>Stock actual en la página: ${actual}</b></div>
+      ${dupWarn}
       <select data-review-idx="${idx}" data-review-field="productId">${optionsHtml(r.productId)}</select>
       <input type="number" min="0" value="${r.cantidad}" data-review-idx="${idx}" data-review-field="cantidad" placeholder="Cantidad en stock">
       <input type="number" min="0" value="${r.costo||''}" data-review-idx="${idx}" data-review-field="costo" placeholder="Costo (opcional)">
-    </div>`).join("");
+    </div>`; }).join("");
   box.querySelectorAll("select").forEach(sel => {
-    sel.onchange = e => { stockReviewRows[Number(e.target.dataset.reviewIdx)].productId = e.target.value ? Number(e.target.value) : null; };
+    sel.onchange = e => { stockReviewRows[Number(e.target.dataset.reviewIdx)].productId = e.target.value ? Number(e.target.value) : null; renderStockReview(); };
   });
   box.querySelectorAll('input[data-review-field="cantidad"]').forEach(inp => {
     inp.onchange = e => { stockReviewRows[Number(e.target.dataset.reviewIdx)].cantidad = Number(e.target.value)||0; };
@@ -1538,9 +1572,9 @@ if(window.location.hash === "#admin"){
   document.getElementById("editToggle").classList.add("unlocked");
 }
 
-["setBrand","setHeroTitle","setHeroTag","setEnvio","setWhatsapp","setAlias","setMarkupEf","setMarkupTa","setRoundTo","setPin"].forEach(id => {
+["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setAlias","setMarkupEf","setMarkupTa","setRoundTo","setPin"].forEach(id => {
   document.getElementById(id).addEventListener("change", e => {
-    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setEnvio:"envioTexto",setWhatsapp:"whatsapp",setAlias:"aliasTransferencia",setMarkupEf:"markupEfectivo",setMarkupTa:"markupTarjeta",setRoundTo:"roundTo",setPin:"pin"};
+    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setAlias:"aliasTransferencia",setMarkupEf:"markupEfectivo",setMarkupTa:"markupTarjeta",setRoundTo:"roundTo",setPin:"pin"};
     const key = map[id];
     let val = e.target.value;
     if(key === "markupEfectivo" || key === "markupTarjeta" || key === "roundTo") val = Number(val)||0;
@@ -1549,12 +1583,141 @@ if(window.location.hash === "#admin"){
   });
 });
 
+/* ---------- TIPOGRAFÍAS ---------- */
+const FONT_OPTIONS = [
+  {id:"anton", name:"Anton", css:"'Anton',sans-serif", w:400},
+  {id:"bebas", name:"Bebas Neue", css:"'Bebas Neue',sans-serif", w:400},
+  {id:"oswald", name:"Oswald", css:"'Oswald',sans-serif", w:700},
+  {id:"archivo", name:"Archivo Black", css:"'Archivo Black',sans-serif", w:400},
+  {id:"russo", name:"Russo One", css:"'Russo One',sans-serif", w:400},
+  {id:"montserrat", name:"Montserrat", css:"'Montserrat',sans-serif", w:800},
+  {id:"righteous", name:"Righteous", css:"'Righteous',sans-serif", w:400},
+  {id:"bangers", name:"Bangers", css:"'Bangers',cursive", w:400},
+  {id:"marker", name:"Permanent Marker", css:"'Permanent Marker',cursive", w:400},
+  {id:"pacifico", name:"Pacifico", css:"'Pacifico',cursive", w:400},
+  {id:"playfair", name:"Playfair", css:"'Playfair Display',serif", w:900},
+  {id:"inter", name:"Inter", css:"'Inter',sans-serif", w:800}
+];
+const FONT_TARGETS = [
+  {key:"brand", label:"Nombre de la marca (barra de arriba)"},
+  {key:"hero", label:"Título principal (el grande de arriba)"},
+  {key:"sections", label:"Títulos de secciones (Combos, productos…)"},
+  {key:"prices", label:"Precios y totales"}
+];
+function applyFonts(){
+  const f = state.settings.fonts || {};
+  const root = document.documentElement.style;
+  FONT_TARGETS.forEach(t => {
+    const opt = FONT_OPTIONS.find(o => o.id === f[t.key]) || FONT_OPTIONS[0];
+    root.setProperty("--f-" + t.key, opt.css);
+    root.setProperty("--w-" + t.key, String(opt.w));
+  });
+}
+function renderFontPickers(){
+  const f = state.settings.fonts || {};
+  document.getElementById("fontPickers").innerHTML = FONT_TARGETS.map(t => `
+    <div class="font-sub">${t.label}</div>
+    <div class="chip-row">${FONT_OPTIONS.map(o => `<button type="button" class="opt-chip ${((f[t.key]||"anton")===o.id)?"sel":""}" style="font-family:${o.css};font-weight:${o.w};" data-font-target="${t.key}" data-font-id="${o.id}">${o.name}</button>`).join("")}</div>`).join("");
+}
+document.getElementById("fontPickers").addEventListener("click", e => {
+  const btn = e.target.closest("[data-font-id]");
+  if(!btn) return;
+  state.settings.fonts = Object.assign({brand:"anton",hero:"anton",sections:"anton",prices:"anton"}, state.settings.fonts || {});
+  state.settings.fonts[btn.dataset.fontTarget] = btn.dataset.fontId;
+  applyFonts(); renderFontPickers(); scheduleSave();
+});
+
+/* ---------- FONDO DE LA PÁGINA ---------- */
+let bgDirty = false;
+const BG_PATTERNS = {
+  dots: "<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28'><circle cx='4' cy='4' r='2' fill='#c9cdb8'/></svg>",
+  stripes: "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><path d='M-6 6 L6 -6 M0 24 L24 0 M18 30 L30 18' stroke='#d3d6c6' stroke-width='3'/></svg>",
+  grid: "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><path d='M32 0H0V32' fill='none' stroke='#d3d6c6' stroke-width='1.5'/></svg>"
+};
+const BG_PRESETS = [
+  {id:"default", name:"🏋️ Deportivo (actual)"},
+  {id:"none", name:"Liso (sin dibujos)"},
+  {id:"dots", name:"Puntos"},
+  {id:"stripes", name:"Rayas"},
+  {id:"grid", name:"Cuadrícula"},
+  {id:"custom", name:"📷 Mi imagen"}
+];
+function applyBackground(){
+  const st = state.settings;
+  const mode = st.bgMode || "default";
+  const layer = document.getElementById("pageBg");
+  document.body.style.backgroundColor = st.bgColor || "";
+  layer.style.display = "none";
+  layer.style.backgroundImage = "";
+  if(mode === "none"){ document.body.style.backgroundImage = "none"; }
+  else if(BG_PATTERNS[mode]){ document.body.style.backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(BG_PATTERNS[mode]).replace(/'/g,"%27")}")`; }
+  else if(mode === "custom" && st.bgImage){
+    document.body.style.backgroundImage = "none";
+    layer.style.display = "block";
+    layer.style.backgroundImage = `url(${st.bgImage})`;
+    if(st.bgFit === "tile"){ layer.style.backgroundRepeat = "repeat"; layer.style.backgroundSize = "180px"; }
+    else { layer.style.backgroundRepeat = "no-repeat"; layer.style.backgroundSize = "cover"; }
+  } else { document.body.style.backgroundImage = ""; }
+}
+function renderBgControls(){
+  const st = state.settings;
+  const mode = st.bgMode || "default";
+  document.getElementById("bgPresetRow").innerHTML = BG_PRESETS.map(o =>
+    `<button type="button" class="opt-chip plain ${mode===o.id?"sel":""}" data-bg-mode="${o.id}">${o.name}</button>`).join("");
+  const fitRow = document.getElementById("bgFitRow");
+  if(mode === "custom" && st.bgImage){
+    fitRow.style.display = "flex";
+    fitRow.innerHTML = [["cover","Pantalla completa"],["tile","Mosaico repetido"]].map(([id,label]) =>
+      `<button type="button" class="opt-chip plain ${(st.bgFit||"cover")===id?"sel":""}" data-bg-fit="${id}">${label}</button>`).join("") +
+      `<button type="button" class="opt-chip plain" data-bg-remove="1">Quitar mi imagen</button>`;
+  } else { fitRow.style.display = "none"; fitRow.innerHTML = ""; }
+  document.getElementById("setBgColor").value = st.bgColor || "#eef0ea";
+}
+document.getElementById("bgPresetRow").addEventListener("click", e => {
+  const btn = e.target.closest("[data-bg-mode]");
+  if(!btn) return;
+  if(btn.dataset.bgMode === "custom" && !state.settings.bgImage){ document.getElementById("bgUploadInput").click(); return; }
+  state.settings.bgMode = btn.dataset.bgMode;
+  render(); scheduleSave();
+});
+document.getElementById("bgFitRow").addEventListener("click", e => {
+  const fit = e.target.closest("[data-bg-fit]");
+  if(fit){ state.settings.bgFit = fit.dataset.bgFit; render(); scheduleSave(); return; }
+  if(e.target.closest("[data-bg-remove]")){
+    state.settings.bgImage = null; state.settings.bgMode = "default"; bgDirty = true;
+    render(); scheduleSave();
+  }
+});
+document.getElementById("bgUploadBtn").addEventListener("click", () => document.getElementById("bgUploadInput").click());
+document.getElementById("bgUploadInput").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    state.settings.bgImage = await compressImageP(file, 1000, 0.6);
+    state.settings.bgMode = "custom";
+    bgDirty = true;
+    render(); scheduleSave();
+  }catch(err){
+    console.error(err);
+    showToast("No se pudo procesar la imagen, probá con otra");
+  }
+  e.target.value = "";
+});
+document.getElementById("setBgColor").addEventListener("input", e => {
+  state.settings.bgColor = e.target.value;
+  applyBackground(); scheduleSave();
+});
+document.getElementById("bgColorReset").addEventListener("click", () => {
+  state.settings.bgColor = "";
+  render(); scheduleSave();
+});
+
 function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveState, 600); }
 
 async function saveState(){
   try{
     const batch = db.batch();
-    const { heroImage, logoImage, ...settingsRest } = state.settings;
+    const { heroImage, logoImage, bgImage, ...settingsRest } = state.settings;
     batch.set(configRef, {
       settings: settingsRest,
       nextProductId: state.nextProductId, nextComboId: state.nextComboId,
@@ -1562,12 +1725,14 @@ async function saveState(){
     });
     batch.set(heroImageRef, {image: heroImage || null});
     batch.set(logoRef, {image: logoImage || null});
+    if(bgDirty){ batch.set(bgImageRef, {image: bgImage || null}); }
     batch.set(brandLogosRef, {logos: state.brandLogos || {}});
     state.products.forEach(p => batch.set(productsCol.doc(String(p.id)), p));
     state.combos.forEach(c => batch.set(combosCol.doc(String(c.id)), c));
     state.ventas.forEach(v => batch.set(ventasCol.doc(String(v.id)), v));
     state.pedidos.forEach(p => batch.set(pedidosCol.doc(String(p.id)), p));
     await batch.commit();
+    bgDirty = false;
     showToast("Guardado ✓");
   }catch(err){
     console.error(err);
@@ -1578,7 +1743,7 @@ function showToast(msg, duration){ const t=document.getElementById("toast"); t.t
 
 async function seedDefaults(){
   const batch = db.batch();
-  const { heroImage, logoImage, ...settingsRest } = DEFAULT_STATE.settings;
+  const { heroImage, logoImage, bgImage, ...settingsRest } = DEFAULT_STATE.settings;
   batch.set(configRef, {
     settings: settingsRest,
     nextProductId: DEFAULT_STATE.nextProductId, nextComboId: DEFAULT_STATE.nextComboId,
@@ -1586,6 +1751,7 @@ async function seedDefaults(){
   });
   batch.set(heroImageRef, {image: heroImage || null});
   batch.set(logoRef, {image: logoImage || null});
+  batch.set(bgImageRef, {image: null});
   batch.set(brandLogosRef, {logos: {}});
   DEFAULT_STATE.products.forEach(p => batch.set(productsCol.doc(String(p.id)), p));
   DEFAULT_STATE.combos.forEach(c => batch.set(combosCol.doc(String(c.id)), c));
@@ -1601,9 +1767,9 @@ async function loadState(){
       render();
       return;
     }
-    const [heroDoc, logoDoc, brandLogosDoc, productsSnap, combosSnap, ventasSnap, pedidosSnap] = await Promise.all([
+    const [heroDoc, logoDoc, brandLogosDoc, productsSnap, combosSnap, ventasSnap, pedidosSnap, bgDoc] = await Promise.all([
       heroImageRef.get(), logoRef.get(), brandLogosRef.get(),
-      productsCol.get(), combosCol.get(), ventasCol.get(), pedidosCol.get()
+      productsCol.get(), combosCol.get(), ventasCol.get(), pedidosCol.get(), bgImageRef.get()
     ]);
     const cfg = configDoc.data();
     state = {
@@ -1620,9 +1786,13 @@ async function loadState(){
     };
     state.settings.heroImage = (heroDoc.exists && heroDoc.data().image) || null;
     state.settings.logoImage = (logoDoc.exists && logoDoc.data().image) || null;
+    state.settings.bgImage = (bgDoc.exists && bgDoc.data().image) || null;
+    if(!state.settings.fonts) state.settings.fonts = {brand:"anton",hero:"anton",sections:"anton",prices:"anton"};
+    if(!state.settings.bgMode) state.settings.bgMode = "default";
+    if(!state.settings.bgFit) state.settings.bgFit = "cover";
+    if(state.settings.bgColor === undefined) state.settings.bgColor = "";
 
     if(state.settings.roundTo === undefined) state.settings.roundTo = 100;
-    if(state.settings.envioTexto === undefined) state.settings.envioTexto = "🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas";
     if(state.settings.aliasTransferencia === undefined) state.settings.aliasTransferencia = "";
     if(state.settings.accentColor === undefined) state.settings.accentColor = "#c6ff2e";
     state.products.forEach(p => {
