@@ -387,7 +387,7 @@ const pedidosCol = db.collection("pedidos");
 const money = n => "$" + Math.round(n).toLocaleString("es-AR");
 
 const DESC_RULES = [
-  [/creatina/i, "Ayuda a mejorar la fuerza y el rendimiento en entrenamientos de alta intensidad."],
+  [/creatin/i, "Ayuda a mejorar la fuerza y el rendimiento en entrenamientos de alta intensidad."],
   [/whey|proteina|protein/i, "Proteína para acompañar la recuperación muscular después de entrenar."],
   [/colageno|colágeno|collagen/i, "Aporta colágeno para el cuidado de articulaciones y piel."],
   [/magnesio/i, "Suplemento de magnesio, útil para la función muscular y el descanso."],
@@ -396,22 +396,31 @@ const DESC_RULES = [
   [/energy gel|gel/i, "Gel energético de rápida absorción para actividades de resistencia."],
   [/pre war|pre-entreno|pre entreno/i, "Suplemento pre-entrenamiento pensado para energía y foco."]
 ];
-function suggestDesc(name){ for(const [rx, txt] of DESC_RULES){ if(rx.test(name)) return txt; } return ""; }
+const DESC_GENERIC = "Suplemento deportivo pensado para acompañar tu entrenamiento.";
+function suggestDesc(name){
+  for(const [rx, txt] of DESC_RULES){ if(rx.test(name)) return txt; }
+  return DESC_GENERIC;
+}
 
+// Cuándo y por qué tomarlo, no solo el modo de uso mecánico.
 const USO_RULES = [
-  [/creatina/i, "Diluir una medida en agua u otro líquido y consumir todos los días, incluso en días de descanso. Preferentemente después de entrenar."],
-  [/whey|proteina|protein/i, "Mezclar una medida con agua o leche. Consumir después de entrenar o entre comidas."],
-  [/magnesio/i, "Tomar según lo indicado en el envase, preferentemente con las comidas."],
-  [/electrolito/i, "Diluir un sobre o medida en agua y consumir durante o después del entrenamiento."],
-  [/energy gel|gel/i, "Consumir el contenido del sobre antes o durante la actividad física."],
-  [/pre war|pre-entreno|pre entreno/i, "Consumir una medida diluida en agua, 20-30 minutos antes de entrenar."]
+  [/creatin/i, "Cuándo: todos los días, incluso en días de descanso, preferentemente después de entrenar. Por qué: mantener niveles estables en el cuerpo es lo que la hace efectiva, no importa tanto el horario exacto. Cómo: diluir una medida en agua u otro líquido."],
+  [/whey|proteina|protein/i, "Cuándo: después de entrenar o entre comidas, cuando te cuesta llegar a tu proteína diaria. Por qué: ayuda a cubrir el requerimiento de proteína para la recuperación muscular. Cómo: mezclar una medida con agua o leche."],
+  [/magnesio/i, "Cuándo: con las comidas, en el horario que te resulte más fácil de recordar. Por qué: el magnesio se absorbe mejor acompañado de alimento. Cómo: tomar según la dosis indicada en el envase."],
+  [/electrolito/i, "Cuándo: durante o después de entrenamientos largos o con mucha transpiración. Por qué: repone las sales minerales que se pierden con el sudor. Cómo: diluir un sobre o medida en agua."],
+  [/energy gel|gel/i, "Cuándo: antes o durante la actividad física, en esfuerzos prolongados. Por qué: da energía de rápida absorción cuando el cuerpo la necesita ya. Cómo: consumir el contenido del sobre directamente."],
+  [/pre war|pre-entreno|pre entreno/i, "Cuándo: 20-30 minutos antes de entrenar. Por qué: ayuda a llegar con más energía y foco al entrenamiento. Cómo: diluir una medida en agua."]
 ];
-function suggestUso(name){ for(const [rx, txt] of USO_RULES){ if(rx.test(name)) return txt; } return ""; }
+const USO_GENERIC = "Cuándo: según el objetivo de tu entrenamiento. Por qué: acompaña tu rutina y tu alimentación. Cómo: seguí la dosis indicada en el envase.";
+function suggestUso(name){
+  for(const [rx, txt] of USO_RULES){ if(rx.test(name)) return txt; }
+  return USO_GENERIC;
+}
 
 const ADVERTENCIA_DEFAULT = "Suplementa dietas insuficientes; consultá a tu médico o farmacéutico antes de consumir. No apto para embarazo o lactancia. Menores de 18 años, consumir bajo supervisión de un adulto. Mantener en lugar seco y fresco, fuera del alcance de los niños.";
 
 const BENEFICIOS_RULES = [
-  [/creatina/i, "💪 Ayuda a mejorar la fuerza y la potencia muscular\n⚡ Contribuye al rendimiento físico en esfuerzos de alta intensidad\n🔄 Favorece la recuperación entre entrenamientos\n📈 Ideal para el desarrollo y mantenimiento de masa muscular"],
+  [/creatin/i, "💪 Ayuda a mejorar la fuerza y la potencia muscular\n⚡ Contribuye al rendimiento físico en esfuerzos de alta intensidad\n🔄 Favorece la recuperación entre entrenamientos\n📈 Ideal para el desarrollo y mantenimiento de masa muscular"],
   [/whey|proteina|protein/i, "💪 Proteína de alto valor biológico para la recuperación muscular\n🥤 Fácil de preparar, con agua o leche\n📈 Acompaña tus objetivos de entrenamiento"],
   [/colageno|colágeno|collagen/i, "🦴 Aporta colágeno para el cuidado de las articulaciones\n✨ Contribuye a la salud de la piel\n🔄 Ideal para acompañar la recuperación articular"],
   [/magnesio/i, "⚡ Contribuye a la función muscular normal\n😴 Puede ayudar a mejorar el descanso\n💧 Fácil de incorporar a la rutina diaria"],
@@ -420,7 +429,15 @@ const BENEFICIOS_RULES = [
   [/energy gel|gel/i, "⚡ Energía de rápida absorción\n🏃 Ideal para actividades de resistencia"],
   [/pre war|pre-entreno|pre entreno/i, "🔥 Pensado para energía y foco antes de entrenar\n⚡ Ayuda a rendir al máximo en la sesión"]
 ];
-function suggestBeneficios(name){ for(const [rx, txt] of BENEFICIOS_RULES){ if(rx.test(name)) return txt; } return ""; }
+const BENEFICIOS_GENERIC = "💪 Acompaña tu entrenamiento y tu alimentación diaria";
+function suggestBeneficios(name){
+  // Combina los beneficios de TODAS las categorías que coincidan con el nombre
+  // (por ejemplo "Creatina + Electrolitos" suma los dos), en vez de quedarse con la primera.
+  const matches = BENEFICIOS_RULES.filter(([rx]) => rx.test(name)).map(([_,txt]) => txt);
+  if(!matches.length) return BENEFICIOS_GENERIC;
+  const lines = matches.join("\n").split("\n");
+  return [...new Set(lines)].join("\n");
+}
 
 const CATEGORY_RULES = [
   [/creatina/i,"Creatina"],
@@ -485,7 +502,7 @@ DEFAULT_STATE.products.forEach(p => {
   p.desc = suggestDesc(p.name);
   p.modoDeUso = suggestUso(p.name);
   p.beneficios = suggestBeneficios(p.name);
-  if(/creatina|colageno|colágeno|magnesio|whey|proteina|protein/i.test(p.name)) p.advertencias = ADVERTENCIA_DEFAULT;
+  p.advertencias = ADVERTENCIA_DEFAULT;
 });
 
 let state = null;
@@ -1644,10 +1661,10 @@ async function loadState(){
     state.products.forEach(p => {
       if(!p.images){ p.images = p.image ? [p.image] : []; }
       if(!p.desc) p.desc = suggestDesc(p.name);
-      if(p.modoDeUso === undefined) p.modoDeUso = suggestUso(p.name);
+      if(!p.modoDeUso) p.modoDeUso = suggestUso(p.name);
       if(p.ingredientes === undefined) p.ingredientes = "";
-      if(p.advertencias === undefined) p.advertencias = "";
-      if(p.beneficios === undefined) p.beneficios = suggestBeneficios(p.name);
+      if(!p.advertencias) p.advertencias = ADVERTENCIA_DEFAULT;
+      if(!p.beneficios) p.beneficios = suggestBeneficios(p.name);
       if(p.stock === undefined) p.stock = null;
       if(p.precioEfManual === undefined) p.precioEfManual = null;
       if(p.precioTaManual === undefined) p.precioTaManual = null;
