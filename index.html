@@ -318,6 +318,26 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
 .op-card-price{font-size:0.95rem;font-weight:700;color:var(--coral);margin-bottom:10px;}
 .op-card-price span{font-size:0.7rem;color:var(--muted);font-weight:600;}
 .op-items{font-size:0.8rem;color:var(--muted);margin-bottom:10px;line-height:1.4;}
+
+#brandLabel,#brandLogoImg{cursor:pointer;}
+.admin-thumb button.thumb-edit{top:auto;bottom:-6px;background:#2563eb;width:18px;height:18px;font-size:0.6rem;}
+.ie-ov{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.88);display:none;align-items:flex-end;justify-content:center;}
+.ie-ov.open{display:flex;}
+.ie-box{background:#fff;color:#1b1c17;width:100%;max-width:520px;max-height:100vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:14px 14px 0;font-family:system-ui,sans-serif;}
+.ie-title{font-weight:800;font-size:1rem;margin-bottom:8px;}
+.ie-stage{display:flex;justify-content:center;background:#222;border-radius:12px;padding:8px;margin-bottom:8px;}
+.ie-stage canvas{touch-action:none;border-radius:6px;background:#fff;cursor:grab;}
+.ie-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.ie-chips button{border:1.5px solid #cfd1c4;background:#fff;border-radius:999px;padding:6px 12px;font-size:0.78rem;font-weight:700;color:#1b1c17;}
+.ie-chips button.on{background:#1b1c17;color:#fff;border-color:#1b1c17;}
+.ie-lbl{display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;font-weight:700;margin-top:6px;}
+.ie-lbl small{font-weight:600;color:#7a7c6e;}
+.ie-box input[type=range]{width:100%;margin:2px 0 4px;}
+.ie-row{display:flex;gap:8px;margin:8px 0;}
+.ie-row button{flex:1;border:1.5px solid #cfd1c4;background:#fff;border-radius:10px;padding:9px;font-weight:700;font-size:0.8rem;color:#1b1c17;}
+.ie-actions{position:sticky;bottom:0;background:#fff;display:flex;gap:8px;padding:10px 0 14px;}
+.ie-actions button{flex:1;border-radius:12px;padding:12px 6px;font-weight:800;font-size:0.85rem;border:1.5px solid #1b1c17;background:#fff;color:#1b1c17;}
+.ie-actions button.ok{background:#1b1c17;color:#fff;}
 @media(min-width:640px){
   .hero h1{font-size:3rem;}
 }
@@ -375,10 +395,12 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div class="admin-row"><label>Alias transf.</label><input id="setAlias" placeholder="Ej: mi.alias.mp"></div>
   <button class="admin-photo-btn" id="heroImageBtn">🖼️ Subir foto de fondo del hero (gente entrenando)</button>
   <input type="file" accept="image/*" id="heroImageInput" style="display:none;">
+  <button class="admin-photo-btn" data-edit-img="hero">✂️ Editar foto de fondo (recortar / brillo)</button>
   <button class="admin-delete" id="heroImageRemoveBtn" style="display:none;">Quitar foto de fondo</button>
   <div class="admin-row" style="margin-top:8px;"><label>Acento</label><input type="color" id="setAccentColor" style="max-width:60px;padding:2px;"></div>
   <button class="admin-photo-btn" id="logoUploadBtn">🖼️ Subir logo de tu marca</button>
   <input type="file" accept="image/*" id="logoUploadInput" style="display:none;">
+  <button class="admin-photo-btn" data-edit-img="logo">✂️ Editar logo (recortar / tamaño)</button>
   <div class="set-title">🔤 Tipografía y color — elegí qué querés modificar</div>
   <div id="fontPickers"></div>
   <div class="set-title">🖼️ Fondo de la página</div>
@@ -386,6 +408,7 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div class="chip-row" id="bgFitRow" style="display:none;"></div>
   <button class="admin-photo-btn" id="bgUploadBtn">📷 Subir mi propia imagen de fondo</button>
   <input type="file" accept="image/*" id="bgUploadInput" style="display:none;">
+  <button class="admin-photo-btn" data-edit-img="bg">✂️ Editar imagen de fondo (recortar / brillo)</button>
   <div class="admin-row"><label>Color fondo</label><input type="color" id="setBgColor" style="max-width:60px;padding:2px;"><button type="button" class="admin-suggest" id="bgColorReset" style="align-self:center;">Color original</button></div>
   <div class="admin-row"><label>Margen %</label><input id="setMarkupEf" type="number" placeholder="Efvo/Transf %" style="max-width:80px;"><input id="setMarkupTa" type="number" placeholder="Tarjeta %" style="max-width:80px;"></div>
   <div class="admin-row"><label>Redondeo $</label><input id="setRoundTo" type="number" placeholder="Ej: 100" style="max-width:90px;"></div>
@@ -807,7 +830,7 @@ function renderBrandLogoBox(brands){
           <div class="bla-name">${escapeHtml(b)}</div>
           <button data-logo-upload="${escapeHtml(b)}">Subir logo</button>
           <input type="file" accept="image/*" data-logo-input="${escapeHtml(b)}" style="display:none;">
-          ${logo ? `<button data-logo-remove="${escapeHtml(b)}">Quitar</button>` : ''}
+          ${logo ? `<button data-edit-img="brandlogo:${escapeHtml(b)}">✂️ Editar</button><button data-logo-remove="${escapeHtml(b)}">Quitar</button>` : ''}
         </div>`;
     }).join("");
   box.querySelectorAll("[data-logo-upload]").forEach(btn => {
@@ -819,8 +842,8 @@ function renderBrandLogoBox(brands){
       if(!file) return;
       const brand = e.target.dataset.logoInput;
       try{
-        state.brandLogos[brand] = await compressImageP(file, 220, 0.7);
-        renderProducts(); scheduleSave();
+        const r = await editFileImage(file, 220, 0.8, "1:1"); if(r){ state.brandLogos[brand] = r; renderProducts(); scheduleSave(); }
+        e.target.value = "";
       }catch(err){
         console.error(err);
         showToast("No se pudo procesar el logo, probá con otra imagen");
@@ -865,7 +888,7 @@ function renderProducts(){
       <div class="admin-panel">
           <button class="admin-photo-btn" data-photo-id="${p.id}">📷 Subir fotos (hasta 4, varias juntas)</button>
           <input type="file" accept="image/*" multiple data-photo-input="${p.id}" style="display:none;">
-          <div class="admin-thumb-row">${imgs.map((im,i)=>`<div class="admin-thumb"><img src="${im}"><button data-photo-remove="${p.id}" data-img-idx="${i}">✕</button></div>`).join("")}</div>
+          <div class="admin-thumb-row">${imgs.map((im,i)=>`<div class="admin-thumb"><img src="${im}"><button data-photo-remove="${p.id}" data-img-idx="${i}">✕</button><button class="thumb-edit" data-edit-img="product:${p.id}:${i}">✂</button></div>`).join("")}</div>
           <div class="admin-row"><label>Nombre</label><input data-field="name" data-id="${p.id}" value="${escapeHtml(p.name)}"></div>
           <div class="admin-row"><label>Marca</label><input data-field="brand" data-id="${p.id}" value="${escapeHtml(p.brand)}"></div>
           <div class="admin-row"><label>Costo</label><input type="number" data-field="costo" data-id="${p.id}" value="${p.costo}"></div>
@@ -928,7 +951,7 @@ function renderCombos(){
         <div style="font-size:0.65rem;color:var(--muted);margin:2px 0 6px;">Costo del combo: ${money(costo)}</div>
         <button class="admin-photo-btn" data-combo-photo-id="${c.id}">📷 Subir fotos (hasta 4, varias juntas)</button>
         <input type="file" accept="image/*" multiple data-combo-photo-input="${c.id}" style="display:none;">
-        <div class="admin-thumb-row">${images.map((im,i)=>`<div class="admin-thumb"><img src="${im}"><button data-combo-remove-img="${c.id}" data-img-idx="${i}">✕</button></div>`).join("")}</div>
+        <div class="admin-thumb-row">${images.map((im,i)=>`<div class="admin-thumb"><img src="${im}"><button data-combo-remove-img="${c.id}" data-img-idx="${i}">✕</button><button class="thumb-edit" data-edit-img="combo:${c.id}:${i}">✂</button></div>`).join("")}</div>
         <button class="admin-delete" data-delete-combo="${c.id}">Eliminar combo</button>
       </div>
     `;
@@ -1108,6 +1131,170 @@ function attachComboListeners(){
   });
 }
 
+
+/* ---------- EDITOR DE FOTOS ---------- */
+function fileToDataUrl(file){
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = e => res(e.target.result); r.onerror = rej; r.readAsDataURL(file); });
+}
+function loadImgEl(src){
+  return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+}
+function openImageEditor(src, opts){
+  opts = opts || {};
+  return new Promise(async resolve => {
+    let img;
+    try{ img = await loadImgEl(src); }catch(e){ showToast("No se pudo abrir la imagen"); return resolve(null); }
+    let cv0 = document.createElement("canvas");
+    cv0.width = img.naturalWidth; cv0.height = img.naturalHeight;
+    cv0.getContext("2d").drawImage(img, 0, 0);
+
+    const ASPECTS = [["orig","Original"],["1:1","Cuadrada"],["4:3","4:3"],["3:4","Vertical"],["16:9","Panorama"],["3:1","Banner"]];
+    let aspect = opts.aspect || "orig", zoom = 1, ox = 0, oy = 0, bright = 100, contr = 100;
+    let outW = Math.min(1400, Math.max(200, opts.maxW || 600));
+    let Wp = 300, Hp = 300;
+
+    const ov = document.getElementById("imgEditor");
+    ov.innerHTML = `
+      <div class="ie-box">
+        <div class="ie-title">✂️ Editar foto</div>
+        <div class="ie-stage"><canvas id="ieCv"></canvas></div>
+        <div class="ie-chips" id="ieAsp"></div>
+        <div class="ie-lbl"><span>🔍 Zoom</span><small>arrastrá la foto para moverla</small></div>
+        <input type="range" id="ieZoom" step="0.01">
+        <div class="ie-lbl"><span>☀️ Brillo</span><small>oscuro ↔ claro</small></div>
+        <input type="range" id="ieBri" min="40" max="200" value="100">
+        <div class="ie-lbl"><span>◐ Contraste</span><small>suave ↔ fuerte</small></div>
+        <input type="range" id="ieCon" min="50" max="200" value="100">
+        <div class="ie-lbl"><span>📐 Tamaño (ancho)</span><small id="ieOutVal"></small></div>
+        <input type="range" id="ieOut" min="200" max="1400" step="50">
+        <div class="ie-row"><button type="button" id="ieRot">↻ Girar</button><button type="button" id="ieReset">Restablecer</button></div>
+        <div class="ie-actions">
+          <button type="button" id="ieCancel">Cancelar</button>
+          ${opts.canSkip ? `<button type="button" id="ieAsis">Usar tal cual</button>` : ""}
+          <button type="button" class="ok" id="ieOk">Aplicar</button>
+        </div>
+      </div>`;
+    ov.classList.add("open");
+    const cv = ov.querySelector("#ieCv"), ctx = cv.getContext("2d");
+    const zEl = ov.querySelector("#ieZoom"), bEl = ov.querySelector("#ieBri"), cEl = ov.querySelector("#ieCon"), oEl = ov.querySelector("#ieOut");
+    const S = 2;
+
+    const ratio = () => { if(aspect === "orig") return cv0.width / cv0.height; const [a, b] = aspect.split(":").map(Number); return a / b; };
+    const cover = () => Math.max(Wp / cv0.width, Hp / cv0.height);
+    const contain = () => Math.min(Wp / cv0.width, Hp / cv0.height);
+    function layout(){
+      const maxW = Math.min(window.innerWidth - 44, 440), maxH = Math.min(window.innerHeight * 0.4, 400);
+      const r = ratio();
+      if(maxW / r <= maxH){ Wp = maxW; Hp = maxW / r; } else { Hp = maxH; Wp = maxH * r; }
+      Wp = Math.round(Wp); Hp = Math.round(Hp);
+      cv.width = Wp * S; cv.height = Hp * S; cv.style.width = Wp + "px"; cv.style.height = Hp + "px";
+      zEl.min = (contain() / cover()).toFixed(2); zEl.max = 4;
+      zoom = Math.max(zoom, Number(zEl.min)); zEl.value = zoom;
+      clamp(); paint();
+    }
+    function clamp(){
+      const sc = cover() * zoom, dw = cv0.width * sc, dh = cv0.height * sc;
+      const mx = dw > Wp ? (dw - Wp) / 2 : 0, my = dh > Hp ? (dh - Hp) / 2 : 0;
+      ox = Math.max(-mx, Math.min(mx, ox)); oy = Math.max(-my, Math.min(my, oy));
+      if(dw <= Wp) ox = 0; if(dh <= Hp) oy = 0;
+    }
+    function drawTo(c2, W, H, k){
+      c2.fillStyle = "#fff"; c2.fillRect(0, 0, W, H);
+      const sc = cover() * zoom, dw = cv0.width * sc * k, dh = cv0.height * sc * k;
+      c2.drawImage(cv0, W / 2 + ox * k - dw / 2, H / 2 + oy * k - dh / 2, dw, dh);
+    }
+    function paint(){
+      drawTo(ctx, cv.width, cv.height, S);
+      cv.style.filter = `brightness(${bright / 100}) contrast(${contr / 100})`;
+      ov.querySelector("#ieOutVal").textContent = outW + " px";
+    }
+    function chips(){
+      ov.querySelector("#ieAsp").innerHTML = ASPECTS.map(([k, l]) => `<button type="button" data-asp="${k}" class="${k === aspect ? "on" : ""}">${l}</button>`).join("");
+    }
+    chips(); oEl.value = outW; layout();
+
+    ov.querySelector("#ieAsp").onclick = e => {
+      const b = e.target.closest("[data-asp]"); if(!b) return;
+      aspect = b.dataset.asp; zoom = 1; ox = 0; oy = 0; chips(); layout();
+    };
+    zEl.oninput = () => { zoom = Number(zEl.value); clamp(); paint(); };
+    bEl.oninput = () => { bright = Number(bEl.value); paint(); };
+    cEl.oninput = () => { contr = Number(cEl.value); paint(); };
+    oEl.oninput = () => { outW = Number(oEl.value); paint(); };
+    ov.querySelector("#ieRot").onclick = () => {
+      const n = document.createElement("canvas"); n.width = cv0.height; n.height = cv0.width;
+      const c = n.getContext("2d"); c.translate(n.width / 2, n.height / 2); c.rotate(Math.PI / 2); c.drawImage(cv0, -cv0.width / 2, -cv0.height / 2);
+      cv0 = n; zoom = 1; ox = 0; oy = 0; layout();
+    };
+    ov.querySelector("#ieReset").onclick = () => {
+      zoom = 1; ox = 0; oy = 0; bright = 100; contr = 100; bEl.value = 100; cEl.value = 100; layout();
+    };
+
+    // arrastrar y pellizcar
+    const ptrs = new Map(); let pinch0 = 0, zoom0 = 1;
+    cv.onpointerdown = e => { cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, {x: e.clientX, y: e.clientY}); if(ptrs.size === 2){ const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); zoom0 = zoom; } };
+    cv.onpointermove = e => {
+      const p = ptrs.get(e.pointerId); if(!p) return;
+      if(ptrs.size === 2){
+        p.x = e.clientX; p.y = e.clientY;
+        const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if(pinch0 > 0){ zoom = Math.max(Number(zEl.min), Math.min(4, zoom0 * d / pinch0)); zEl.value = zoom; }
+      } else { ox += e.clientX - p.x; oy += e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; }
+      clamp(); paint();
+    };
+    const up = e => { ptrs.delete(e.pointerId); };
+    cv.onpointerup = up; cv.onpointercancel = up;
+
+    function close(val){ ov.classList.remove("open"); ov.innerHTML = ""; resolve(val); }
+    ov.querySelector("#ieCancel").onclick = () => close(null);
+    const asis = ov.querySelector("#ieAsis"); if(asis) asis.onclick = () => close("ASIS");
+    ov.querySelector("#ieOk").onclick = () => {
+      const k = outW / Wp, W = outW, H = Math.max(1, Math.round(Hp * k));
+      const out = document.createElement("canvas"); out.width = W; out.height = H;
+      const c = out.getContext("2d"); drawTo(c, W, H, k);
+      if(bright !== 100 || contr !== 100){
+        const d = c.getImageData(0, 0, W, H), px = d.data, b = bright / 100, cc = contr / 100;
+        for(let i = 0; i < px.length; i += 4){
+          for(let j = 0; j < 3; j++){ let v = px[i + j] * b; v = (v - 128) * cc + 128; px[i + j] = v < 0 ? 0 : v > 255 ? 255 : v; }
+        }
+        c.putImageData(d, 0, 0);
+      }
+      close(out.toDataURL("image/jpeg", opts.quality || 0.72));
+    };
+  });
+}
+async function editFileImage(file, maxW, quality, aspect){
+  const src = await fileToDataUrl(file);
+  const out = await openImageEditor(src, {maxW, quality, aspect, canSkip: true});
+  if(out === null) return null;
+  if(out === "ASIS") return compressImageP(file, maxW, quality);
+  return out;
+}
+document.addEventListener("click", async e => {
+  const btn = e.target.closest("[data-edit-img]"); if(!btn) return;
+  e.preventDefault(); e.stopPropagation();
+  const parts = btn.dataset.editImg.split(":"), kind = parts[0];
+  let src = null, maxW = 600, q = 0.72;
+  if(kind === "product"){ const p = state.products.find(x => x.id === Number(parts[1])); src = p && p.images && p.images[Number(parts[2])]; }
+  else if(kind === "combo"){ const c = state.combos.find(x => x.id === Number(parts[1])); src = c && c.images && c.images[Number(parts[2])]; }
+  else if(kind === "banner"){ src = state.banners && state.banners[parts[1]]; maxW = 900; }
+  else if(kind === "hero"){ src = state.settings.heroImage; maxW = 900; }
+  else if(kind === "logo"){ src = state.settings.logoImage; maxW = 260; }
+  else if(kind === "bg"){ src = state.settings.bgImage; maxW = 1000; }
+  else if(kind === "brandlogo"){ src = state.brandLogos[parts.slice(1).join(":")]; maxW = 220; }
+  if(!src){ showToast("Primero subí una foto para poder editarla"); return; }
+  const out = await openImageEditor(src, {maxW, quality: q});
+  if(!out || out === "ASIS") return;
+  if(kind === "product"){ state.products.find(x => x.id === Number(parts[1])).images[Number(parts[2])] = out; renderProducts(); }
+  else if(kind === "combo"){ state.combos.find(x => x.id === Number(parts[1])).images[Number(parts[2])] = out; renderCombos(); }
+  else if(kind === "banner"){ state.banners[parts[1]] = out; renderBanners(); }
+  else if(kind === "hero"){ state.settings.heroImage = out; render(); }
+  else if(kind === "logo"){ state.settings.logoImage = out; render(); }
+  else if(kind === "bg"){ state.settings.bgImage = out; bgDirty = true; render(); }
+  else if(kind === "brandlogo"){ state.brandLogos[parts.slice(1).join(":")] = out; renderProducts(); }
+  scheduleSave();
+}, true);
+
 function compressImageP(file, maxW, quality){
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1136,7 +1323,7 @@ async function addMultipleImages(fileList, targetArr, max, onDone){
   if(files.length > room){ showToast(`Se subieron ${room} de ${files.length} (máximo ${max} fotos)`); }
   try{
     for(const file of files.slice(0, room)){
-      targetArr.push(await compressImageP(file, 500, 0.6));
+      const r = await editFileImage(file, 600, 0.7, "orig"); if(r) targetArr.push(r);
     }
     onDone();
   }catch(err){
@@ -1403,7 +1590,7 @@ function renderBanners(){
       <div class="admin-only banner-admin">
         <button type="button" class="admin-photo-btn" data-banner-up="${b.key}">📷 Subir imagen de "${b.label}"</button>
         <input type="file" accept="image/*" data-banner-input="${b.key}" style="display:none;">
-        ${imgs[b.key] ? `<button type="button" class="admin-delete" data-banner-rm="${b.key}">Quitar imagen</button>` : ""}
+        ${imgs[b.key] ? `<button type="button" class="admin-photo-btn" data-edit-img="banner:${b.key}">✂️ Editar imagen (recortar / brillo)</button><button type="button" class="admin-delete" data-banner-rm="${b.key}">Quitar imagen</button>` : ""}
       </div>
     </div>`).join("");
   box.querySelectorAll("[data-banner-up]").forEach(btn => {
@@ -1415,8 +1602,8 @@ function renderBanners(){
       if(!file) return;
       try{
         state.banners = state.banners || {};
-        state.banners[e.target.dataset.bannerInput] = await compressImageP(file, 900, 0.72);
-        renderBanners(); scheduleSave();
+        const r = await editFileImage(file, 900, 0.72, "orig"); if(r){ state.banners[e.target.dataset.bannerInput] = r; renderBanners(); scheduleSave(); }
+        e.target.value = "";
       }catch(err){ console.error(err); showToast("No se pudo procesar la imagen, probá con otra"); }
     };
   });
@@ -2130,8 +2317,7 @@ document.getElementById("heroImageInput").addEventListener("change", async e => 
   const file = e.target.files[0];
   if(!file) return;
   try{
-    state.settings.heroImage = await compressImageP(file, 900, 0.55);
-    render(); scheduleSave();
+    const r = await editFileImage(file, 900, 0.7, "orig"); if(r){ state.settings.heroImage = r; render(); scheduleSave(); }
   }catch(err){
     console.error(err);
     showToast("No se pudo procesar la foto, probá con otra imagen");
@@ -2152,8 +2338,7 @@ document.getElementById("logoUploadInput").addEventListener("change", async e =>
   const file = e.target.files[0];
   if(!file) return;
   try{
-    state.settings.logoImage = await compressImageP(file, 260, 0.7);
-    render(); scheduleSave();
+    const r = await editFileImage(file, 260, 0.8, "orig"); if(r){ state.settings.logoImage = r; render(); scheduleSave(); }
   }catch(err){
     console.error(err);
     showToast("No se pudo procesar el logo, probá con otra imagen");
@@ -2174,7 +2359,9 @@ document.getElementById("editToggle").addEventListener("click", () => {
 
 // Secret unlock: tap the brand name 5 times to reveal the admin button (hidden from customers by default).
 let brandTapCount = 0, brandTapTimer = null;
+document.getElementById("brandLogoImg").addEventListener("click", () => { closeMenu(); closeAllSheets(); setView("home"); });
 document.getElementById("brandLabel").addEventListener("click", () => {
+  closeMenu(); closeAllSheets(); setView("home");
   brandTapCount++;
   clearTimeout(brandTapTimer);
   brandTapTimer = setTimeout(() => { brandTapCount = 0; }, 1500);
@@ -2334,10 +2521,8 @@ document.getElementById("bgUploadInput").addEventListener("change", async e => {
   const file = e.target.files[0];
   if(!file) return;
   try{
-    state.settings.bgImage = await compressImageP(file, 1000, 0.6);
-    state.settings.bgMode = "custom";
-    bgDirty = true;
-    render(); scheduleSave();
+    const r = await editFileImage(file, 1000, 0.7, "orig");
+    if(r){ state.settings.bgImage = r; state.settings.bgMode = "custom"; bgDirty = true; render(); scheduleSave(); }
   }catch(err){
     console.error(err);
     showToast("No se pudo procesar la imagen, probá con otra");
@@ -2466,5 +2651,6 @@ async function loadState(){
 }
 loadState();
 </script>
+<div class="ie-ov" id="imgEditor"></div>
 </body>
 </html>
