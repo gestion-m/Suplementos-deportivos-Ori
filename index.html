@@ -44,7 +44,11 @@ button{font-family:'Inter',sans-serif;cursor:pointer;}
 #editToggle.unlocked{display:inline-block;}
 
 .hero{background:var(--ink);color:var(--paper);padding:38px 20px 46px;position:relative;overflow:hidden;background-size:cover;background-position:center;}
-.hero.has-image::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg, rgba(20,21,15,0.55), rgba(20,21,15,0.92));}
+.hero{isolation:isolate;}
+.hero-bg{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center;filter:brightness(var(--hb,1)) contrast(var(--hc,1));display:none;}
+.hero.has-image .hero-bg{display:block;}
+.hero.has-image::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg, rgba(20,21,15,var(--ho-top,0.55)), rgba(20,21,15,var(--ho-bot,0.92)));}
+.hero.has-image h1,.hero.has-image p{text-shadow:0 2px 12px rgba(0,0,0,.6);}
 .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:var(--gold);opacity:0.14;}
 .hero-illustration{position:absolute;right:-20px;bottom:-10px;width:230px;opacity:0.9;transform:rotate(-8deg);pointer-events:none;z-index:1;}
 .hero-illustration g{fill:var(--gold);stroke:var(--gold);}
@@ -55,8 +59,8 @@ button{font-family:'Inter',sans-serif;cursor:pointer;}
 .hero-badge{display:flex;flex-direction:column;align-items:center;gap:4px;width:70px;}
 .hero-badge .ic{width:38px;height:38px;border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
 .hero-badge .lbl{font-size:0.58rem;font-weight:800;text-align:center;color:var(--paper);letter-spacing:0.01em;line-height:1.15;}
-.hero .accent{color:var(--gold);}
-.hero p{margin:0 0 20px;font-size:0.95rem;color:#c9cbbf;max-width:32ch;}
+.hero .accent{color:var(--c-hero2,var(--gold));font-family:var(--f-hero2,inherit);font-weight:var(--w-hero2,inherit);}
+.hero p{margin:0 0 20px;font-size:0.95rem;color:var(--c-heroTag,#c9cbbf);font-family:var(--f-heroTag,inherit);font-weight:var(--w-heroTag,inherit);max-width:32ch;}
 .hero-cta{display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:var(--ink);font-weight:700;font-size:0.88rem;padding:12px 18px;border-radius:11px;border:none;text-decoration:none;}
 
 .section{padding:34px 18px 8px;}
@@ -353,13 +357,14 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
     <button class="icon-btn" id="logoRemoveBtn" style="display:none;font-size:0.62rem;padding:5px 7px;">Quitar logo</button>
   </div>
   <div class="actions">
-    <a class="icon-btn" id="topWaBtn" href="#" target="_blank">WhatsApp</a>
+    <a class="icon-btn" id="topWaBtn" href="#" target="_blank" style="display:none;">WhatsApp</a>
     <button class="icon-btn" id="editToggle">Editar</button>
   </div>
 </div>
 
 
 <div class="hero">
+  <div class="hero-bg" id="heroBg"></div>
   <svg class="hero-illustration" id="heroIllustration" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
     <g fill="none" stroke="#f2c230" stroke-width="16" stroke-linecap="round" opacity="0.5">
       <line x1="70" y1="100" x2="330" y2="100"/>
@@ -374,8 +379,8 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div class="hero-content">
     <h1 id="heroTitle">ENERGÍA<br><span class="accent">PARA RENDIR</span></h1>
     <p id="heroTag">Suplementos deportivos originales. Consultá stock y precios.</p>
-    <a class="hero-cta" id="heroWaBtn" href="#" target="_blank">Pedir por WhatsApp →</a>
-    <button type="button" class="hero-cta" data-go="catalog" style="margin-left:8px;background:transparent;color:var(--gold);border:2px solid var(--gold);">Ver productos</button>
+    <a class="hero-cta" id="heroWaBtn" href="#" target="_blank" style="display:none;">Pedir por WhatsApp →</a>
+    <button type="button" class="hero-cta" data-go="catalog" style="background:transparent;color:var(--gold);border:2px solid var(--gold);">Ver productos</button>
     <div style="margin-top:18px;">
 <div class="searchbar">
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
@@ -396,6 +401,11 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <button class="admin-photo-btn" id="heroImageBtn">🖼️ Subir foto de fondo del hero (gente entrenando)</button>
   <input type="file" accept="image/*" id="heroImageInput" style="display:none;">
   <button class="admin-photo-btn" data-edit-img="hero">✂️ Editar foto de fondo (recortar / brillo)</button>
+  <div class="set-title">💡 Luz de la portada (ENERGÍA PARA RENDIR)</div>
+  <div class="admin-row"><label>Capa oscura</label><input type="range" id="heroOvlRange" min="0" max="100" step="1"><span id="heroOvlVal" style="font-size:0.7rem;min-width:34px;"></span></div>
+  <div class="admin-row"><label>Brillo foto</label><input type="range" id="heroBriRange" min="50" max="220" step="1"><span id="heroBriVal" style="font-size:0.7rem;min-width:34px;"></span></div>
+  <div class="admin-row"><label>Contraste</label><input type="range" id="heroConRange" min="50" max="200" step="1"><span id="heroConVal" style="font-size:0.7rem;min-width:34px;"></span></div>
+  <button type="button" class="admin-suggest" id="heroLookReset">Volver a valores originales</button>
   <button class="admin-delete" id="heroImageRemoveBtn" style="display:none;">Quitar foto de fondo</button>
   <div class="admin-row" style="margin-top:8px;"><label>Acento</label><input type="color" id="setAccentColor" style="max-width:60px;padding:2px;"></div>
   <button class="admin-photo-btn" id="logoUploadBtn">🖼️ Subir logo de tu marca</button>
@@ -713,16 +723,17 @@ function render(){
   const heroEl = document.querySelector(".hero");
   const heroIllustration = document.getElementById("heroIllustration");
   if(state.settings.heroImage){
-    heroEl.style.backgroundImage = `url(${state.settings.heroImage})`;
+    document.getElementById("heroBg").style.backgroundImage = `url(${state.settings.heroImage})`;
     heroEl.classList.add("has-image");
     document.getElementById("heroImageRemoveBtn").style.display = "block";
     heroIllustration.classList.add("hidden");
   } else {
-    heroEl.style.backgroundImage = "";
+    document.getElementById("heroBg").style.backgroundImage = "";
     heroEl.classList.remove("has-image");
     document.getElementById("heroImageRemoveBtn").style.display = "none";
     heroIllustration.classList.remove("hidden");
   }
+  applyHeroLook();
   document.documentElement.style.setProperty("--gold", state.settings.accentColor || "#c6ff2e");
   document.getElementById("setAccentColor").value = state.settings.accentColor || "#c6ff2e";
   const logoEl = document.getElementById("brandLogoImg");
@@ -2324,6 +2335,26 @@ document.getElementById("heroImageInput").addEventListener("change", async e => 
   }
   e.target.value = "";
 });
+
+/* ---------- LUZ DE LA PORTADA ---------- */
+function applyHeroLook(){
+  const st = state.settings;
+  const ovl = st.heroOverlay == null ? 100 : st.heroOverlay, bri = st.heroBright == null ? 100 : st.heroBright, con = st.heroContrast == null ? 100 : st.heroContrast;
+  const heroEl = document.querySelector(".hero");
+  heroEl.style.setProperty("--ho-top", (0.55 * ovl / 100).toFixed(3));
+  heroEl.style.setProperty("--ho-bot", (0.92 * ovl / 100).toFixed(3));
+  heroEl.style.setProperty("--hb", bri / 100);
+  heroEl.style.setProperty("--hc", con / 100);
+  [["heroOvlRange","heroOvlVal",ovl],["heroBriRange","heroBriVal",bri],["heroConRange","heroConVal",con]].forEach(([r, v, val]) => {
+    document.getElementById(r).value = val; document.getElementById(v).textContent = val + "%";
+  });
+}
+[["heroOvlRange","heroOverlay"],["heroBriRange","heroBright"],["heroConRange","heroContrast"]].forEach(([id, key]) => {
+  document.getElementById(id).addEventListener("input", e => { state.settings[key] = Number(e.target.value); applyHeroLook(); scheduleSave(); });
+});
+document.getElementById("heroLookReset").addEventListener("click", () => {
+  state.settings.heroOverlay = 100; state.settings.heroBright = 100; state.settings.heroContrast = 100; applyHeroLook(); scheduleSave();
+});
 document.getElementById("heroImageRemoveBtn").addEventListener("click", () => {
   state.settings.heroImage = null;
   render(); scheduleSave();
@@ -2360,6 +2391,17 @@ document.getElementById("editToggle").addEventListener("click", () => {
 // Secret unlock: tap the brand name 5 times to reveal the admin button (hidden from customers by default).
 let brandTapCount = 0, brandTapTimer = null;
 document.getElementById("brandLogoImg").addEventListener("click", () => { closeMenu(); closeAllSheets(); setView("home"); });
+document.querySelector(".topbar").addEventListener("click", e => {
+  if(e.target.closest("button,a")) return;
+  brandTapCount++;
+  clearTimeout(brandTapTimer);
+  brandTapTimer = setTimeout(() => { brandTapCount = 0; }, 1500);
+  if(brandTapCount >= 5){
+    brandTapCount = 0;
+    document.getElementById("editToggle").classList.add("unlocked");
+    showToast("Modo administrador disponible");
+  }
+});
 document.getElementById("brandLabel").addEventListener("click", () => {
   closeMenu(); closeAllSheets(); setView("home");
   brandTapCount++;
@@ -2403,7 +2445,9 @@ const FONT_OPTIONS = [
 ];
 const FONT_TARGETS = [
   {key:"brand", label:"Nombre de la marca", def:"anton", colorDef:"#eef0ea"},
-  {key:"hero", label:"Título principal", def:"anton", colorDef:"#eef0ea"},
+  {key:"hero", label:"Título: ENERGÍA (1ª línea)", def:"anton", colorDef:"#eef0ea"},
+  {key:"hero2", label:"Título: PARA RENDIR (2ª línea)", def:null, colorDef:"#c6ff2e"},
+  {key:"heroTag", label:"Subtítulo (Suplementos deportivos…)", def:null, colorDef:"#c9cbbf"},
   {key:"sections", label:"Títulos de secciones", def:"anton", colorDef:"#14150f"},
   {key:"names", label:"Nombres de productos", def:null, colorDef:"#14150f"},
   {key:"prices", label:"Precios y totales", def:"anton", colorDef:"#3f7d4f"}
