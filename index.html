@@ -580,7 +580,9 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
       <button class="small-btn" id="copyAliasBtn">Copiar</button>
     </div>
   </div>
-  <button class="primary-btn" id="cartWaBtn" style="background:var(--gold);color:var(--ink);margin-top:12px;">Confirmar por WhatsApp</button>
+  <button class="primary-btn" id="cartMpBtn" style="background:#009ee3;color:#fff;margin-top:12px;">Pagar con tarjeta (Mercado Pago)</button>
+  <div style="font-size:0.66rem;color:var(--muted);text-align:center;margin-top:4px;">Se cobra el total tarjeta. Cuotas y medios de Mercado Pago.</div>
+  <button class="primary-btn" id="cartWaBtn" style="background:var(--gold);color:var(--ink);margin-top:8px;">Confirmar por WhatsApp</button>
 </div>
 
 <div class="sheet" id="detailSheet">
@@ -1784,6 +1786,7 @@ function renderCart(){
 
   const waBtn = document.getElementById("cartWaBtn");
   waBtn.disabled = cart.length === 0;
+  document.getElementById("cartMpBtn").disabled = cart.length === 0;
   waBtn.onclick = () => {
     if(cart.length === 0) return;
     let msg = "Hola! Quiero hacer este pedido:\n";
@@ -1805,6 +1808,53 @@ function renderCart(){
     showToast("Pedido enviado — vas a poder confirmarlo desde el modo edición");
   };
 }
+
+/* ---------- MERCADO PAGO ---------- */
+const MP_BACKEND = "https://ori-pagos.onrender.com";
+async function pagarConMercadoPago(){
+  if(cart.length === 0) return;
+  const btn = document.getElementById("cartMpBtn");
+  const items = [], pedidoItems = [];
+  let totalEf = 0, totalTa = 0;
+  cart.forEach(item => {
+    const info = cartLineInfo(item);
+    if(!info) return;
+    totalEf += info.unitEf*item.qty; totalTa += info.unitTa*item.qty;
+    items.push({id: item.type+"-"+item.id, title: info.name, quantity: item.qty, unit_price: Number(info.unitTa)});
+    pedidoItems.push({type:item.type, id:item.id, name:info.name, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
+  });
+  if(!items.length) return;
+  btn.disabled = true; btn.textContent = "Conectando con Mercado Pago...";
+  try{
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 70000); // el servidor gratis puede tardar en despertar
+    const r = await fetch(MP_BACKEND + "/crear-pago", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({items}), signal: ctrl.signal
+    });
+    clearTimeout(to);
+    const data = await r.json();
+    if(!data.init_point) throw new Error(data.error || "Sin link de pago");
+    state.pedidos.push({id: state.nextPedidoId++, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente", medio:"mercadopago", mpRef: data.id});
+    clearTimeout(saveTimer);
+    try{ await Promise.race([saveState(), new Promise(res => setTimeout(res, 4000))]); }catch(e){}
+    window.location.href = data.init_point;
+  }catch(e){
+    console.error(e);
+    showToast("No pudimos abrir Mercado Pago. Probá de nuevo o pedí por WhatsApp.", 3500);
+    btn.disabled = false; btn.textContent = "Pagar con tarjeta (Mercado Pago)";
+  }
+}
+document.getElementById("cartMpBtn").addEventListener("click", pagarConMercadoPago);
+
+/* Al volver de Mercado Pago: ?pago=ok | pendiente | error */
+(function(){
+  const q = new URLSearchParams(location.search).get("pago");
+  if(!q) return;
+  const msgs = {ok:"¡Pago aprobado! Gracias por tu compra 💪", pendiente:"Tu pago está pendiente de acreditación.", error:"El pago no se completó. Podés intentar de nuevo."};
+  if(msgs[q]) setTimeout(() => showToast(msgs[q], 6000), 1200);
+  history.replaceState(null, "", location.pathname);
+})();
 
 /* ---------- SHEETS ---------- */
 function openSheet(sheetId){ document.getElementById(sheetId).classList.add("show"); document.getElementById("sheetOverlay").classList.add("show"); }
