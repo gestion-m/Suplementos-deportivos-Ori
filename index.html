@@ -590,7 +590,7 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
 
 <div class="sheet" id="stockReviewSheet">
   <button class="sheet-close" data-close-sheet>✕</button>
-  <h3>Revisá el stock detectado</h3>
+  <h3>Revisá lo detectado</h3>
   <div id="stockReviewContent"></div>
   <button class="primary-btn" id="stockApplyBtn">Aplicar cambios</button>
 </div>
@@ -2162,8 +2162,8 @@ function renderVentasBox(){
     ${admSec("v-stock","📦 Consulta de stock",`
     <div style="font-size:.66rem;color:var(--muted);margin-bottom:6px;">Tocá un número para corregirlo.</div>
     <div class="scroll-box"><table class="stock-table"><thead><tr><th>Producto</th><th>Cantidad</th><th>Estado</th></tr></thead><tbody>${stockRows}</tbody></table></div>
-    <button class="admin-photo-btn" id="stockFileBtn" style="margin-top:8px;">📥 Actualizar stock y costos desde Excel o CSV</button>
-    <input type="file" id="stockFileInput" accept=".csv,.xlsx,.xls" style="display:none;">
+    <button class="admin-photo-btn" id="stockFileBtn" style="margin-top:8px;">📥 Cargar compra o stock (PDF, foto, Excel o CSV)</button>
+    <input type="file" id="stockFileInput" accept=".csv,.xlsx,.xls,.pdf,image/*" style="display:none;">
 
     `)}
     ${admSec("v-ventas","📋 Ventas registradas ("+state.ventas.length+")",`
@@ -2433,26 +2433,172 @@ function ensureXLSX(){
   return xlsxPromise;
 }
 
-/* ---------- STOCK FROM FILE ---------- */
+/* ---------- CARGA DE LIBRERÍAS EXTRA (PDF y lector de fotos) ---------- */
+async function ensureLib(check, sources){
+  if(check()) return true;
+  for(const src of sources){
+    try{ await loadScriptOnce(src); if(check()) return true; }
+    catch(e){ console.warn(e.message); }
+  }
+  return false;
+}
+const PDFJS_VER = "3.11.174";
+async function ensurePdfJs(){
+  const ok = await ensureLib(() => typeof pdfjsLib !== "undefined", [
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/" + PDFJS_VER + "/pdf.min.js",
+    "https://cdn.jsdelivr.net/npm/pdfjs-dist@" + PDFJS_VER + "/build/pdf.min.js"
+  ]);
+  if(ok && !pdfjsLib.GlobalWorkerOptions.workerSrc){
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/" + PDFJS_VER + "/pdf.worker.min.js";
+  }
+  return ok;
+}
+function ensureTesseract(){
+  return ensureLib(() => typeof Tesseract !== "undefined", [
+    "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js",
+    "https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"
+  ]);
+}
+
+/* ---------- STOCK FROM FILE (Excel, CSV, PDF o foto) ---------- */
+let stockMode = "sumar"; // "sumar" = se suma al stock actual · "reemplazar" = pisa el stock
 async function handleStockFile(file){
   showToast("Leyendo archivo...");
   try{
-    if(!(await ensureXLSX())){
-      showToast("No se pudo cargar la librería de Excel (revisá tu conexión) — probá de nuevo en un momento.", 6000);
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    const isImg = /^image\//.test(file.type) || ["jpg","jpeg","png","webp","heic","heif","bmp"].includes(ext);
+    let rows;
+    if(["csv","xlsx","xls"].includes(ext)){
+      if(!(await ensureXLSX())){ showToast("No se pudo cargar la librería de Excel (revisá tu conexión) — probá de nuevo en un momento.", 6000); return; }
+      rows = await parseSpreadsheet(file);
+    } else if(ext === "pdf" || file.type === "application/pdf"){
+      rows = await parsePdfPurchase(file);
+    } else if(isImg){
+      rows = await parseImagePurchase(file);
+    } else {
+      showToast("Ese formato no lo puedo leer. Subí un PDF, una foto, un Excel (.xlsx) o un CSV.", 6000);
       return;
     }
-    const ext = file.name.split(".").pop().toLowerCase();
-    if(!["csv","xlsx","xls"].includes(ext)){
-      showToast("Por ahora solo puedo leer Excel o CSV en la página publicada. Subí el archivo .xlsx o .csv.");
+    if(!rows.length){
+      showToast(isImg ? "No pude leer productos en la foto. Probá con una foto más nítida y derecha, o subí el PDF/Excel." : "No se encontraron productos en el archivo — revisá que tenga producto y cantidad.", 7000);
       return;
     }
-    const rows = await parseSpreadsheet(file);
-    if(!rows.length){ showToast("No se encontraron productos — revisá que el Excel tenga columnas de producto y cantidad"); return; }
     openStockReview(rows);
   }catch(err){
     console.error(err);
-    showToast("Error real: " + (err && err.message ? err.message : String(err)), 8000);
+    showToast("Error: " + (err && err.message ? err.message : String(err)), 8000);
   }
+}
+
+function escapeRegex(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+function splitBrand(full){
+  const parts = String(full).split(/\s+[—–]\s+/);
+  if(parts.length >= 2){
+    const marca = parts[0].trim();
+    let nombre = parts.slice(1).join(" — ").trim();
+    nombre = nombre.replace(new RegExp("^" + escapeRegex(marca) + "\\s+", "i"), "");
+    return { marca, nombre };
+  }
+  return { marca:"", nombre:String(full).trim() };
+}
+
+/* Lee un PDF: primero intenta el texto del PDF; si es un PDF escaneado, usa el lector de fotos */
+async function parsePdfPurchase(file){
+  if(!(await ensurePdfJs())) throw new Error("No se pudo cargar el lector de PDF (revisá tu conexión).");
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data:new Uint8Array(buf) }).promise;
+  let lines = [];
+  for(let p = 1; p <= pdf.numPages; p++){
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent();
+    const items = tc.items.filter(i => i.str && i.str.trim()).map(i => ({ s:i.str, x:i.transform[4], y:i.transform[5] }));
+    items.sort((a, b) => b.y - a.y || a.x - b.x);
+    let cur = null;
+    items.forEach(it => {
+      if(cur && Math.abs(it.y - cur.y) <= 3){ cur.parts.push(it); }
+      else { cur = { y:it.y, parts:[it] }; lines.push(cur); }
+    });
+    lines = lines.map(l => Array.isArray(l.parts) ? l.parts.sort((a, b) => a.x - b.x).map(i => i.s).join(" ") : l);
+  }
+  let rows = parsePurchaseLines(lines);
+  if(!rows.length){
+    // PDF escaneado (sin texto): se lo pasamos al lector de fotos página por página
+    let ocrLines = [];
+    for(let p = 1; p <= pdf.numPages; p++){
+      const page = await pdf.getPage(p);
+      const vp = page.getViewport({ scale:2.2 });
+      const c = document.createElement("canvas"); c.width = vp.width; c.height = vp.height;
+      await page.render({ canvasContext:c.getContext("2d"), viewport:vp }).promise;
+      ocrLines = ocrLines.concat((await ocrCanvas(c)).split("\n"));
+    }
+    rows = parsePurchaseLines(ocrLines);
+  }
+  return rows;
+}
+
+function fileToCanvas(file, maxSide){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); resolve(c);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("No pude abrir la imagen. Probá sacarla de nuevo en JPG o PNG.")); };
+    img.src = url;
+  });
+}
+async function ocrCanvas(canvas){
+  if(!(await ensureTesseract())) throw new Error("No se pudo cargar el lector de fotos (revisá tu conexión).");
+  const r = await Tesseract.recognize(canvas, "spa", {
+    logger: m => { if(m.status === "recognizing text") showToast("Leyendo foto… " + Math.round(m.progress * 100) + "%", 4000); }
+  });
+  return r.data.text || "";
+}
+async function parseImagePurchase(file){
+  showToast("Leyendo foto… puede tardar unos segundos", 5000);
+  const canvas = await fileToCanvas(file, 2200);
+  const text = await ocrCanvas(canvas);
+  return parsePurchaseLines(text.split("\n"));
+}
+
+/* Convierte líneas de texto tipo "MARCA — Producto  $ precio  x2  $ total" en filas de compra */
+function parsePurchaseLines(lines){
+  const rows = [];
+  const BAD = /detalle|fecha|cliente|informaci|producto|precio|subtotal|total|cant\./i;
+  const TAIL = /^(.*?)\s*\$?\s*(\d[\d.,]*)\s+[x×]\s?(\d+)\s+\$?\s*(\d[\d.,]*)\s*$/i;
+  const SIMPLE = /^(.{4,}?)\s+[x×]\s?(\d+)$/i;
+  let prev = "";
+  lines.forEach(raw => {
+    const line = String(raw).replace(/\s+/g, " ").trim();
+    if(!line) return;
+    let m = line.match(TAIL);
+    if(m){
+      let name = m[1].trim();
+      if(prev && !/[—–]/.test(name)) name = prev + " " + name;
+      prev = "";
+      name = name.replace(/[\s\-•·]+$/, "");
+      if(name.length < 3) return;
+      const sb = splitBrand(name);
+      rows.push({ producto:name, marca:sb.marca, nombre:sb.nombre, cantidad:Number(m[3]) || 0, costo:parseNumberAR(m[2]) || null });
+      return;
+    }
+    m = line.match(SIMPLE);
+    if(m && !BAD.test(line)){
+      const name = m[1].trim().replace(/[\s\-•·]+$/, "");
+      const sb = splitBrand(name);
+      rows.push({ producto:name, marca:sb.marca, nombre:sb.nombre, cantidad:Number(m[2]) || 0, costo:null });
+      prev = "";
+      return;
+    }
+    prev = (!BAD.test(line) && !/\$/.test(line)) ? line : "";
+  });
+  return rows;
 }
 
 function stripAccents(s){ return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
@@ -2528,69 +2674,121 @@ function parseSpreadsheet(file){
   });
 }
 
+const MATCH_STOP = new Set(["sabor","de","del","la","el","con","para","por","los","las","un","una","doypack","polvo","vto"]);
 function tokensOf(str){
-  return new Set(stripAccents(String(str)).toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 1));
+  let s = stripAccents(String(str)).toLowerCase();
+  s = s.replace(/(\d+)\s*(?:grs?|gramos|g)\b/g, "$1g")
+       .replace(/(\d+)\s*lbs?\b/g, "$1lb")
+       .replace(/(\d+)\s*(?:unidades|unid|u)\b/g, "$1u");
+  return new Set(s.split(/[^a-z0-9]+/).filter(w => w.length > 1 && !MATCH_STOP.has(w)));
 }
-function bestMatchProductId(name){
-  const n = stripAccents(name).toLowerCase().trim();
-  const nTok = tokensOf(name);
+function bestMatchProductId(name, marca){
+  const sb = marca ? { marca, nombre:name } : splitBrand(name);
+  const brandN = stripAccents(sb.marca).toLowerCase().trim();
+  const nTok = tokensOf(sb.nombre);
+  let pool = state.products;
+  if(brandN){
+    const same = state.products.filter(p => {
+      const b = stripAccents(p.brand || "").toLowerCase().trim();
+      return b && (b === brandN || b.includes(brandN) || brandN.includes(b));
+    });
+    if(same.length) pool = same;
+  }
   let best = null, bestScore = 0;
-  state.products.forEach(p => {
-    const full = stripAccents(p.brand+" "+p.name).toLowerCase().trim();
-    let score = 0;
-    if(full === n || stripAccents(p.name).toLowerCase().trim() === n){ score = 10; }
-    else {
-      const pTok = tokensOf(p.brand+" "+p.name);
-      let shared = 0; nTok.forEach(w => { if(pTok.has(w)) shared++; });
-      const union = new Set([...nTok, ...pTok]).size || 1;
-      score = shared / union;
-    }
+  pool.forEach(p => {
+    const pTok = tokensOf(p.name);
+    let shared = 0; nTok.forEach(w => { if(pTok.has(w)) shared++; });
+    const score = (2 * shared) / ((nTok.size + pTok.size) || 1);
     if(score > bestScore){ bestScore = score; best = p.id; }
   });
-  return bestScore >= 0.4 ? best : null;
+  return bestScore >= 0.34 ? best : null;
 }
 
 function openStockReview(rows){
-  stockReviewRows = rows.map(r => ({ detectedName:r.producto, cantidad:r.cantidad, costo: r.costo || null, productId: bestMatchProductId(r.producto) }));
+  stockReviewRows = rows.map(r => {
+    const sb = r.marca !== undefined ? { marca:r.marca, nombre:r.nombre } : splitBrand(r.producto);
+    return { detectedName:r.producto, marca:sb.marca, nombre:sb.nombre, cantidad:r.cantidad, costo:r.costo || null, productId:bestMatchProductId(sb.nombre, sb.marca) };
+  });
   renderStockReview();
   openSheet("stockReviewSheet");
 }
 
+function stockAfter(prod, cant, running){
+  const base = running[prod.id] !== undefined ? running[prod.id] : (Number(prod.stock) || 0);
+  const nuevo = stockMode === "sumar" ? base + cant : cant;
+  running[prod.id] = nuevo;
+  return { base, nuevo };
+}
+
 function renderStockReview(){
   const box = document.getElementById("stockReviewContent");
-  const optionsHtml = (selectedId) => `<option value="">— no asignar —</option>` + state.products.map(p => `<option value="${p.id}" ${p.id===selectedId?'selected':''}>${escapeHtml(p.brand)} - ${escapeHtml(p.name)}</option>`).join("");
+  const optionsHtml = (selectedId) => `<option value="">— no asignar —</option><option value="new" ${selectedId==="new"?'selected':''}>➕ Crear como producto nuevo</option>` + state.products.map(p => `<option value="${p.id}" ${p.id===selectedId?'selected':''}>${escapeHtml(p.brand)} - ${escapeHtml(p.name)}</option>`).join("");
   const dupCount = {};
-  stockReviewRows.forEach(r => { if(r.productId){ dupCount[r.productId] = (dupCount[r.productId]||0) + 1; } });
-  box.innerHTML = stockReviewRows.map((r, idx) => {
-    const prod = r.productId ? state.products.find(pp => pp.id === r.productId) : null;
-    const actual = prod ? ((prod.stock===null||prod.stock===undefined) ? "sin control" : prod.stock) : "—";
-    const dupWarn = (r.productId && dupCount[r.productId] > 1) ? `<div style="font-size:0.66rem;color:var(--coral);font-weight:700;margin-bottom:4px;">⚠️ Este producto aparece ${dupCount[r.productId]} veces en la lista — se va a aplicar el último</div>` : "";
+  stockReviewRows.forEach(r => { if(typeof r.productId === "number"){ dupCount[r.productId] = (dupCount[r.productId]||0) + 1; } });
+  const running = {};
+  const reconocidos = stockReviewRows.filter(r => r.productId).length;
+  const btnStyle = on => `flex:1;padding:8px;border-radius:8px;border:1px solid var(--line);font-size:0.72rem;font-weight:700;${on ? 'background:#111;color:#fff;' : 'background:var(--card);color:inherit;'}`;
+  const head = `
+    <div style="display:flex;gap:6px;margin-bottom:6px;">
+      <button type="button" id="modeSumar" style="${btnStyle(stockMode==='sumar')}">➕ Sumar al stock actual</button>
+      <button type="button" id="modeReemplazar" style="${btnStyle(stockMode==='reemplazar')}">✏️ Reemplazar stock</button>
+    </div>
+    <div style="font-size:0.68rem;color:var(--muted);margin-bottom:8px;">${reconocidos} de ${stockReviewRows.length} productos reconocidos. Revisá cada uno y corregí lo que haga falta antes de aplicar.</div>`;
+  box.innerHTML = head + stockReviewRows.map((r, idx) => {
+    const prod = typeof r.productId === "number" ? state.products.find(pp => pp.id === r.productId) : null;
+    let info;
+    if(prod){
+      const sin = (prod.stock===null||prod.stock===undefined);
+      const { base, nuevo } = stockAfter(prod, r.cantidad, running);
+      info = `Stock actual: <b>${sin ? "sin control (cuenta como 0)" : prod.stock}</b> → quedará: <b>${nuevo}</b>`;
+    } else if(r.productId === "new"){
+      info = `Se va a crear <b>${escapeHtml(r.marca)} ${escapeHtml(r.nombre)}</b> con stock <b>${r.cantidad}</b>`;
+    } else {
+      info = `<span style="color:var(--coral);font-weight:700;">Sin asignar — no se va a cargar</span>`;
+    }
+    const dupWarn = (typeof r.productId === "number" && dupCount[r.productId] > 1) ? `<div style="font-size:0.66rem;color:var(--coral);font-weight:700;margin-bottom:4px;">⚠️ Este producto aparece ${dupCount[r.productId]} veces en la lista${stockMode==='sumar' ? " — se suman todas" : " — se aplica la última"}</div>` : "";
     return `
     <div class="stock-review-row">
-      <div class="srr-name">Detectado: "${escapeHtml(r.detectedName)}" · <b>Stock actual en la página: ${actual}</b></div>
+      <div class="srr-name">Detectado: "${escapeHtml(r.detectedName)}"<br>${info}</div>
       ${dupWarn}
       <select data-review-idx="${idx}" data-review-field="productId">${optionsHtml(r.productId)}</select>
-      <input type="number" min="0" value="${r.cantidad}" data-review-idx="${idx}" data-review-field="cantidad" placeholder="Cantidad en stock">
+      <input type="number" min="0" value="${r.cantidad}" data-review-idx="${idx}" data-review-field="cantidad" placeholder="Cantidad">
       <input type="number" min="0" value="${r.costo||''}" data-review-idx="${idx}" data-review-field="costo" placeholder="Costo (opcional)">
+      <button type="button" data-review-remove="${idx}" style="font-size:0.68rem;border:none;background:none;color:var(--coral);font-weight:700;padding:2px 0;">🗑 Quitar de la lista</button>
     </div>`; }).join("");
+  document.getElementById("modeSumar").onclick = () => { stockMode = "sumar"; renderStockReview(); };
+  document.getElementById("modeReemplazar").onclick = () => { stockMode = "reemplazar"; renderStockReview(); };
   box.querySelectorAll("select").forEach(sel => {
-    sel.onchange = e => { stockReviewRows[Number(e.target.dataset.reviewIdx)].productId = e.target.value ? Number(e.target.value) : null; renderStockReview(); };
+    sel.onchange = e => {
+      const v = e.target.value;
+      stockReviewRows[Number(e.target.dataset.reviewIdx)].productId = v === "" ? null : (v === "new" ? "new" : Number(v));
+      renderStockReview();
+    };
   });
   box.querySelectorAll('input[data-review-field="cantidad"]').forEach(inp => {
-    inp.onchange = e => { stockReviewRows[Number(e.target.dataset.reviewIdx)].cantidad = Number(e.target.value)||0; };
+    inp.onchange = e => { stockReviewRows[Number(e.target.dataset.reviewIdx)].cantidad = Math.max(0, Number(e.target.value)||0); renderStockReview(); };
   });
   box.querySelectorAll('input[data-review-field="costo"]').forEach(inp => {
     inp.onchange = e => { stockReviewRows[Number(e.target.dataset.reviewIdx)].costo = e.target.value === "" ? null : Number(e.target.value); };
   });
+  box.querySelectorAll("[data-review-remove]").forEach(btn => {
+    btn.onclick = e => { stockReviewRows.splice(Number(e.currentTarget.dataset.reviewRemove), 1); renderStockReview(); };
+  });
 }
 
 document.getElementById("stockApplyBtn").addEventListener("click", () => {
-  let applied = 0;
+  let applied = 0, created = 0;
   stockReviewRows.forEach(r => {
-    if(r.productId){
+    if(r.productId === "new"){
+      const id = state.nextProductId++;
+      const np = Object.assign(blankProduct(id), { name:r.nombre || r.detectedName, brand:r.marca || "", costo:(r.costo && r.costo > 0) ? r.costo : 0, stock:r.cantidad });
+      state.products.push(np);
+      r.productId = id; // si el mismo producto viene repetido, las siguientes filas se suman a este
+      created++;
+    } else if(typeof r.productId === "number"){
       const p = state.products.find(pp => pp.id === r.productId);
       if(p){
-        p.stock = r.cantidad;
+        p.stock = stockMode === "sumar" ? (Number(p.stock) || 0) + r.cantidad : r.cantidad;
         if(r.costo && r.costo > 0) p.costo = r.costo;
         applied++;
       }
@@ -2598,7 +2796,7 @@ document.getElementById("stockApplyBtn").addEventListener("click", () => {
   });
   closeSheet("stockReviewSheet");
   render(); scheduleSave();
-  showToast(`Stock actualizado en ${applied} producto(s)`);
+  showToast(`Stock ${stockMode === "sumar" ? "sumado" : "actualizado"} en ${applied} producto(s)` + (created ? ` · ${created} producto(s) nuevo(s) creado(s)` : ""));
 });
 
 document.getElementById("heroImageBtn").addEventListener("click", () => document.getElementById("heroImageInput").click());
