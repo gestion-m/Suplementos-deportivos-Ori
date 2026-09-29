@@ -50,6 +50,7 @@ async function avisarTelegram(texto) {
 
 const mp = new MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN });
 const app = express();
+app.set('trust proxy', 1); // Render está detrás de un proxy: así se ve la IP real
 app.use(express.json());
 app.use(cors({ origin: new URL(SITE_URL).origin })); // solo el origen de tu tienda
 
@@ -138,6 +139,33 @@ app.post('/webhook', async (req, res) => {
     }
   } catch (e) {
     console.error('webhook:', e.message);
+  }
+});
+
+// 3) Aviso de pedido nuevo (efectivo / transferencia, se cobra a mano)
+const avisosPorIp = new Map();
+function permitido(ip) {
+  const ahora = Date.now();
+  const recientes = (avisosPorIp.get(ip) || []).filter((t) => ahora - t < 10 * 60 * 1000);
+  if (recientes.length >= 6) return false; // máximo 6 avisos cada 10 min por persona
+  recientes.push(ahora);
+  avisosPorIp.set(ip, recientes);
+  return true;
+}
+app.post('/aviso-pedido', async (req, res) => {
+  res.sendStatus(200);
+  try {
+    if (!permitido(req.ip)) return;
+    const { pedidoId, items, total } = req.body || {};
+    if (!Array.isArray(items) || !items.length || items.length > 50) return;
+    const lista = items
+      .map((i) => `• ${Math.floor(Number(i.qty)) || 1} x ${String(i.name || '').slice(0, 80)}`)
+      .join('\n');
+    const monto = (Number(total) || 0).toLocaleString('es-AR');
+    const num = /^\d{1,10}$/.test(String(pedidoId || '')) ? '#' + pedidoId : '';
+    await avisarTelegram(`🛒 Pedido nuevo ${num}\nForma de pago: efectivo / transferencia (falta cobrar)\nTotal: $${monto}\n${lista}\n\nAbrí la app en modo edición → Pedidos pendientes para armarlo.`);
+  } catch (e) {
+    console.error('aviso-pedido:', e.message);
   }
 });
 

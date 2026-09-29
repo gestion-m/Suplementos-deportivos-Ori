@@ -1822,6 +1822,11 @@ function renderCart(){
     if(state.settings.aliasTransferencia){ msg += `\n\nSi pagás por transferencia, el alias es: ${state.settings.aliasTransferencia}\nMandame el comprobante para confirmar el pedido.`; }
     state.pedidos.push({id: state.nextPedidoId++, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente"});
     scheduleSave();
+    /* Aviso por Telegram al dueño (pedido en efectivo/transferencia) */
+    try{
+      fetch(MP_BACKEND + "/aviso-pedido", {method:"POST", headers:{"Content-Type":"application/json"}, keepalive:true,
+        body: JSON.stringify({pedidoId: state.nextPedidoId-1, total: totalEf, items: pedidoItems.map(i => ({name:i.name, qty:i.qty}))})}).catch(() => {});
+    }catch(e){}
     window.open(waLink(state.settings.whatsapp, msg), "_blank");
     cart = [];
     renderCart(); renderProducts();
@@ -1869,13 +1874,35 @@ async function pagarConMercadoPago(){
 }
 document.getElementById("cartMpBtn").addEventListener("click", pagarConMercadoPago);
 
-/* Al volver de Mercado Pago: ?pago=ok | pendiente | error */
+/* Al volver de Mercado Pago: ?pago=ok | pendiente | error -> cartel bien visible en el medio */
 (function(){
   const q = new URLSearchParams(location.search).get("pago");
   if(!q) return;
-  const msgs = {ok:"¡Pago aprobado! Gracias por tu compra 💪", pendiente:"Tu pago está pendiente de acreditación.", error:"El pago no se completó. Podés intentar de nuevo."};
-  if(msgs[q]) setTimeout(() => showToast(msgs[q], 6000), 1200);
-  history.replaceState(null, "", location.pathname);
+  try{ history.replaceState(null, "", location.pathname); }catch(e){}
+  const msgs = {
+    ok:{ic:"✅", t:"¡Pago aprobado!", d:"Gracias por tu compra 💪 Ya registramos tu pago."},
+    pendiente:{ic:"⏳", t:"Pago pendiente", d:"Tu pago está pendiente de acreditación. Apenas se confirme, procesamos tu pedido."},
+    error:{ic:"⚠️", t:"El pago no se completó", d:"No se realizó ningún cobro. Podés intentar de nuevo cuando quieras."}
+  };
+  const m = msgs[q];
+  if(!m) return;
+  let shown = false;
+  function mostrar(){
+    if(shown) return; shown = true;
+    const o = document.createElement("div");
+    o.id = "pagoModal";
+    o.style.cssText = "position:fixed;inset:0;z-index:99990;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:24px;";
+    o.innerHTML = '<div style="background:var(--ink);color:var(--paper);border-radius:18px;padding:26px 22px;max-width:340px;width:100%;text-align:center;font-family:Inter,sans-serif;">' +
+      '<div style="font-size:2.4rem;margin-bottom:8px;">' + m.ic + '</div>' +
+      '<div style="font-weight:800;font-size:1.15rem;margin-bottom:8px;">' + m.t + '</div>' +
+      '<div style="font-size:.85rem;opacity:.85;margin-bottom:18px;">' + m.d + '</div>' +
+      '<button id="pagoModalOk" style="background:var(--gold);color:var(--ink);border:0;border-radius:12px;padding:12px 22px;font-weight:800;font-size:.9rem;cursor:pointer;">Entendido</button></div>';
+    document.body.appendChild(o);
+    document.getElementById("pagoModalOk").addEventListener("click", () => o.remove());
+  }
+  /* esperar a que se vaya la pantalla de carga para que no tape el cartel */
+  const iv = setInterval(() => { if(!document.getElementById("pageLoader")){ clearInterval(iv); mostrar(); } }, 250);
+  setTimeout(() => { clearInterval(iv); mostrar(); }, 21000);
 })();
 
 /* Sincroniza pagos de Mercado Pago: confirma/rechaza pedidos solos (solo en modo edición) */
