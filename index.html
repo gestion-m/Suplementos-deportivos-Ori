@@ -1808,8 +1808,10 @@ function renderCart(){
   const waBtn = document.getElementById("cartWaBtn");
   waBtn.disabled = cart.length === 0;
   document.getElementById("cartMpBtn").disabled = cart.length === 0;
-  waBtn.onclick = () => {
+  waBtn.onclick = async () => {
     if(cart.length === 0) return;
+    const cliente = await pedirDatosCliente();
+    if(!cliente || cart.length === 0) return;
     let msg = "Hola! Quiero hacer este pedido:\n";
     const pedidoItems = [];
     cart.forEach(item => {
@@ -1819,13 +1821,14 @@ function renderCart(){
       pedidoItems.push({type:item.type, id:item.id, name:info.name, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
     });
     msg += `\nTotal efectivo/transferencia: ${money(totalEf)}\nTotal tarjeta: ${money(totalTa)}`;
+    msg += `\n\nMis datos: ${cliente.nombre} - ${cliente.telefono}`;
     if(state.settings.aliasTransferencia){ msg += `\n\nSi pagás por transferencia, el alias es: ${state.settings.aliasTransferencia}\nMandame el comprobante para confirmar el pedido.`; }
-    state.pedidos.push({id: state.nextPedidoId++, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente"});
+    state.pedidos.push({id: state.nextPedidoId++, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente", cliente});
     scheduleSave();
     /* Aviso por Telegram al dueño (pedido en efectivo/transferencia) */
     try{
       fetch(MP_BACKEND + "/aviso-pedido", {method:"POST", headers:{"Content-Type":"application/json"}, keepalive:true,
-        body: JSON.stringify({pedidoId: state.nextPedidoId-1, total: totalEf, items: pedidoItems.map(i => ({name:i.name, qty:i.qty}))})}).catch(() => {});
+        body: JSON.stringify({pedidoId: state.nextPedidoId-1, total: totalEf, cliente: {nombre: cliente.nombre, telefono: cliente.telefono}, items: pedidoItems.map(i => ({name:i.name, qty:i.qty}))})}).catch(() => {});
     }catch(e){}
     window.open(waLink(state.settings.whatsapp, msg), "_blank");
     cart = [];
@@ -1835,10 +1838,117 @@ function renderCart(){
   };
 }
 
+/* ---------- DATOS DEL CLIENTE ---------- */
+function normTel(t){
+  let d = String(t||"").replace(/\D/g,"").replace(/^0+/,"");
+  if(!d) return "";
+  if(!d.startsWith("54")) d = "549" + d;
+  return d;
+}
+function pedirDatosCliente(){
+  return new Promise(resolve => {
+    let g = {};
+    try{ g = JSON.parse(localStorage.getItem("oriCliente") || "{}"); }catch(e){}
+    const o = document.createElement("div");
+    o.style.cssText = "position:fixed;inset:0;z-index:99991;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:20px;";
+    const inp = "width:100%;box-sizing:border-box;padding:11px 12px;border-radius:10px;border:1px solid rgba(238,240,234,.25);background:rgba(255,255,255,.08);color:var(--paper);font-size:.9rem;margin-bottom:10px;font-family:inherit;";
+    const btnBase = "border:0;border-radius:12px;padding:12px;font-weight:800;font-size:.9rem;cursor:pointer;flex:1;";
+    o.innerHTML = '<div style="background:var(--ink);color:var(--paper);border-radius:18px;padding:22px 20px;max-width:340px;width:100%;font-family:Inter,sans-serif;">' +
+      '<div style="font-weight:800;font-size:1.05rem;margin-bottom:4px;">Tus datos</div>' +
+      '<div style="font-size:.78rem;opacity:.8;margin-bottom:14px;">Los usamos para avisarte de tu pedido.</div>' +
+      '<input id="cliNombre" placeholder="Nombre y apellido" autocomplete="name" style="' + inp + '">' +
+      '<input id="cliTel" type="tel" placeholder="Teléfono (WhatsApp)" autocomplete="tel" style="' + inp + '">' +
+      '<input id="cliMail" type="email" placeholder="Email (opcional)" autocomplete="email" style="' + inp + '">' +
+      '<div id="cliErr" style="color:#ff8a7a;font-size:.75rem;min-height:1em;margin-bottom:8px;"></div>' +
+      '<div style="display:flex;gap:8px;"><button id="cliCancel" style="' + btnBase + 'background:rgba(255,255,255,.12);color:var(--paper);">Cancelar</button>' +
+      '<button id="cliOk" style="' + btnBase + 'background:var(--gold);color:var(--ink);">Continuar</button></div></div>';
+    document.body.appendChild(o);
+    const $ = id => o.querySelector("#" + id);
+    $("cliNombre").value = g.nombre || ""; $("cliTel").value = g.telefono || ""; $("cliMail").value = g.email || "";
+    $("cliCancel").onclick = () => { o.remove(); resolve(null); };
+    $("cliOk").onclick = () => {
+      const nombre = $("cliNombre").value.trim(), telefono = $("cliTel").value.trim(), email = $("cliMail").value.trim();
+      if(nombre.length < 2){ $("cliErr").textContent = "Escribí tu nombre."; return; }
+      if(telefono.replace(/\D/g,"").length < 8){ $("cliErr").textContent = "Escribí un teléfono válido."; return; }
+      if(email && !/^\S+@\S+\.\S+$/.test(email)){ $("cliErr").textContent = "El email no parece válido."; return; }
+      const c = {nombre, telefono, email};
+      try{ localStorage.setItem("oriCliente", JSON.stringify(c)); }catch(e){}
+      o.remove(); resolve(c);
+    };
+  });
+}
+
+/* ---------- PEDIDOS: refrescar, alerta al abrir administración y aviso al cliente ---------- */
+async function refrescarPedidos(){
+  try{
+    const snap = await pedidosCol.get();
+    const ids = new Set(state.pedidos.map(p => p.id));
+    snap.docs.forEach(d => { const p = d.data(); if(!ids.has(p.id)) state.pedidos.push(p); });
+    state.pedidos.sort((a,b) => a.id - b.id);
+    const max = state.pedidos.reduce((m,p) => Math.max(m, p.id), 0);
+    if(state.nextPedidoId <= max) state.nextPedidoId = max + 1;
+  }catch(e){ console.error("refrescar pedidos", e); }
+}
+function avisarClienteWA(p){
+  const lista = p.items.map(it => it.qty + "x " + it.name).join(", ");
+  const msg = "Hola " + p.cliente.nombre + "! Tu pedido #" + p.id + " de " + (state.settings.brand || "Ori Sports") + " ya está confirmado 💪\n" + lista + "\nTe avisamos cuando esté listo para entregar.";
+  window.open(waLink(normTel(p.cliente.telefono), msg), "_blank");
+  p.avisado = true; scheduleSave();
+}
+function mostrarPanelPedidos(){
+  const viejo = document.getElementById("panelPedidos"); if(viejo) viejo.remove();
+  const pend = state.pedidos.filter(p => p.status === "pendiente");
+  const porAvisar = state.pedidos.filter(p => p.status === "confirmado" && p.cliente && p.cliente.telefono && !p.avisado);
+  if(!pend.length && !porAvisar.length) return;
+  const mp = pend.filter(p => p.medio === "mercadopago").length, ef = pend.length - mp;
+  let h = '<div style="background:var(--ink);color:var(--paper);border-radius:18px;padding:22px 20px;max-width:360px;width:100%;max-height:85vh;overflow:auto;font-family:Inter,sans-serif;">';
+  if(pend.length){
+    h += '<div style="font-weight:800;font-size:1.05rem;margin-bottom:8px;">🛒 Tenés ' + pend.length + (pend.length === 1 ? ' pedido pendiente' : ' pedidos pendientes') + '</div>';
+    if(ef) h += '<div style="font-size:.85rem;margin-bottom:4px;">💵 ' + ef + ' en efectivo / transferencia (falta cobrar)</div>';
+    if(mp) h += '<div style="font-size:.85rem;margin-bottom:4px;">💳 ' + mp + ' con tarjeta / Mercado Pago (esperando pago)</div>';
+    h += '<div style="font-size:.75rem;opacity:.85;margin:8px 0 12px;">' + pend.slice(0,8).map(p =>
+      '#' + p.id + ' ' + (p.cliente ? escapeHtml(p.cliente.nombre) + ' · ' : '') + (p.medio === "mercadopago" ? 'tarjeta' : 'efectivo/transf.') + ' · ' + money(p.medio === "mercadopago" ? p.totalTa : p.totalEf)
+    ).join('<br>') + '</div>';
+  }
+  if(porAvisar.length){
+    h += '<div style="font-weight:800;font-size:1rem;margin:10px 0 8px;">📲 Avisar al cliente</div>';
+    porAvisar.forEach(p => {
+      h += '<button data-avisar="' + p.id + '" style="display:block;width:100%;text-align:left;background:rgba(255,255,255,.1);color:var(--paper);border:0;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:.82rem;cursor:pointer;">Pedido #' + p.id + ' — avisar a ' + escapeHtml(p.cliente.nombre) + ' por WhatsApp</button>';
+    });
+  }
+  h += '<div style="display:flex;gap:8px;margin-top:12px;">' +
+    (pend.length ? '<button id="panelVer" style="flex:1;background:var(--gold);color:var(--ink);border:0;border-radius:12px;padding:12px;font-weight:800;cursor:pointer;">Ver pedidos</button>' : '') +
+    '<button id="panelCerrar" style="flex:1;background:rgba(255,255,255,.12);color:var(--paper);border:0;border-radius:12px;padding:12px;font-weight:800;cursor:pointer;">Cerrar</button></div></div>';
+  const o = document.createElement("div");
+  o.id = "panelPedidos";
+  o.style.cssText = "position:fixed;inset:0;z-index:99992;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:20px;";
+  o.innerHTML = h;
+  document.body.appendChild(o);
+  o.querySelector("#panelCerrar").onclick = () => o.remove();
+  const ver = o.querySelector("#panelVer");
+  if(ver) ver.onclick = () => {
+    o.remove();
+    const list = document.getElementById("pedidosList");
+    if(list){ const d = list.closest("details"); if(d) d.open = true; list.scrollIntoView({behavior:"smooth", block:"center"}); }
+  };
+  o.querySelectorAll("[data-avisar]").forEach(b => b.onclick = () => {
+    const p = state.pedidos.find(x => x.id === Number(b.dataset.avisar));
+    if(p){ avisarClienteWA(p); b.textContent = "✅ Avisado"; b.disabled = true; b.style.opacity = ".6"; }
+  });
+}
+async function avisarPedidosAlEditar(){
+  await refrescarPedidos();
+  await sincronizarPagosMP();
+  render();
+  mostrarPanelPedidos();
+}
+
 /* ---------- MERCADO PAGO ---------- */
 const MP_BACKEND = "https://ori-pagos.onrender.com";
 async function pagarConMercadoPago(){
   if(cart.length === 0) return;
+  const cliente = await pedirDatosCliente();
+  if(!cliente || cart.length === 0) return;
   const btn = document.getElementById("cartMpBtn");
   const items = [], pedidoItems = [];
   let totalEf = 0, totalTa = 0;
@@ -1857,12 +1967,12 @@ async function pagarConMercadoPago(){
     const pedidoId = state.nextPedidoId;
     const r = await fetch(MP_BACKEND + "/crear-pago", {
       method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({items, referencia: String(pedidoId)}), signal: ctrl.signal
+      body: JSON.stringify({items, referencia: String(pedidoId), comprador: {nombre: cliente.nombre, telefono: cliente.telefono, email: cliente.email}}), signal: ctrl.signal
     });
     clearTimeout(to);
     const data = await r.json();
     if(!data.init_point) throw new Error(data.error || "Sin link de pago");
-    state.pedidos.push({id: state.nextPedidoId++, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente", medio:"mercadopago", mpRef: data.id});
+    state.pedidos.push({id: state.nextPedidoId++, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente", medio:"mercadopago", mpRef: data.id, cliente});
     clearTimeout(saveTimer);
     try{ await Promise.race([saveState(), new Promise(res => setTimeout(res, 4000))]); }catch(e){}
     window.location.href = data.init_point;
@@ -1925,7 +2035,13 @@ async function sincronizarPagosMP(){
     }
   } finally { syncingMP = false; }
 }
-setInterval(sincronizarPagosMP, 45000);
+setInterval(async () => {
+  if(!editMode) return;
+  const antes = state.pedidos.length;
+  await refrescarPedidos();
+  if(state.pedidos.length !== antes){ render(); showToast("🛒 Llegó un pedido nuevo", 4000); }
+  sincronizarPagosMP();
+}, 45000);
 document.getElementById("editToggle").addEventListener("click", () => setTimeout(sincronizarPagosMP, 1500));
 
 /* ---------- SHEETS ---------- */
@@ -2418,8 +2534,9 @@ function renderPedidosList(){
   box.innerHTML = pendientes.map(p => `
     <div class="venta-line" style="flex-direction:column;align-items:stretch;gap:6px;">
       <div><strong>${p.fecha}</strong> — ${p.items.map(it=>`${it.qty}x ${escapeHtml(it.name)}`).join(", ")}</div>
+      <div style="font-size:0.72rem;">${p.cliente ? `👤 ${escapeHtml(p.cliente.nombre)} · 📞 ${escapeHtml(p.cliente.telefono)}` : ""} ${p.medio === "mercadopago" ? "· 💳 Mercado Pago (esperando pago)" : "· 💵 Efectivo/Transferencia (falta cobrar)"}</div>
       <div>Efvo/Transf: ${money(p.totalEf)} · Tarjeta: ${money(p.totalTa)}</div>
-      <div class="admin-row" style="margin:0;"><label style="width:auto;">Cobrado con</label><select data-pedido-metodo="${p.id}"><option value="efectivo">Efectivo/Transferencia</option><option value="tarjeta">Tarjeta</option></select></div>
+      <div class="admin-row" style="margin:0;"><label style="width:auto;">Cobrado con</label><select data-pedido-metodo="${p.id}"><option value="efectivo">Efectivo/Transferencia</option><option value="tarjeta" ${p.medio === "mercadopago" ? "selected" : ""}>Tarjeta</option></select></div>
       <div style="display:flex;gap:6px;">
         <button class="small-btn" data-confirm-pedido="${p.id}" style="flex:1;">✅ Confirmar (descuenta stock)</button>
         <button class="small-btn" data-reject-pedido="${p.id}" style="flex:1;color:var(--coral);">❌ Rechazar</button>
@@ -2430,6 +2547,7 @@ function renderPedidosList(){
       const id = Number(e.target.dataset.confirmPedido);
       const metodo = box.querySelector(`[data-pedido-metodo="${id}"]`).value;
       confirmarPedido(id, metodo);
+      mostrarPanelPedidos();
     };
   });
   box.querySelectorAll("[data-reject-pedido]").forEach(btn => {
@@ -2983,7 +3101,7 @@ document.getElementById("logoRemoveBtn").addEventListener("click", () => {
 document.getElementById("editToggle").addEventListener("click", () => {
   if(editMode){ editMode = false; render(); return; }
   const pin = prompt("PIN para editar el catálogo:");
-  if(pin === state.settings.pin){ editMode = true; render(); }
+  if(pin === state.settings.pin){ editMode = true; render(); avisarPedidosAlEditar(); }
   else if(pin !== null){ showToast("PIN incorrecto"); }
 });
 
