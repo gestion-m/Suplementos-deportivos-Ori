@@ -38,6 +38,9 @@ button{font-family:'Inter',sans-serif;cursor:pointer;}
 .topbar .brand{color:var(--c-brand,inherit);font-family:var(--f-brand);font-weight:var(--w-brand);font-size:1.15rem;letter-spacing:0.02em;}
 .topbar .actions{display:flex;gap:8px;align-items:center;}
 .icon-btn{background:none;border:1px solid #3a3c31;color:var(--paper);border-radius:9px;padding:7px 10px;font-size:0.75rem;font-weight:600;}
+.topbar-cart{position:relative;display:none;font-size:1rem;padding:5px 9px;}
+.topbar-cart.show{display:inline-block;}
+.topbar-cart .tc-badge{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;border-radius:9px;background:var(--gold);color:var(--ink);font-size:0.65rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;}
 .icon-btn.active{background:var(--gold);color:var(--ink);border-color:var(--gold);}
 .shipping-bar{background:var(--gold);color:var(--ink);text-align:center;font-size:0.72rem;font-weight:800;padding:8px 14px;letter-spacing:0.01em;}
 #editToggle{display:none;}
@@ -402,9 +405,18 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
 @media(min-width:640px){
   .hero h1{font-size:3rem;}
 }
+
+/* ---------- PANTALLA DE CARGA ---------- */
+#pageLoader{position:fixed;inset:0;z-index:99999;background:var(--ink);color:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .35s ease,visibility .35s ease;}
+#pageLoader.hide{opacity:0;visibility:hidden;pointer-events:none;}
+#pageLoader .pl-spin{width:44px;height:44px;border-radius:50%;border:4px solid rgba(238,240,234,.18);border-top-color:var(--gold);animation:plspin .8s linear infinite;}
+#pageLoader .pl-txt{font-family:'Inter',sans-serif;font-weight:700;font-size:.9rem;letter-spacing:.02em;}
+@keyframes plspin{to{transform:rotate(360deg);}}
 </style>
 </head>
 <body class="view-home">
+
+<div id="pageLoader" role="status" aria-live="polite"><div class="pl-spin"></div><div class="pl-txt">Cargando página…</div></div>
 
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:8px;">
@@ -414,6 +426,7 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
     <button class="icon-btn" id="logoRemoveBtn" style="display:none;font-size:0.62rem;padding:5px 7px;">Quitar logo</button>
   </div>
   <div class="actions">
+    <button class="icon-btn topbar-cart" id="topCartBtn" aria-label="Ver pedido">🛒<span class="tc-badge" id="topCartCount">0</span></button>
     <a class="icon-btn" id="topWaBtn" href="#" target="_blank" style="display:none;">WhatsApp</a>
     <button class="icon-btn" id="editToggle">Editar</button>
   </div>
@@ -492,7 +505,9 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div class="admin-row"><label>Color fondo</label><input type="color" id="setBgColor" style="max-width:60px;padding:2px;"><button type="button" class="admin-suggest" id="bgColorReset" style="align-self:center;">Color original</button></div>
   </div></details>
   <details class="adm-sec" data-adm="s-precios"><summary>💲 Márgenes y redondeo</summary><div class="adm-body">
-  <div class="admin-row"><label>Margen %</label><input id="setMarkupEf" type="number" placeholder="Efvo/Transf %" style="max-width:80px;"><input id="setMarkupTa" type="number" placeholder="Tarjeta %" style="max-width:80px;"></div>
+  <div class="admin-row"><label>Margen %</label><input id="setMarkupEf" type="number" placeholder="Efvo/Transf %" style="max-width:80px;"></div>
+  <div class="admin-row"><label>Comisión Mercado Pago % (total)</label><input id="setMpFee" type="number" step="0.01" placeholder="Ej: 6.5" style="max-width:80px;"></div>
+  <div style="font-size:0.66rem;color:var(--muted);margin:-4px 0 6px;">El precio de tarjeta se calcula solo: precio efectivo ÷ (1 − comisión), para que te quede lo mismo que en efectivo. 8,57 = costo por cobro con IVA + SIRTAC (tarjeta de crédito, 1 cuota).</div>
   <div class="admin-row"><label>Redondeo $</label><input id="setRoundTo" type="number" placeholder="Ej: 100" style="max-width:90px;"></div>
   </div></details>
   <details class="adm-sec" data-adm="s-pin"><summary>🔐 PIN de edición</summary><div class="adm-body">
@@ -694,7 +709,7 @@ const DEFAULT_STATE = {
     brand:"PWR SUPLEMENTOS", heroTitle:"ENERGÍA|PARA RENDIR",
     heroTag:"Suplementos deportivos originales. Consultá stock y precios.",
     envioTexto:"🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas",
-    whatsapp:"", pin:"1234", markupEfectivo:40, markupTarjeta:48, roundTo:100, aliasTransferencia:"", heroImage:null, accentColor:"#c6ff2e", logoImage:null,
+    whatsapp:"", pin:"1234", markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", heroImage:null, accentColor:"#c6ff2e", logoImage:null,
     fonts:{brand:"anton",hero:"anton",sections:"anton",prices:"anton"}, textColors:{}, ofertas:[], bgMode:"default", bgFit:"cover", bgColor:"", bgImage:null
   },
   motivos:[{id:1,text:"La disciplina es hacer lo que tenés que hacer, aunque no tengas ganas.",author:"PWR · Entrená con constancia",image:null,ovl:55,bri:100,con:100,color:"#ffffff",bg:"dark"}],
@@ -749,11 +764,16 @@ let stockReviewRows = [];
 
 function clone(o){return JSON.parse(JSON.stringify(o));}
 function roundPrice(n){ const step=(state.settings.roundTo&&state.settings.roundTo>0)?state.settings.roundTo:1; return Math.ceil(n/step)*step; }
+/* Precio de tarjeta = precio en efectivo + comisión de Mercado Pago (para cobrar neto lo mismo) */
+function cardFromCash(ef){
+  let fee = Number(state.settings.mpFee);
+  if(!isFinite(fee) || fee < 0 || fee >= 90) fee = 0;
+  return roundPrice(ef / (1 - fee/100));
+}
 function calcBasePrices(p){
   const mEf=(p.markupEf===null||p.markupEf===undefined)?state.settings.markupEfectivo:p.markupEf;
-  const mTa=(p.markupTa===null||p.markupTa===undefined)?state.settings.markupTarjeta:p.markupTa;
   const precioEf = (p.precioEfManual!==null && p.precioEfManual!==undefined && p.precioEfManual!=="") ? Number(p.precioEfManual) : roundPrice(p.costo*(1+mEf/100));
-  const precioTa = (p.precioTaManual!==null && p.precioTaManual!==undefined && p.precioTaManual!=="") ? Number(p.precioTaManual) : roundPrice(p.costo*(1+mTa/100));
+  const precioTa = (p.precioTaManual!==null && p.precioTaManual!==undefined && p.precioTaManual!=="") ? Number(p.precioTaManual) : cardFromCash(precioEf);
   return { precioEf, precioTa };
 }
 function offerPriceFor(p){
@@ -770,7 +790,7 @@ function calcProductPrices(p){
   const pr = offerPriceFor(p);
   if(!pr) return {precioEf: base.precioEf, precioTa: base.precioTa, anterior: 0, pct: 0};
   const ef = Number(pr.ef);
-  const ta = Number(pr.ta) > 0 ? Number(pr.ta) : (base.precioEf > 0 ? roundPrice(ef * base.precioTa / base.precioEf) : ef);
+  const ta = Number(pr.ta) > 0 ? Number(pr.ta) : cardFromCash(ef);
   const ant = Number(pr.ant) > 0 ? Number(pr.ant) : base.precioEf;
   const pct = ant > ef ? Math.round((1 - ef / ant) * 100) : 0;
   return {precioEf: ef, precioTa: ta, anterior: pct > 0 ? ant : 0, pct};
@@ -1006,7 +1026,7 @@ function render(){
     document.getElementById("logoRemoveBtn").style.display = "none";
   }
   document.getElementById("setMarkupEf").value = state.settings.markupEfectivo;
-  document.getElementById("setMarkupTa").value = state.settings.markupTarjeta;
+  document.getElementById("setMpFee").value = state.settings.mpFee;
   document.getElementById("setRoundTo").value = state.settings.roundTo;
   document.getElementById("setPin").value = state.settings.pin;
 
@@ -1165,7 +1185,6 @@ function renderProducts(){
           <div class="admin-row"><label>Costo</label><input type="number" data-field="costo" data-id="${p.id}" value="${p.costo}"></div>
           <div class="admin-row"><label>Stock</label><input type="number" data-field="stock" data-id="${p.id}" value="${p.stock===null?'':p.stock}" placeholder="sin control"></div>
           <div class="admin-row"><label>Marg. Ef/Tr %</label><input type="number" data-field="markupEf" data-id="${p.id}" value="${p.markupEf===null?'':p.markupEf}" placeholder="${state.settings.markupEfectivo}"></div>
-          <div class="admin-row"><label>Marg. Tar %</label><input type="number" data-field="markupTa" data-id="${p.id}" value="${p.markupTa===null?'':p.markupTa}" placeholder="${state.settings.markupTarjeta}"></div>
           <div class="admin-row"><label>Precio manual Ef/Tr</label><input type="number" data-field="precioEfManual" data-id="${p.id}" value="${p.precioEfManual===null?'':p.precioEfManual}" placeholder="automático"></div>
           <div class="admin-row"><label>Precio manual Tarj.</label><input type="number" data-field="precioTaManual" data-id="${p.id}" value="${p.precioTaManual===null?'':p.precioTaManual}" placeholder="automático"></div>
           <div class="admin-row"><label>Para qué sirve</label><textarea data-field="desc" data-id="${p.id}">${escapeHtml(p.desc||"")}</textarea><button type="button" class="admin-suggest" data-suggest="${p.id}">Sugerir</button></div>
@@ -1722,7 +1741,7 @@ function cartLineInfo(item){
   } else {
     const c = state.combos.find(cc => cc.id === item.id);
     if(!c) return null;
-    return {name:c.name, unitEf:c.precio, unitTa:c.precio, image:(c.images&&c.images[0])||""};
+    return {name:c.name, unitEf:c.precio, unitTa:cardFromCash(c.precio), image:(c.images&&c.images[0])||""};
   }
 }
 
@@ -1751,6 +1770,8 @@ function renderCart(){
   document.getElementById("cartCount").textContent = count;
   document.getElementById("cartBarTotal").textContent = money(totalEf);
   document.getElementById("cartBar").classList.toggle("show", count > 0);
+  document.getElementById("topCartCount").textContent = count;
+  document.getElementById("topCartBtn").classList.toggle("show", count > 0);
 
   const aliasBox = document.getElementById("aliasBox");
   if(state.settings.aliasTransferencia){
@@ -1828,9 +1849,10 @@ async function pagarConMercadoPago(){
   try{
     const ctrl = new AbortController();
     const to = setTimeout(() => ctrl.abort(), 70000); // el servidor gratis puede tardar en despertar
+    const pedidoId = state.nextPedidoId;
     const r = await fetch(MP_BACKEND + "/crear-pago", {
       method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({items}), signal: ctrl.signal
+      body: JSON.stringify({items, referencia: String(pedidoId)}), signal: ctrl.signal
     });
     clearTimeout(to);
     const data = await r.json();
@@ -1856,11 +1878,35 @@ document.getElementById("cartMpBtn").addEventListener("click", pagarConMercadoPa
   history.replaceState(null, "", location.pathname);
 })();
 
+/* Sincroniza pagos de Mercado Pago: confirma/rechaza pedidos solos (solo en modo edición) */
+let syncingMP = false;
+async function sincronizarPagosMP(){
+  if(!editMode || syncingMP) return;
+  const pend = state.pedidos.filter(p => p.status === "pendiente" && p.medio === "mercadopago");
+  if(!pend.length) return;
+  syncingMP = true;
+  try{
+    for(const p of pend){
+      try{
+        const d = await db.collection("pagos").doc(String(p.id)).get();
+        if(!d.exists) continue;
+        const est = d.data().estado;
+        if(p.status !== "pendiente") continue;
+        if(est === "approved"){ confirmarPedido(p.id, "tarjeta"); }
+        else if(est === "rejected" || est === "cancelled"){ rechazarPedido(p.id); }
+      }catch(e){ console.error("sync pago", e); }
+    }
+  } finally { syncingMP = false; }
+}
+setInterval(sincronizarPagosMP, 45000);
+document.getElementById("editToggle").addEventListener("click", () => setTimeout(sincronizarPagosMP, 1500));
+
 /* ---------- SHEETS ---------- */
 function openSheet(sheetId){ document.getElementById(sheetId).classList.add("show"); document.getElementById("sheetOverlay").classList.add("show"); }
 function closeSheet(sheetId){ document.getElementById(sheetId).classList.remove("show"); document.getElementById("sheetOverlay").classList.remove("show"); }
 function closeAllSheets(){ document.querySelectorAll(".sheet").forEach(s => s.classList.remove("show")); document.getElementById("sheetOverlay").classList.remove("show"); }
 document.getElementById("cartOpenBtn").addEventListener("click", () => openSheet("cartSheet"));
+document.getElementById("topCartBtn").addEventListener("click", () => openSheet("cartSheet"));
 document.querySelectorAll("[data-close-sheet]").forEach(btn => btn.addEventListener("click", closeAllSheets));
 document.getElementById("sheetOverlay").addEventListener("click", closeAllSheets);
 
@@ -2943,12 +2989,12 @@ if(window.location.hash === "#admin"){
   document.getElementById("editToggle").classList.add("unlocked");
 }
 
-["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setAlias","setMarkupEf","setMarkupTa","setRoundTo","setPin"].forEach(id => {
+["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setAlias","setMarkupEf","setMpFee","setRoundTo","setPin"].forEach(id => {
   document.getElementById(id).addEventListener("change", e => {
-    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setAlias:"aliasTransferencia",setMarkupEf:"markupEfectivo",setMarkupTa:"markupTarjeta",setRoundTo:"roundTo",setPin:"pin"};
+    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setAlias:"aliasTransferencia",setMarkupEf:"markupEfectivo",setMpFee:"mpFee",setRoundTo:"roundTo",setPin:"pin"};
     const key = map[id];
     let val = e.target.value;
-    if(key === "markupEfectivo" || key === "markupTarjeta" || key === "roundTo") val = Number(val)||0;
+    if(key === "markupEfectivo" || key === "mpFee" || key === "roundTo") val = Number(val)||0;
     state.settings[key] = val;
     render(); scheduleSave();
   });
@@ -3218,6 +3264,7 @@ async function loadState(){
     if(state.settings.bgColor === undefined) state.settings.bgColor = "";
 
     if(state.settings.roundTo === undefined) state.settings.roundTo = 100;
+    if(state.settings.mpFee === undefined) state.settings.mpFee = 8.57;
     if(state.settings.aliasTransferencia === undefined) state.settings.aliasTransferencia = "";
     if(state.settings.accentColor === undefined) state.settings.accentColor = "#c6ff2e";
     state.products.forEach(p => {
@@ -3239,7 +3286,20 @@ async function loadState(){
   }
   render();
 }
-loadState();
+/* Ocultar la pantalla de carga cuando termina de cargar todo (con tope de seguridad de 20 s) */
+(function(){
+  const loader = document.getElementById("pageLoader");
+  let done = false;
+  function hideLoader(){
+    if(done) return; done = true;
+    loader.classList.add("hide");
+    setTimeout(() => loader.remove(), 500);
+  }
+  setTimeout(hideLoader, 20000);
+  /* Despertar el servidor de pagos (Render gratis se duerme) para que "Pagar" responda rápido */
+  try{ fetch(MP_BACKEND + "/", {mode:"no-cors", cache:"no-store"}).catch(() => {}); }catch(e){}
+  loadState().then(() => (document.fonts && document.fonts.ready) || null).catch(() => {}).then(hideLoader);
+})();
 </script>
 <div class="ie-ov" id="imgEditor"></div>
 </body>
