@@ -612,6 +612,7 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <button type="button" class="menu-item" data-go="catalog">Productos</button>
   <button type="button" class="menu-item" data-go="combos">Combos</button>
   <a class="menu-item" id="menuContact" href="#" target="_blank">Contacto</a>
+  <a class="menu-item" id="menuIg" href="#" target="_blank" rel="noopener" style="display:none;align-items:center;gap:8px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg> Instagram</a>
 </nav>
 
 <div class="sheet" id="resenaSheet">
@@ -620,6 +621,9 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div class="rs-stars" id="rsStars"></div>
   <input id="rsNombre" placeholder="Tu nombre" autocomplete="given-name">
   <textarea id="rsTexto" rows="4" placeholder="Contanos tu experiencia (opcional)"></textarea>
+  <button type="button" class="small-btn" id="rsFotoBtn" style="width:100%;margin-bottom:8px;">📷 Subir foto del producto (opcional)</button>
+  <input type="file" id="rsFoto" accept="image/*" style="display:none;">
+  <img id="rsFotoPrev" alt="" style="display:none;max-width:100%;max-height:180px;border-radius:10px;margin:0 auto 8px;">
   <button class="primary-btn" id="rsEnviar">Enviar reseña</button>
   <div id="rsMsg" style="font-size:.78rem;margin-top:8px;text-align:center;"></div>
 </div>
@@ -2145,6 +2149,7 @@ function renderContact(){
   if(wa) $("cbWa").href = waLink(wa, "Hola! Quería consultar por sus suplementos 💪");
   $("cbIg").style.display = igUrl ? "flex" : "none";
   if(igUrl){ $("cbIg").href = igUrl; $("cbIg").innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex:none"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>` + " Instagram" + (igName ? " @" + escapeHtml(igName) : ""); }
+  $("menuIg").style.display = igUrl ? "flex" : "none"; if(igUrl) $("menuIg").href = igUrl;
   $("contactBox").style.display = (wa || igUrl) ? "block" : "none";
 }
 
@@ -2170,29 +2175,41 @@ function renderResenas(){
       <div class="st">${starsTxt(r.puntaje)}</div>
       <div class="who">${escapeHtml(firstName(r.nombre))}<span>✔ Compra confirmada${r.fecha ? " · " + escapeHtml(r.fecha) : ""}</span></div>
       ${r.comentario ? `<p>${escapeHtml(r.comentario)}</p>` : ""}
+      ${fotoSegura(r) ? `<img src="${fotoSegura(r)}" alt="Foto del producto" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-top:8px;">` : ""}
     </div>`).join("");
   sec.style.display = "block";
 }
+function fotoSegura(r){ return r && typeof r.foto === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(r.foto) ? r.foto : ""; }
 async function openResenaFromUrl(){
   const id = Number(new URLSearchParams(location.search).get("resena"));
   if(!id) return;
+  try{ history.replaceState(null, "", location.href.split(/[?#]/)[0]); }catch(e){}
   let p = null;
   try{ const cd = await db.collection("compras").doc(String(id)).get(); if(cd.exists) p = {id, status:"confirmado", cliente:{nombre: cd.data().nombre || ""}}; }catch(e){}
   if(!p || p.status !== "confirmado"){ showToast("Este link de reseña no es válido o la compra todavía no fue confirmada.", 4500); return; }
   if((state.resenas || []).some(r => r.pedidoId === id)){ showToast("¡Ya nos dejaste tu reseña, gracias! 💚", 4000); return; }
   let puntaje = 0;
   const box = document.getElementById("rsStars");
-  const pintar = () => { box.innerHTML = [1,2,3,4,5].map(n => `<button type="button" data-n="${n}" class="${n <= puntaje ? "on" : ""}" aria-label="${n} de 5">★</button>`).join(""); box.querySelectorAll("button").forEach(b => b.onclick = () => { puntaje = Number(b.dataset.n); pintar(); }); };
+  const pintar = () => { box.innerHTML = [1,2,3,4,5].map(n => `<button type="button" data-n="${n}" class="${n <= puntaje ? "on" : ""}" aria-label="${n} de 5">★︎</button>`).join(""); box.querySelectorAll("button").forEach(b => b.onclick = () => { puntaje = Number(b.dataset.n); pintar(); }); };
   pintar();
   document.getElementById("rsNombre").value = firstName(p.cliente && p.cliente.nombre);
   document.getElementById("rsTexto").value = "";
+  let foto = null;
+  const fPrev = document.getElementById("rsFotoPrev"), fIn = document.getElementById("rsFoto");
+  fPrev.style.display = "none"; fPrev.removeAttribute("src"); fIn.value = "";
+  document.getElementById("rsFotoBtn").onclick = () => fIn.click();
+  fIn.onchange = async () => {
+    const f = fIn.files[0]; if(!f) return;
+    try{ foto = await compressImageP(f, 640, 0.6); fPrev.src = foto; fPrev.style.display = "block"; }
+    catch(e){ foto = null; showToast("No se pudo cargar la foto"); }
+  };
   document.getElementById("rsMsg").textContent = "";
   const btn = document.getElementById("rsEnviar"); btn.disabled = false; btn.textContent = "Enviar reseña";
   btn.onclick = async () => {
     const msg = document.getElementById("rsMsg");
     if(!puntaje){ msg.style.color = "var(--coral)"; msg.textContent = "Elegí cuántas estrellas le das."; return; }
     btn.disabled = true; btn.textContent = "Enviando…";
-    const r = { id, pedidoId: id, nombre: document.getElementById("rsNombre").value.trim() || firstName(p.cliente && p.cliente.nombre), puntaje, comentario: document.getElementById("rsTexto").value.trim().slice(0, 500), fecha: new Date().toLocaleDateString("es-AR"), ts: Date.now(), aprobada: false };
+    const r = { id, pedidoId: id, nombre: document.getElementById("rsNombre").value.trim() || firstName(p.cliente && p.cliente.nombre), puntaje, comentario: document.getElementById("rsTexto").value.trim().slice(0, 500), foto: foto || null, fecha: new Date().toLocaleDateString("es-AR"), ts: Date.now(), aprobada: false };
     try{
       await resenasCol.doc("p" + id).set(r);
       state.resenas = [r].concat(state.resenas || []);
@@ -2204,15 +2221,76 @@ async function openResenaFromUrl(){
   };
   openSheet("resenaSheet");
 }
+let cliQ = "", cliF = "todos";
+function clientesData(){
+  const map = new Map();
+  (state.pedidos || []).forEach(p => {
+    const c = p.cliente; if(!c) return;
+    const tel = String(c.telefono || "").replace(/\D/g, "");
+    const key = tel.slice(-8) || String(c.email || "").toLowerCase() || String(c.nombre || "").toLowerCase();
+    if(!key) return;
+    let k = map.get(key);
+    if(!k){ k = {nombre:"", telefono:"", email:"", direccion:"", pedidos:[], canales:new Set(), total:0, conf:0}; map.set(key, k); }
+    k.nombre = c.nombre || k.nombre; k.telefono = c.telefono || k.telefono; k.email = c.email || k.email;
+    const dir = [c.direccion, c.zona, c.cp, c.provincia].filter(Boolean).join(", ");
+    if(dir) k.direccion = dir;
+    k.pedidos.push(p);
+    k.canales.add(p.medio === "mercadopago" ? "Mercado Pago" : (p.medio === "manual" ? "Por fuera" : "Página"));
+    if(p.status === "confirmado"){ k.conf++; k.total += p.medio === "mercadopago" ? (Number(p.totalTa) || 0) : (Number(p.totalEf) || 0); }
+  });
+  const out = [...map.values()].map(k => {
+    const ids = new Set(k.pedidos.map(p => p.id));
+    k.res = (state.resenas || []).filter(r => ids.has(r.pedidoId));
+    k.ultimo = k.pedidos.reduce((m, p) => p.id > m.id ? p : m, k.pedidos[0]);
+    return k;
+  });
+  return out.sort((a, b) => b.ultimo.id - a.ultimo.id);
+}
+function clientesListaHtml(){
+  const q = cliQ.trim().toLowerCase();
+  const lista = clientesData().filter(k => {
+    if(q && !(k.nombre + " " + k.telefono + " " + k.email + " " + k.direccion).toLowerCase().includes(q)) return false;
+    if(cliF === "con") return k.res.length > 0;
+    if(cliF === "sin") return k.res.length === 0;
+    if(cliF === "pagina") return k.canales.has("Página");
+    if(cliF === "fuera") return k.canales.has("Por fuera");
+    if(cliF === "mp") return k.canales.has("Mercado Pago");
+    return true;
+  });
+  if(!lista.length) return `<div style="font-size:.72rem;color:var(--muted);">No hay clientes para mostrar.</div>`;
+  return lista.map(k => `
+    <div class="venta-line" style="flex-direction:column;align-items:stretch;gap:3px;">
+      <div><b>${escapeHtml(k.nombre || "Sin nombre")}</b> · ${k.conf} compra${k.conf === 1 ? "" : "s"} confirmada${k.conf === 1 ? "" : "s"} · ${money(k.total)}</div>
+      ${k.telefono ? `<div style="font-size:.74rem;">📞 ${escapeHtml(k.telefono)}</div>` : ""}
+      ${k.email ? `<div style="font-size:.74rem;">✉️ ${escapeHtml(k.email)}</div>` : ""}
+      ${k.direccion ? `<div style="font-size:.74rem;">📍 ${escapeHtml(k.direccion)}</div>` : ""}
+      <div style="font-size:.72rem;color:var(--muted);">Compró por: ${escapeHtml([...k.canales].join(", "))} · Último pedido: ${escapeHtml(k.ultimo.fecha || "")} (#${k.ultimo.id})</div>
+      ${k.res.length ? k.res.map(r => `<div style="font-size:.74rem;"><span style="color:#f5a623;">${starsTxt(r.puntaje)}</span> ${r.aprobada ? "✅ publicada" : "⏳ pendiente"}${r.comentario ? " · " + escapeHtml(r.comentario) : ""}</div>${fotoSegura(r) ? `<img src="${fotoSegura(r)}" alt="" style="max-width:100%;max-height:120px;border-radius:8px;">` : ""}`).join("") : `<div style="font-size:.72rem;color:var(--muted);">Sin reseña</div>`}
+    </div>`).join("");
+}
+function clientesAdminHtml(){
+  const opt = (v, t) => `<option value="${v}" ${cliF === v ? "selected" : ""}>${t}</option>`;
+  return `<div style="display:flex;gap:6px;margin-bottom:8px;">
+    <input id="cliBuscar" placeholder="Buscar nombre, teléfono, zona…" value="${escapeHtml(cliQ)}" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px;">
+    <select id="cliFiltro" style="border:1px solid var(--line);border-radius:8px;padding:8px;">${opt("todos","Todos")}${opt("con","Con reseña")}${opt("sin","Sin reseña")}${opt("pagina","Compró por la página")}${opt("fuera","Compró por fuera")}${opt("mp","Mercado Pago")}</select>
+  </div><div id="cliLista">${clientesListaHtml()}</div>`;
+}
+function bindClientes(box){
+  const l = box.querySelector("#cliLista"); if(!l) return;
+  box.querySelector("#cliBuscar").oninput = e => { cliQ = e.target.value; l.innerHTML = clientesListaHtml(); };
+  box.querySelector("#cliFiltro").onchange = e => { cliF = e.target.value; l.innerHTML = clientesListaHtml(); };
+}
 function resenasAdminHtml(){
   const rs = state.resenas || [];
   const conRes = new Set(rs.map(r => r.pedidoId));
-  const pedir = state.pedidos.filter(p => p.status === "confirmado" && p.cliente && (p.cliente.telefono || p.cliente.email) && !conRes.has(p.id)).slice(-10).reverse();
+  const aprob = new Set(rs.filter(r => r.aprobada).map(r => r.pedidoId));
+  const pedir = state.pedidos.filter(p => p.status === "confirmado" && p.cliente && (p.cliente.telefono || p.cliente.email) && !aprob.has(p.id)).slice(-10).reverse();
   let h = `<div style="font-size:.7rem;color:var(--muted);margin-bottom:6px;">Las reseñas nuevas quedan ocultas hasta que las aprobés.</div>`;
   h += rs.length ? rs.map(r => `
     <div class="venta-line" style="flex-direction:column;align-items:stretch;gap:4px;">
       <div><span style="color:#f5a623;">${starsTxt(r.puntaje)}</span> <b>${escapeHtml(r.nombre || "")}</b> · pedido #${r.pedidoId} ${r.aprobada ? "· ✅ publicada" : "· ⏳ pendiente"}</div>
       ${r.comentario ? `<div style="font-size:.74rem;">${escapeHtml(r.comentario)}</div>` : ""}
+      ${fotoSegura(r) ? `<img src="${fotoSegura(r)}" alt="" style="max-width:100%;max-height:160px;border-radius:8px;">` : ""}
       <div style="display:flex;gap:6px;">
         <button class="small-btn" data-res-toggle="${r.pedidoId}" style="flex:1;">${r.aprobada ? "Ocultar" : "✅ Publicar"}</button>
         <button class="small-btn" data-res-del="${r.pedidoId}" style="flex:1;color:var(--coral);">Borrar</button>
@@ -2222,11 +2300,11 @@ function resenasAdminHtml(){
     <div style="display:flex;gap:6px;"><input id="rmNom" placeholder="Nombre" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px;"><input id="rmTel" placeholder="WhatsApp" inputmode="tel" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px;"><button class="small-btn" id="rmAdd">Agregar</button></div>`;
   if(pedir.length){
     h += `<div style="font-weight:800;font-size:.78rem;margin:12px 0 6px;">📨 Pedir reseña a clientes</div>` + pedir.map(p => `
-      <div class="venta-line" style="gap:6px;">
+      <div class="venta-line" style="gap:6px;flex-wrap:wrap;">
         <div style="flex:1;">#${p.id} ${escapeHtml(p.cliente.nombre)}</div>
-        ${p.cliente.telefono ? `<button class="small-btn" data-res-wa="${p.id}">WhatsApp</button>` : ""}
+        ${conRes.has(p.id) ? `<span style="font-size:.7rem;color:var(--muted);">⏳ Reseña recibida · aprobala arriba</span>` : `${p.cliente.telefono ? `<button class="small-btn" data-res-wa="${p.id}">WhatsApp</button>` : ""}
         <button class="small-btn" data-res-copy="${p.id}">Copiar link</button>
-        ${p.cliente.email ? `<button class="small-btn" data-res-mail="${p.id}">Mail</button>` : ""}
+        ${p.cliente.email ? `<button class="small-btn" data-res-mail="${p.id}">Mail</button>` : ""}`}
       </div>`).join("");
   }
   return h;
@@ -2385,6 +2463,7 @@ document.getElementById("menuBtn").addEventListener("click", openMenu);
 document.getElementById("menuClose").addEventListener("click", closeMenu);
 document.getElementById("menuOverlay").addEventListener("click", closeMenu);
 document.getElementById("menuContact").addEventListener("click", closeMenu);
+document.getElementById("menuIg").addEventListener("click", closeMenu);
 document.addEventListener("click", e => {
   const g = e.target.closest("[data-go]");
   if(!g) return;
@@ -2737,10 +2816,12 @@ function renderVentasBox(){
     ${admSec("v-pedidos","🛒 Pedidos pendientes"+(nPend?" ("+nPend+")":""),`
     <div id="pedidosList" style="margin-top:6px;"></div>
     `)}
+    ${admSec("v-clientes","👥 Clientes ("+clientesData().length+")", clientesAdminHtml())}
     ${admSec("v-resenas","⭐ Reseñas"+(nResPend?" ("+nResPend+" nueva"+(nResPend>1?"s":"")+")":""),resenasAdminHtml())}
   `;
   renderPedidosList();
   bindResenasAdmin(box);
+  bindClientes(box);
   document.getElementById("ventaProducto").onchange = e => { ventaSelId = e.target.value; };
   document.getElementById("ventaMetodo").onchange = e => { ventaMetodoSel = e.target.value; };
   document.getElementById("registrarVentaBtn").onclick = () => registrarVenta();
