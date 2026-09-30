@@ -197,6 +197,26 @@ body.edit-mode .ventas-box{display:block;}
 .venta-line button{border:none;background:none;color:var(--coral);font-size:0.65rem;font-weight:700;}
 
 .footer{text-align:center;padding:24px 18px 100px;color:var(--muted);font-size:0.72rem;}
+.contact-box{margin:26px 18px 0;background:var(--ink);color:var(--paper);border-radius:18px;padding:20px 18px;text-align:center;}
+.contact-box .cb-title{font-weight:800;font-size:1rem;margin-bottom:12px;}
+.contact-box a{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-weight:800;font-size:.9rem;border-radius:12px;padding:12px;margin-top:8px;}
+.contact-box a.cb-phone{background:var(--gold);color:var(--ink);}
+.contact-box a.cb-wa{background:#25d366;color:#0b2e16;}
+.contact-box a.cb-ig{background:rgba(255,255,255,.12);color:var(--paper);}
+.res-sec{margin:26px 18px 0;}
+.res-sec h2{margin:0 0 4px;font-size:1.15rem;}
+.res-avg{font-size:.8rem;color:var(--muted);margin-bottom:12px;}
+.res-avg b{color:var(--ink);font-size:1.05rem;}
+.res-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;}
+.res-card .st{color:#f5a623;letter-spacing:2px;font-size:1rem;}
+.res-card .who{font-weight:800;font-size:.8rem;margin-top:2px;}
+.res-card .who span{font-weight:500;color:var(--muted);margin-left:6px;}
+.res-card p{margin:6px 0 0;font-size:.82rem;line-height:1.35;}
+.rs-stars{display:flex;gap:6px;justify-content:center;margin:6px 0 12px;}
+.rs-stars button{border:none;background:none;font-size:2.2rem;line-height:1;color:#c9c6b6;padding:0 2px;}
+.rs-stars button.on{color:#f5a623;}
+#resenaSheet input,#resenaSheet textarea{width:100%;box-sizing:border-box;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;font-size:.85rem;margin-bottom:8px;background:#fff;}
+
 .status-toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:20px;font-size:0.72rem;font-weight:600;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:300;}
 .status-toast.show{opacity:1;}
 
@@ -473,6 +493,7 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div class="admin-row"><label>Título hero</label><input id="setHeroTitle" placeholder="Ej: ENERGÍA | PARA RENDIR (usá | para el salto de línea)"></div>
   <div class="admin-row"><label>Bajada</label><input id="setHeroTag" placeholder="Frase corta debajo del título"></div>
   <div class="admin-row"><label>WhatsApp</label><input id="setWhatsapp" placeholder="Solo números, ej: 5491122334455"></div>
+  <div class="admin-row"><label>Instagram</label><input id="setInstagram" placeholder="Tu usuario, ej: orisports"></div>
   <div class="admin-row"><label>Alias transf.</label><input id="setAlias" placeholder="Ej: mi.alias.mp"></div>
   <div class="admin-row"><label>Envío Correo a sucursal $</label><input id="setEnvSuc" type="number" placeholder="Ej: 6800" style="max-width:90px;"></div>
   <div class="admin-row"><label>Envío Correo a domicilio $</label><input id="setEnvDom" type="number" placeholder="Ej: 9700" style="max-width:90px;"></div>
@@ -513,8 +534,8 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div style="font-size:0.66rem;color:var(--muted);margin:-4px 0 6px;">El precio de tarjeta se calcula solo: precio efectivo ÷ (1 − comisión), para que te quede lo mismo que en efectivo. 8,57 = costo por cobro con IVA + SIRTAC (tarjeta de crédito, 1 cuota).</div>
   <div class="admin-row"><label>Redondeo $</label><input id="setRoundTo" type="number" placeholder="Ej: 100" style="max-width:90px;"></div>
   </div></details>
-  <details class="adm-sec" data-adm="s-pin"><summary>🔐 PIN de edición</summary><div class="adm-body">
-  <div class="admin-row"><label>PIN edición</label><input id="setPin" placeholder="PIN para entrar a editar"></div>
+  <details class="adm-sec" data-adm="s-pin"><summary>🔐 Acceso</summary><div class="adm-body">
+  <div style="font-size:.75rem;color:var(--muted);">El acceso ahora es con tu email y contraseña de Firebase.</div><input id="setPin" type="hidden">
   </div></details>
   <div style="font-size:0.66rem;color:var(--muted);margin-top:4px;">Los cambios se guardan solos y los ve cualquiera que abra este link.</div>
 </div>
@@ -566,6 +587,19 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div class="admin-only" id="offersAdmin"></div>
 </div>
 
+<div class="contact-box" id="contactBox" style="display:none;">
+  <div class="cb-title">📍 Contacto</div>
+  <a class="cb-phone" id="cbPhone" href="#" style="display:none;"></a>
+  <a class="cb-wa" id="cbWa" href="#" target="_blank" rel="noopener" style="display:none;">💬 Escribime por WhatsApp</a>
+  <a class="cb-ig" id="cbIg" href="#" target="_blank" rel="noopener" style="display:none;"></a>
+</div>
+
+<div class="res-sec" id="resenasSection" style="display:none;">
+  <h2>⭐ Lo que dicen nuestros clientes</h2>
+  <div class="res-avg" id="resAvg"></div>
+  <div id="resList"></div>
+</div>
+
 <div class="footer">Hecho con cariño para vender más rápido. 💪</div>
 
 <div class="sheet-overlay" id="sheetOverlay"></div>
@@ -578,6 +612,16 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <button type="button" class="menu-item" data-go="combos">Combos</button>
   <a class="menu-item" id="menuContact" href="#" target="_blank">Contacto</a>
 </nav>
+
+<div class="sheet" id="resenaSheet">
+  <button class="sheet-close" data-close-sheet>✕</button>
+  <h3>¿Cómo te fue con tu compra?</h3>
+  <div class="rs-stars" id="rsStars"></div>
+  <input id="rsNombre" placeholder="Tu nombre" autocomplete="given-name">
+  <textarea id="rsTexto" rows="4" placeholder="Contanos tu experiencia (opcional)"></textarea>
+  <button class="primary-btn" id="rsEnviar">Enviar reseña</button>
+  <div id="rsMsg" style="font-size:.78rem;margin-top:8px;text-align:center;"></div>
+</div>
 
 <div class="sheet" id="offerSheet">
   <button class="sheet-close" data-close-sheet>✕</button>
@@ -626,6 +670,7 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 /* ======= CONFIGURACIÓN DE FIREBASE (ya completa con tus datos) ======= */
 const firebaseConfig = {
@@ -638,6 +683,55 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const auth = firebase.auth();
+const esAdmin = () => !!auth.currentUser && editMode;
+
+/* ---- Seguridad: pedidos nuevos (cualquiera puede crear, solo vos leer) ---- */
+async function reservarIdPedido(){
+  try{
+    const ref = db.collection("contador").doc("pedidos");
+    return await db.runTransaction(async t => {
+      const sn = await t.get(ref);
+      if(!sn.exists) throw new Error("sin contador");
+      const n = (sn.data().n || 0) + 1;
+      t.update(ref, {n});
+      return n;
+    });
+  }catch(e){ console.warn("contador", e); return Date.now(); }
+}
+async function guardarPedidoNuevo(p){
+  state.pedidos.push(p);
+  try{ await pedidosCol.doc(String(p.id)).set(p); }catch(e){ console.error("guardar pedido", e); }
+}
+/* Datos privados (solo con sesión de administrador) */
+async function cargarPrivado(){
+  const [vs, ps, ct] = await Promise.all([ventasCol.get(), pedidosCol.get(), db.collection("contador").doc("pedidos").get()]);
+  state.ventas = vs.docs.map(d => d.data()).sort((a,b) => a.id - b.id);
+  state.pedidos = ps.docs.map(d => d.data()).sort((a,b) => a.id - b.id);
+  const max = state.pedidos.reduce((m,p) => p.id < 1e12 ? Math.max(m,p.id) : m, 0);
+  if(!ct.exists){ await db.collection("contador").doc("pedidos").set({n: Math.max(max, (state.nextPedidoId||1) - 1)}); }
+}
+function pedirLogin(){
+  return new Promise(res => {
+    const o = document.createElement("div");
+    o.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;";
+    o.innerHTML = '<div style="background:#1a1d18;color:#eef0ea;border-radius:16px;padding:20px;width:100%;max-width:340px;font-family:inherit;">'
+      + '<div style="font-weight:800;font-size:1.05rem;margin-bottom:12px;">🔐 Acceso administrador</div>'
+      + '<input id="lgMail" type="email" autocomplete="username" placeholder="Email" style="width:100%;padding:12px;border-radius:10px;border:1px solid #444;background:#0f110e;color:#fff;margin-bottom:8px;box-sizing:border-box;">'
+      + '<input id="lgPass" type="password" autocomplete="current-password" placeholder="Contraseña" style="width:100%;padding:12px;border-radius:10px;border:1px solid #444;background:#0f110e;color:#fff;box-sizing:border-box;">'
+      + '<div id="lgErr" style="color:#ff7a6b;font-size:.8rem;min-height:18px;margin:6px 0;"></div>'
+      + '<div style="display:flex;gap:8px;"><button id="lgNo" style="flex:1;padding:12px;border-radius:10px;border:0;background:#333;color:#fff;font-weight:700;">Cancelar</button>'
+      + '<button id="lgOk" style="flex:1;padding:12px;border-radius:10px;border:0;background:var(--gold,#c6ff2e);color:#111;font-weight:800;">Entrar</button></div></div>';
+    document.body.appendChild(o);
+    const q = id => o.querySelector("#" + id);
+    q("lgNo").onclick = () => { o.remove(); res(false); };
+    q("lgOk").onclick = async () => {
+      q("lgErr").textContent = "";
+      try{ await auth.signInWithEmailAndPassword(q("lgMail").value.trim(), q("lgPass").value); o.remove(); res(true); }
+      catch(e){ q("lgErr").textContent = "Email o contraseña incorrectos."; }
+    };
+  });
+}
 
 /* Cada tipo de dato vive en su propio lugar en vez de un solo archivo gigante,
    así ninguno se pasa nunca del límite de 1 MB por documento (plan gratis). */
@@ -651,6 +745,7 @@ const productsCol = db.collection("productos");
 const combosCol = db.collection("combos");
 const ventasCol = db.collection("ventas");
 const pedidosCol = db.collection("pedidos");
+const resenasCol = db.collection("resenas");
 
 const money = n => "$" + Math.round(n).toLocaleString("es-AR");
 
@@ -713,7 +808,7 @@ const DEFAULT_STATE = {
     brand:"PWR SUPLEMENTOS", heroTitle:"ENERGÍA|PARA RENDIR",
     heroTag:"Suplementos deportivos originales. Consultá stock y precios.",
     envioTexto:"🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas",
-    whatsapp:"", pin:"1234", markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", envioSucursal:6800, envioDomicilio:9700, zonasGratis:"José C. Paz, San Miguel, Grand Bourg", heroImage:null, accentColor:"#c6ff2e", logoImage:null,
+    whatsapp:"", markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", envioSucursal:6800, envioDomicilio:9700, zonasGratis:"José C. Paz, San Miguel, Grand Bourg", heroImage:null, accentColor:"#c6ff2e", logoImage:null,
     fonts:{brand:"anton",hero:"anton",sections:"anton",prices:"anton"}, textColors:{}, ofertas:[], bgMode:"default", bgFit:"cover", bgColor:"", bgImage:null
   },
   motivos:[{id:1,text:"La disciplina es hacer lo que tenés que hacer, aunque no tengas ganas.",author:"PWR · Entrená con constancia",image:null,ovl:55,bri:100,con:100,color:"#ffffff",bg:"dark"}],
@@ -801,6 +896,8 @@ function calcProductPrices(p){
 }
 function waLink(number, text){ const clean=(number||"").replace(/[^0-9]/g,""); return clean ? `https://wa.me/${clean}?text=${encodeURIComponent(text)}` : "#"; }
 function escapeHtml(str){ return String(str).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function conMarca(brand, name){ const b=(brand||"").trim(), n=String(name||""); if(!b) return n; return n.toLowerCase().startsWith(b.toLowerCase()) ? n : b + " - " + n; }
+function ventaMarca(v){ if(v.marca) return v.marca; if(v.productId){ const p=state.products.find(x=>x.id===v.productId); if(p && p.brand) return p.brand; } return v.comboId ? "COMBO" : ""; }
 function stockOf(p){ return (p.stock===null||p.stock===undefined) ? Infinity : p.stock; }
 function inCartQty(type,id){ const it=cart.find(c=>c.type===type&&c.id===id); return it?it.qty:0; }
 
@@ -1003,6 +1100,7 @@ function render(){
   document.getElementById("setHeroTitle").value = state.settings.heroTitle;
   document.getElementById("setHeroTag").value = state.settings.heroTag;
   document.getElementById("setWhatsapp").value = state.settings.whatsapp;
+  document.getElementById("setInstagram").value = state.settings.instagram || "";
   document.getElementById("setAlias").value = state.settings.aliasTransferencia || "";
   document.getElementById("setEnvSuc").value = state.settings.envioSucursal ?? "";
   document.getElementById("setEnvDom").value = state.settings.envioDomicilio ?? "";
@@ -1046,6 +1144,8 @@ function render(){
   renderCombos();
   renderCart();
   renderVentasBox();
+  renderContact();
+  renderResenas();
 }
 
 let searchQuery = "";
@@ -1834,12 +1934,12 @@ function renderCart(){
     else if(cliente.entrega === "punto") msg += `\n🤝 Punto de encuentro en ${cliente.zona} (gratis). Coordinemos lugar, día y hora.`;
     else msg += `\n🏠 Retiro en tu casa (gratis). Coordinemos día y hora.`;
     if(state.settings.aliasTransferencia){ msg += `\n\nSi pagás por transferencia, el alias es: ${state.settings.aliasTransferencia}\nMandame el comprobante para confirmar el pedido.`; }
-    state.pedidos.push({id: state.nextPedidoId++, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente", cliente});
-    scheduleSave();
+    const pidNuevo = await reservarIdPedido();
+    await guardarPedidoNuevo({id: pidNuevo, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente", cliente});
     /* Aviso por Telegram al dueño (pedido en efectivo/transferencia) */
     try{
       fetch(MP_BACKEND + "/aviso-pedido", {method:"POST", headers:{"Content-Type":"application/json"}, keepalive:true,
-        body: JSON.stringify({pedidoId: state.nextPedidoId-1, total: totalEf + envio, cliente: {nombre: cliente.nombre, telefono: cliente.telefono}, items: pedidoItems.map(i => ({name:(i.brand ? i.brand + " - " : "") + i.name, qty:i.qty}))})}).catch(() => {});
+        body: JSON.stringify({pedidoId: pidNuevo, total: totalEf + envio, cliente: {nombre: cliente.nombre, telefono: cliente.telefono}, items: pedidoItems.map(i => ({name:conMarca(i.brand, i.name), brand:i.brand||"", qty:i.qty}))})}).catch(() => {});
     }catch(e){}
     window.open(waLink(state.settings.whatsapp, msg), "_blank");
     cart = [];
@@ -1960,9 +2060,13 @@ async function refrescarPedidos(){
 function avisarClienteWA(p){
   const lista = p.items.map(it => it.qty + "x " + it.name).join(", ");
   const msg = "Hola " + p.cliente.nombre + "! Tu pedido #" + p.id + " de " + (state.settings.brand || "Ori Sports") + " ya está confirmado 💪\n" + lista + "\nTe avisamos cuando esté listo para entregar.";
-  window.open(waLink(normTel(p.cliente.telefono), msg), "_blank");
+  window.open(waLink(normTel(p.cliente.telefono), msg + "\n\n¿Nos dejás una reseña de cómo te fue? Nos ayuda un montón ⭐\n" + resenaLink(p)), "_blank");
   p.avisado = true; scheduleSave();
 }
+function resenaLink(p){ return location.href.split(/[?#]/)[0] + "?resena=" + p.id; }
+function msgResena(p){ return "Hola " + p.cliente.nombre + "! Gracias por tu compra en " + (state.settings.brand || "Ori Sports") + " 💪\n¿Nos contás cómo te fue? Dejanos tu reseña acá (te lleva 1 minuto) ⭐\n" + resenaLink(p); }
+function pedirResenaWA(p){ window.open(waLink(normTel(p.cliente.telefono), msgResena(p)), "_blank"); }
+function pedirResenaMail(p){ window.location.href = "mailto:" + encodeURIComponent(p.cliente.email) + "?subject=" + encodeURIComponent("¿Cómo te fue con tu compra?") + "&body=" + encodeURIComponent(msgResena(p)); }
 function mostrarPanelPedidos(){
   const viejo = document.getElementById("panelPedidos"); if(viejo) viejo.remove();
   const pend = state.pedidos.filter(p => p.status === "pendiente");
@@ -2011,6 +2115,123 @@ async function avisarPedidosAlEditar(){
   mostrarPanelPedidos();
 }
 
+/* ---------- CONTACTO ---------- */
+function renderContact(){
+  const $ = id => document.getElementById(id);
+  const wa = (state.settings.whatsapp || "").replace(/[^0-9]/g, "");
+  let ig = (state.settings.instagram || "").trim(), igUrl = "", igName = "";
+  if(ig){
+    if(/^https?:\/\//i.test(ig)){ igUrl = ig; igName = ig.replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/[\/?].*$/, ""); }
+    else { igName = ig.replace(/^@/, "").replace(/\s+/g, ""); igUrl = "https://instagram.com/" + igName; }
+  }
+  $("cbPhone").style.display = wa ? "flex" : "none";
+  if(wa){ $("cbPhone").href = "tel:+" + wa; $("cbPhone").textContent = "📞 +" + wa; }
+  $("cbWa").style.display = wa ? "flex" : "none";
+  if(wa) $("cbWa").href = waLink(wa, "Hola! Quería consultar por sus suplementos 💪");
+  $("cbIg").style.display = igUrl ? "flex" : "none";
+  if(igUrl){ $("cbIg").href = igUrl; $("cbIg").textContent = "📸 Instagram" + (igName ? " @" + igName : ""); }
+  $("contactBox").style.display = (wa || igUrl) ? "block" : "none";
+}
+
+/* ---------- RESEÑAS ---------- */
+function starsTxt(n){ n = Math.max(0, Math.min(5, Math.round(n))); return "★".repeat(n) + "☆".repeat(5 - n); }
+function firstName(n){ return String(n || "").trim().split(/\s+/)[0] || "Cliente"; }
+async function loadResenas(){
+  try{
+    const snap = await resenasCol.get();
+    state.resenas = snap.docs.map(d => d.data()).sort((a,b) => (b.ts||0) - (a.ts||0));
+  }catch(e){ console.error("resenas", e); state.resenas = state.resenas || []; }
+  renderResenas(); renderVentasBox();
+  openResenaFromUrl();
+}
+function renderResenas(){
+  const sec = document.getElementById("resenasSection");
+  const ok = (state.resenas || []).filter(r => r.aprobada);
+  if(!ok.length){ sec.style.display = "none"; return; }
+  const avg = ok.reduce((t, r) => t + (Number(r.puntaje) || 0), 0) / ok.length;
+  document.getElementById("resAvg").innerHTML = `<b>${avg.toFixed(1).replace(".", ",")}</b> <span style="color:#f5a623;">${starsTxt(avg)}</span> · ${ok.length} ${ok.length === 1 ? "reseña" : "reseñas"} de clientes que ya compraron`;
+  document.getElementById("resList").innerHTML = ok.slice(0, 30).map(r => `
+    <div class="res-card">
+      <div class="st">${starsTxt(r.puntaje)}</div>
+      <div class="who">${escapeHtml(firstName(r.nombre))}<span>✔ Compra confirmada${r.fecha ? " · " + escapeHtml(r.fecha) : ""}</span></div>
+      ${r.comentario ? `<p>${escapeHtml(r.comentario)}</p>` : ""}
+    </div>`).join("");
+  sec.style.display = "block";
+}
+async function openResenaFromUrl(){
+  const id = Number(new URLSearchParams(location.search).get("resena"));
+  if(!id) return;
+  let p = null;
+  try{ const cd = await db.collection("compras").doc(String(id)).get(); if(cd.exists) p = {id, status:"confirmado", cliente:{nombre: cd.data().nombre || ""}}; }catch(e){}
+  if(!p || p.status !== "confirmado"){ showToast("Este link de reseña no es válido o la compra todavía no fue confirmada.", 4500); return; }
+  if((state.resenas || []).some(r => r.pedidoId === id)){ showToast("¡Ya nos dejaste tu reseña, gracias! 💚", 4000); return; }
+  let puntaje = 0;
+  const box = document.getElementById("rsStars");
+  const pintar = () => { box.innerHTML = [1,2,3,4,5].map(n => `<button type="button" data-n="${n}" class="${n <= puntaje ? "on" : ""}" aria-label="${n} de 5">★</button>`).join(""); box.querySelectorAll("button").forEach(b => b.onclick = () => { puntaje = Number(b.dataset.n); pintar(); }); };
+  pintar();
+  document.getElementById("rsNombre").value = firstName(p.cliente && p.cliente.nombre);
+  document.getElementById("rsTexto").value = "";
+  document.getElementById("rsMsg").textContent = "";
+  const btn = document.getElementById("rsEnviar"); btn.disabled = false; btn.textContent = "Enviar reseña";
+  btn.onclick = async () => {
+    const msg = document.getElementById("rsMsg");
+    if(!puntaje){ msg.style.color = "var(--coral)"; msg.textContent = "Elegí cuántas estrellas le das."; return; }
+    btn.disabled = true; btn.textContent = "Enviando…";
+    const r = { id, pedidoId: id, nombre: document.getElementById("rsNombre").value.trim() || firstName(p.cliente && p.cliente.nombre), puntaje, comentario: document.getElementById("rsTexto").value.trim().slice(0, 500), fecha: new Date().toLocaleDateString("es-AR"), ts: Date.now(), aprobada: false };
+    try{
+      await resenasCol.doc("p" + id).set(r);
+      state.resenas = [r].concat(state.resenas || []);
+      msg.style.color = "var(--ink)"; msg.textContent = "¡Gracias! 💚 Tu reseña se va a publicar en la página en breve.";
+      btn.textContent = "Enviada ✓";
+      history.replaceState(null, "", location.href.split(/[?#]/)[0]);
+      setTimeout(closeAllSheets, 2500);
+    }catch(e){ console.error(e); btn.disabled = false; btn.textContent = "Enviar reseña"; msg.style.color = "var(--coral)"; msg.textContent = "No se pudo enviar. Probá de nuevo en un momento."; }
+  };
+  openSheet("resenaSheet");
+}
+function resenasAdminHtml(){
+  const rs = state.resenas || [];
+  const conRes = new Set(rs.map(r => r.pedidoId));
+  const pedir = state.pedidos.filter(p => p.status === "confirmado" && p.cliente && (p.cliente.telefono || p.cliente.email) && !conRes.has(p.id)).slice(-10).reverse();
+  let h = `<div style="font-size:.7rem;color:var(--muted);margin-bottom:6px;">Las reseñas nuevas quedan ocultas hasta que las aprobés.</div>`;
+  h += rs.length ? rs.map(r => `
+    <div class="venta-line" style="flex-direction:column;align-items:stretch;gap:4px;">
+      <div><span style="color:#f5a623;">${starsTxt(r.puntaje)}</span> <b>${escapeHtml(r.nombre || "")}</b> · pedido #${r.pedidoId} ${r.aprobada ? "· ✅ publicada" : "· ⏳ pendiente"}</div>
+      ${r.comentario ? `<div style="font-size:.74rem;">${escapeHtml(r.comentario)}</div>` : ""}
+      <div style="display:flex;gap:6px;">
+        <button class="small-btn" data-res-toggle="${r.pedidoId}" style="flex:1;">${r.aprobada ? "Ocultar" : "✅ Publicar"}</button>
+        <button class="small-btn" data-res-del="${r.pedidoId}" style="flex:1;color:var(--coral);">Borrar</button>
+      </div>
+    </div>`).join("") : `<div style="font-size:.7rem;color:var(--muted);">Todavía no hay reseñas.</div>`;
+  if(pedir.length){
+    h += `<div style="font-weight:800;font-size:.78rem;margin:12px 0 6px;">📨 Pedir reseña a clientes</div>` + pedir.map(p => `
+      <div class="venta-line" style="gap:6px;">
+        <div style="flex:1;">#${p.id} ${escapeHtml(p.cliente.nombre)}</div>
+        ${p.cliente.telefono ? `<button class="small-btn" data-res-wa="${p.id}">WhatsApp</button>` : ""}
+        ${p.cliente.email ? `<button class="small-btn" data-res-mail="${p.id}">Mail</button>` : ""}
+      </div>`).join("");
+  }
+  return h;
+}
+function bindResenasAdmin(box){
+  const byPedido = id => (state.resenas || []).find(r => r.pedidoId === Number(id));
+  const pedido = id => state.pedidos.find(p => p.id === Number(id));
+  box.querySelectorAll("[data-res-toggle]").forEach(b => b.onclick = async () => {
+    const r = byPedido(b.dataset.resToggle); if(!r) return;
+    r.aprobada = !r.aprobada;
+    try{ await resenasCol.doc("p" + r.pedidoId).set(r); }catch(e){ r.aprobada = !r.aprobada; showToast("No se pudo guardar la reseña"); return; }
+    renderResenas(); renderVentasBox(); showToast(r.aprobada ? "Reseña publicada ✓" : "Reseña oculta");
+  });
+  box.querySelectorAll("[data-res-del]").forEach(b => b.onclick = async () => {
+    const r = byPedido(b.dataset.resDel); if(!r || !confirm("¿Borrar esta reseña?")) return;
+    try{ await resenasCol.doc("p" + r.pedidoId).delete(); }catch(e){ showToast("No se pudo borrar"); return; }
+    state.resenas = state.resenas.filter(x => x !== r);
+    renderResenas(); renderVentasBox();
+  });
+  box.querySelectorAll("[data-res-wa]").forEach(b => b.onclick = () => { const p = pedido(b.dataset.resWa); if(p) pedirResenaWA(p); });
+  box.querySelectorAll("[data-res-mail]").forEach(b => b.onclick = () => { const p = pedido(b.dataset.resMail); if(p) pedirResenaMail(p); });
+}
+
 /* ---------- MERCADO PAGO ---------- */
 const MP_BACKEND = "https://ori-pagos.onrender.com";
 async function pagarConMercadoPago(){
@@ -2033,7 +2254,7 @@ async function pagarConMercadoPago(){
   try{
     const ctrl = new AbortController();
     const to = setTimeout(() => ctrl.abort(), 70000); // el servidor gratis puede tardar en despertar
-    const pedidoId = state.nextPedidoId;
+    const pedidoId = await reservarIdPedido();
     const r = await fetch(MP_BACKEND + "/crear-pago", {
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({items, referencia: String(pedidoId), comprador: {nombre: cliente.nombre, telefono: cliente.telefono, email: cliente.email, entrega: cliente.entrega, direccion: cliente.direccion, cp: cliente.cp, zona: cliente.zona, servicio: cliente.servicio}}), signal: ctrl.signal
@@ -2041,9 +2262,7 @@ async function pagarConMercadoPago(){
     clearTimeout(to);
     const data = await r.json();
     if(!data.init_point) throw new Error(data.error || "Sin link de pago");
-    state.pedidos.push({id: state.nextPedidoId++, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente", medio:"mercadopago", mpRef: data.id, cliente});
-    clearTimeout(saveTimer);
-    try{ await Promise.race([saveState(), new Promise(res => setTimeout(res, 4000))]); }catch(e){}
+    await guardarPedidoNuevo({id: pedidoId, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente", medio:"mercadopago", mpRef: data.id, cliente});
     window.location.href = data.init_point;
   }catch(e){
     console.error(e);
@@ -2441,11 +2660,12 @@ function renderVentasBox(){
     </tr>`).join("");
   const ventasRows = state.ventas.slice().reverse().map(v => `
     <tr>
-      <td>${v.fecha}</td><td>${escapeHtml(v.itemNombre)}</td><td>${v.cantidad}</td><td>${v.metodo==="efectivo"?"Efvo/Transf":"Tarjeta"}</td>
+      <td>${v.fecha}</td><td>${ventaMarca(v) ? `<b style="display:block;font-size:.62rem;color:var(--muted);letter-spacing:.03em;">${escapeHtml(ventaMarca(v))}</b>` : ""}${escapeHtml(v.itemNombre)}</td><td>${v.cantidad}</td><td>${v.metodo==="efectivo"?"Efvo/Transf":"Tarjeta"}</td>
       <td>${money(v.total)}</td><td>${money(v.ganancia)}</td>
       <td><button data-undo-venta="${v.id}" style="border:none;background:none;color:var(--coral);font-size:0.65rem;font-weight:700;">Deshacer</button></td>
     </tr>`).join("");
   const nPend = state.pedidos.filter(p => p.status === "pendiente").length;
+  const nResPend = (state.resenas || []).filter(r => !r.aprobada).length;
   box.innerHTML = `
     <h3>📊 Control de ventas</h3>
     <div class="adm-hint">Tocá una opción para abrirla.</div>
@@ -2485,8 +2705,10 @@ function renderVentasBox(){
     ${admSec("v-pedidos","🛒 Pedidos pendientes"+(nPend?" ("+nPend+")":""),`
     <div id="pedidosList" style="margin-top:6px;"></div>
     `)}
+    ${admSec("v-resenas","⭐ Reseñas"+(nResPend?" ("+nResPend+" nueva"+(nResPend>1?"s":"")+")":""),resenasAdminHtml())}
   `;
   renderPedidosList();
+  bindResenasAdmin(box);
   document.getElementById("ventaProducto").onchange = e => { ventaSelId = e.target.value; };
   document.getElementById("ventaMetodo").onchange = e => { ventaMetodoSel = e.target.value; };
   document.getElementById("registrarVentaBtn").onclick = () => registrarVenta();
@@ -2511,7 +2733,7 @@ async function exportVentasExcel(){
   if(!state.ventas.length){ showToast("Todavía no hay ventas registradas"); return; }
   if(!(await ensureXLSX())){ showToast("No se pudo cargar la librería de Excel — probá de nuevo en un momento.", 6000); return; }
   const ventas = state.ventas.map(v => ({
-    Fecha: v.fecha, Producto: v.itemNombre, Cantidad: v.cantidad,
+    Fecha: v.fecha, Marca: ventaMarca(v), Producto: v.itemNombre, Cantidad: v.cantidad,
     Metodo: v.metodo === "efectivo" ? "Efectivo/Transferencia" : "Tarjeta",
     "Precio unitario": v.precioUnit, "Costo unitario": v.costoUnit, Total: v.total, Ganancia: v.ganancia
   }));
@@ -2523,7 +2745,7 @@ async function exportVentasExcel(){
   }));
   const wb = XLSX.utils.book_new();
   const ws1 = XLSX.utils.json_to_sheet(ventas);
-  ws1["!cols"] = [{wch:12},{wch:38},{wch:9},{wch:22},{wch:14},{wch:14},{wch:12},{wch:12}];
+  ws1["!cols"] = [{wch:12},{wch:18},{wch:38},{wch:9},{wch:22},{wch:14},{wch:14},{wch:12},{wch:12}];
   const ws2 = XLSX.utils.json_to_sheet(stock);
   ws2["!cols"] = [{wch:16},{wch:38},{wch:12},{wch:12},{wch:16}];
   XLSX.utils.book_append_sheet(wb, ws1, "Ventas");
@@ -2574,8 +2796,8 @@ async function exportVentasPDF(){
   doc.text("Generado: " + new Date().toLocaleString("es-AR"), 40, 60);
   doc.autoTable({
     startY: 74,
-    head: [["Fecha","Producto","Cant.","Metodo","Total","Ganancia"]],
-    body: state.ventas.map(v => [v.fecha, pdfText(v.itemNombre), v.cantidad, v.metodo==="efectivo"?"Efvo/Transf":"Tarjeta", money(v.total), money(v.ganancia)]),
+    head: [["Fecha","Marca","Producto","Cant.","Metodo","Total","Ganancia"]],
+    body: state.ventas.map(v => [v.fecha, pdfText(ventaMarca(v)), pdfText(v.itemNombre), v.cantidad, v.metodo==="efectivo"?"Efvo/Transf":"Tarjeta", money(v.total), money(v.ganancia)]),
     styles: { fontSize: 8 }, headStyles: { fillColor: [20,21,15] }
   });
   let y = doc.lastAutoTable.finalY + 18;
@@ -2633,7 +2855,7 @@ function confirmarPedido(pedidoId, metodo){
       if(!p) return;
       const precioUnit = metodo === "efectivo" ? it.precioEfUnit : it.precioTaUnit;
       const ganancia = (precioUnit - p.costo) * it.qty;
-      state.ventas.push({id:state.nextVentaId++, fecha:new Date().toLocaleDateString("es-AR"), productId:p.id, comboId:null, itemNombre:p.name, cantidad:it.qty, metodo, precioUnit, costoUnit:p.costo, total:precioUnit*it.qty, ganancia});
+      state.ventas.push({id:state.nextVentaId++, fecha:new Date().toLocaleDateString("es-AR"), productId:p.id, comboId:null, marca:p.brand||"", itemNombre:p.name, cantidad:it.qty, metodo, precioUnit, costoUnit:p.costo, total:precioUnit*it.qty, ganancia});
       if(p.stock !== null && p.stock !== undefined){ p.stock = Math.max(0, p.stock - it.qty); }
     } else {
       const c = state.combos.find(cc => cc.id === it.id);
@@ -2646,6 +2868,7 @@ function confirmarPedido(pedidoId, metodo){
     }
   });
   pedido.status = "confirmado";
+  db.collection("compras").doc(String(pedidoId)).set({nombre: firstName(pedido.cliente && pedido.cliente.nombre), fecha: new Date().toLocaleDateString("es-AR")}).catch(e => console.error(e));
   render(); scheduleSave();
   showToast("Pedido confirmado y stock actualizado");
 }
@@ -2685,7 +2908,7 @@ function registrarVenta(){
   const {precioEf, precioTa} = calcProductPrices(p);
   const precioUnit = metodo === "efectivo" ? precioEf : precioTa;
   state.ventas.push({
-    id: state.nextVentaId++, fecha, productId: p.id, comboId: null,
+    id: state.nextVentaId++, fecha, productId: p.id, comboId: null, marca: p.brand || "",
     itemNombre: p.name, cantidad, metodo, precioUnit, costoUnit: p.costo,
     total: precioUnit * cantidad, ganancia: (precioUnit - p.costo) * cantidad
   });
@@ -3167,11 +3390,11 @@ document.getElementById("logoRemoveBtn").addEventListener("click", () => {
   render(); scheduleSave();
 });
 
-document.getElementById("editToggle").addEventListener("click", () => {
+document.getElementById("editToggle").addEventListener("click", async () => {
   if(editMode){ editMode = false; render(); return; }
-  const pin = prompt("PIN para editar el catálogo:");
-  if(pin === state.settings.pin){ editMode = true; render(); avisarPedidosAlEditar(); }
-  else if(pin !== null){ showToast("PIN incorrecto"); }
+  if(!auth.currentUser){ const ok = await pedirLogin(); if(!ok) return; }
+  try{ editMode = true; await cargarPrivado(); render(); avisarPedidosAlEditar(); }
+  catch(e){ console.error(e); editMode = false; showToast("Esta cuenta no tiene permiso de administrador", 4000); }
 });
 
 // Secret unlock: tap the brand name 5 times to reveal the admin button (hidden from customers by default).
@@ -3203,9 +3426,9 @@ if(window.location.hash === "#admin"){
   document.getElementById("editToggle").classList.add("unlocked");
 }
 
-["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setAlias","setEnvSuc","setEnvDom","setZonas","setMarkupEf","setMpFee","setRoundTo","setPin"].forEach(id => {
+["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setInstagram","setAlias","setEnvSuc","setEnvDom","setZonas","setMarkupEf","setMpFee","setRoundTo","setPin"].forEach(id => {
   document.getElementById(id).addEventListener("change", e => {
-    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setAlias:"aliasTransferencia",setEnvSuc:"envioSucursal",setEnvDom:"envioDomicilio",setZonas:"zonasGratis",setMarkupEf:"markupEfectivo",setMpFee:"mpFee",setRoundTo:"roundTo",setPin:"pin"};
+    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setInstagram:"instagram",setAlias:"aliasTransferencia",setEnvSuc:"envioSucursal",setEnvDom:"envioDomicilio",setZonas:"zonasGratis",setMarkupEf:"markupEfectivo",setMpFee:"mpFee",setRoundTo:"roundTo",setPin:"pin"};
     const key = map[id];
     let val = e.target.value;
     if(key === "markupEfectivo" || key === "mpFee" || key === "roundTo" || key === "envioSucursal" || key === "envioDomicilio") val = Number(val)||0;
@@ -3371,9 +3594,10 @@ document.getElementById("bgColorReset").addEventListener("click", () => {
 function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveState, 600); }
 
 async function saveState(){
+  if(!esAdmin()) return;
   try{
     state.settings.motivoIds = (state.motivos || []).map(m => m.id);
-    const { heroImage, logoImage, bgImage, ...settingsRest } = state.settings;
+    const { heroImage, logoImage, bgImage, pin, ...settingsRest } = state.settings;
     const ops = [];
     ops.push(b => b.set(configRef, {
       settings: settingsRest,
@@ -3433,9 +3657,9 @@ async function loadState(){
       render();
       return;
     }
-    const [heroDoc, logoDoc, brandLogosDoc, productsSnap, combosSnap, ventasSnap, pedidosSnap, bgDoc, bannersDoc] = await Promise.all([
+    const [heroDoc, logoDoc, brandLogosDoc, productsSnap, combosSnap, bgDoc, bannersDoc] = await Promise.all([
       heroImageRef.get(), logoRef.get(), brandLogosRef.get(),
-      productsCol.get(), combosCol.get(), ventasCol.get(), pedidosCol.get(), bgImageRef.get(), bannersRef.get()
+      productsCol.get(), combosCol.get(), bgImageRef.get(), bannersRef.get()
     ]);
     const cfg = configDoc.data();
     state = {
@@ -3446,8 +3670,8 @@ async function loadState(){
       nextPedidoId: cfg.nextPedidoId || 1,
       products: productsSnap.docs.map(d => d.data()).sort((a,b)=>a.id-b.id),
       combos: combosSnap.docs.map(d => d.data()).sort((a,b)=>a.id-b.id),
-      ventas: ventasSnap.docs.map(d => d.data()).sort((a,b)=>a.id-b.id),
-      pedidos: pedidosSnap.docs.map(d => d.data()).sort((a,b)=>a.id-b.id),
+      ventas: [],
+      pedidos: [],
       brandLogos: (brandLogosDoc.exists && brandLogosDoc.data().logos) || {},
       banners: (bannersDoc.exists && bannersDoc.data().banners) || {}
     };
@@ -3468,6 +3692,7 @@ async function loadState(){
         state.motivos = clone(DEFAULT_STATE.motivos);
       }
     }
+    delete state.settings.pin;
     delete state.settings.motivoText; delete state.settings.motivoAutor;
     if(state.banners) delete state.banners.motivo;
     if(!state.settings.fonts) state.settings.fonts = {brand:"anton",hero:"anton",sections:"anton",prices:"anton"};
@@ -3515,7 +3740,7 @@ async function loadState(){
   setTimeout(hideLoader, 20000);
   /* Despertar el servidor de pagos (Render gratis se duerme) para que "Pagar" responda rápido */
   try{ fetch(MP_BACKEND + "/", {mode:"no-cors", cache:"no-store"}).catch(() => {}); }catch(e){}
-  loadState().then(() => (document.fonts && document.fonts.ready) || null).catch(() => {}).then(hideLoader);
+  loadState().then(() => { loadResenas(); return (document.fonts && document.fonts.ready) || null; }).catch(() => {}).then(hideLoader);
 })();
 </script>
 <div class="ie-ov" id="imgEditor"></div>
