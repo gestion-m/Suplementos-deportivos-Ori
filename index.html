@@ -474,6 +474,9 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div class="admin-row"><label>Bajada</label><input id="setHeroTag" placeholder="Frase corta debajo del título"></div>
   <div class="admin-row"><label>WhatsApp</label><input id="setWhatsapp" placeholder="Solo números, ej: 5491122334455"></div>
   <div class="admin-row"><label>Alias transf.</label><input id="setAlias" placeholder="Ej: mi.alias.mp"></div>
+  <div class="admin-row"><label>Envío Correo a sucursal $</label><input id="setEnvSuc" type="number" placeholder="Ej: 6800" style="max-width:90px;"></div>
+  <div class="admin-row"><label>Envío Correo a domicilio $</label><input id="setEnvDom" type="number" placeholder="Ej: 9700" style="max-width:90px;"></div>
+  <div class="admin-row"><label>Zonas con entrega gratis</label><input id="setZonas" placeholder="José C. Paz, San Miguel, Grand Bourg"></div>
   </div></details>
   <details class="adm-sec" data-adm="s-cartel"><summary>🏋️ Cartel motivacional</summary><div class="adm-body">
   <div id="motivosAdmin"></div>
@@ -588,6 +591,7 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div id="cartLines"></div>
   <div class="cart-totals"><span>Total efectivo/transferencia</span><span id="cartTotalEf">$0</span></div>
   <div class="cart-totals" style="border-top:none;padding-top:0;"><span>Total tarjeta</span><span id="cartTotalTa">$0</span></div>
+  <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">🏠 Retiro y 🤝 punto de encuentro: <b>sin costo</b>. 📦 Envío por Correo Argentino (solo Buenos Aires por ahora): el costo se suma en el siguiente paso.</div>
   <div id="aliasBox" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:10px;">
     <div style="font-size:0.68rem;color:var(--muted);font-weight:700;">¿PAGÁS POR TRANSFERENCIA? Copiá el alias:</div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
@@ -709,7 +713,7 @@ const DEFAULT_STATE = {
     brand:"PWR SUPLEMENTOS", heroTitle:"ENERGÍA|PARA RENDIR",
     heroTag:"Suplementos deportivos originales. Consultá stock y precios.",
     envioTexto:"🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas",
-    whatsapp:"", pin:"1234", markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", heroImage:null, accentColor:"#c6ff2e", logoImage:null,
+    whatsapp:"", pin:"1234", markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", envioSucursal:6800, envioDomicilio:9700, zonasGratis:"José C. Paz, San Miguel, Grand Bourg", heroImage:null, accentColor:"#c6ff2e", logoImage:null,
     fonts:{brand:"anton",hero:"anton",sections:"anton",prices:"anton"}, textColors:{}, ofertas:[], bgMode:"default", bgFit:"cover", bgColor:"", bgImage:null
   },
   motivos:[{id:1,text:"La disciplina es hacer lo que tenés que hacer, aunque no tengas ganas.",author:"PWR · Entrená con constancia",image:null,ovl:55,bri:100,con:100,color:"#ffffff",bg:"dark"}],
@@ -1000,6 +1004,9 @@ function render(){
   document.getElementById("setHeroTag").value = state.settings.heroTag;
   document.getElementById("setWhatsapp").value = state.settings.whatsapp;
   document.getElementById("setAlias").value = state.settings.aliasTransferencia || "";
+  document.getElementById("setEnvSuc").value = state.settings.envioSucursal ?? "";
+  document.getElementById("setEnvDom").value = state.settings.envioDomicilio ?? "";
+  document.getElementById("setZonas").value = state.settings.zonasGratis || "";
   const heroEl = document.querySelector(".hero");
   const heroIllustration = document.getElementById("heroIllustration");
   if(state.settings.heroImage){
@@ -1737,11 +1744,11 @@ function cartLineInfo(item){
     const p = state.products.find(pp => pp.id === item.id);
     if(!p) return null;
     const {precioEf, precioTa} = calcProductPrices(p);
-    return {name:p.name, unitEf:precioEf, unitTa:precioTa, image:(p.images&&p.images[0])||""};
+    return {name:p.name, brand:p.brand||"", unitEf:precioEf, unitTa:precioTa, image:(p.images&&p.images[0])||""};
   } else {
     const c = state.combos.find(cc => cc.id === item.id);
     if(!c) return null;
-    return {name:c.name, unitEf:c.precio, unitTa:cardFromCash(c.precio), image:(c.images&&c.images[0])||""};
+    return {name:c.name, brand:"", unitEf:c.precio, unitTa:cardFromCash(c.precio), image:(c.images&&c.images[0])||""};
   }
 }
 
@@ -1817,18 +1824,22 @@ function renderCart(){
     cart.forEach(item => {
       const info = cartLineInfo(item);
       if(!info) return;
-      msg += `- ${item.qty}x ${info.name} (${money(info.unitEf*item.qty)})\n`;
-      pedidoItems.push({type:item.type, id:item.id, name:info.name, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
+      msg += `- ${item.qty}x ${info.brand ? info.brand + " - " : ""}${info.name} (${money(info.unitEf*item.qty)})\n`;
+      pedidoItems.push({type:item.type, id:item.id, name:info.name, brand:info.brand, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
     });
-    msg += `\nTotal efectivo/transferencia: ${money(totalEf)}\nTotal tarjeta: ${money(totalTa)}`;
+    const envio = cliente.entrega === "correo" ? (Number(cliente.envioCosto) || 0) : 0, envioTa = envio ? cardFromCash(envio) : 0;
+    msg += `\nTotal efectivo/transferencia: ${money(totalEf + envio)}\nTotal tarjeta: ${money(totalTa + envioTa)}` + (envio ? "\n(incluye envío)" : "");
     msg += `\n\nMis datos: ${cliente.nombre} - ${cliente.telefono}`;
+    if(cliente.entrega === "correo") msg += `\n📦 Envío por Correo Argentino a ${cliente.servicio === "domicilio" ? "domicilio" : "sucursal"}: ${cliente.direccion}, ${cliente.provincia === "caba" ? "CABA" : "Buenos Aires"}, CP ${cliente.cp} (costo de envío ${money(cliente.envioCosto || 0)})`;
+    else if(cliente.entrega === "punto") msg += `\n🤝 Punto de encuentro en ${cliente.zona} (gratis). Coordinemos lugar, día y hora.`;
+    else msg += `\n🏠 Retiro en tu casa (gratis). Coordinemos día y hora.`;
     if(state.settings.aliasTransferencia){ msg += `\n\nSi pagás por transferencia, el alias es: ${state.settings.aliasTransferencia}\nMandame el comprobante para confirmar el pedido.`; }
     state.pedidos.push({id: state.nextPedidoId++, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente", cliente});
     scheduleSave();
     /* Aviso por Telegram al dueño (pedido en efectivo/transferencia) */
     try{
       fetch(MP_BACKEND + "/aviso-pedido", {method:"POST", headers:{"Content-Type":"application/json"}, keepalive:true,
-        body: JSON.stringify({pedidoId: state.nextPedidoId-1, total: totalEf, cliente: {nombre: cliente.nombre, telefono: cliente.telefono}, items: pedidoItems.map(i => ({name:i.name, qty:i.qty}))})}).catch(() => {});
+        body: JSON.stringify({pedidoId: state.nextPedidoId-1, total: totalEf + envio, cliente: {nombre: cliente.nombre, telefono: cliente.telefono}, items: pedidoItems.map(i => ({name:(i.brand ? i.brand + " - " : "") + i.name, qty:i.qty}))})}).catch(() => {});
     }catch(e){}
     window.open(waLink(state.settings.whatsapp, msg), "_blank");
     cart = [];
@@ -1845,6 +1856,12 @@ function normTel(t){
   if(!d.startsWith("54")) d = "549" + d;
   return d;
 }
+function entregaAdmin(c){
+  if(!c) return "";
+  if(c.entrega === "correo") return " · 📦 Correo (" + (c.servicio === "domicilio" ? "domicilio" : "sucursal") + ") · " + escapeHtml(c.direccion || "") + " · CP " + escapeHtml(c.cp || "") + " · envío " + money(c.envioCosto || 0);
+  if(c.entrega === "punto") return " · 🤝 Punto de encuentro: " + escapeHtml(c.zona || "");
+  return " · 🏠 Retira en tu casa";
+}
 function pedirDatosCliente(){
   return new Promise(resolve => {
     let g = {};
@@ -1853,25 +1870,76 @@ function pedirDatosCliente(){
     o.style.cssText = "position:fixed;inset:0;z-index:99991;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:20px;";
     const inp = "width:100%;box-sizing:border-box;padding:11px 12px;border-radius:10px;border:1px solid rgba(238,240,234,.25);background:rgba(255,255,255,.08);color:var(--paper);font-size:.9rem;margin-bottom:10px;font-family:inherit;";
     const btnBase = "border:0;border-radius:12px;padding:12px;font-weight:800;font-size:.9rem;cursor:pointer;flex:1;";
-    o.innerHTML = '<div style="background:var(--ink);color:var(--paper);border-radius:18px;padding:22px 20px;max-width:340px;width:100%;font-family:Inter,sans-serif;">' +
+    const optBase = "border:0;border-radius:12px;padding:11px 12px;font-weight:800;font-size:.8rem;cursor:pointer;text-align:left;width:100%;font-family:inherit;";
+    o.innerHTML = '<div style="background:var(--ink);color:var(--paper);border-radius:18px;padding:22px 20px;max-width:340px;width:100%;max-height:92vh;overflow-y:auto;font-family:Inter,sans-serif;">' +
       '<div style="font-weight:800;font-size:1.05rem;margin-bottom:4px;">Tus datos</div>' +
       '<div style="font-size:.78rem;opacity:.8;margin-bottom:14px;">Los usamos para avisarte de tu pedido.</div>' +
       '<input id="cliNombre" placeholder="Nombre y apellido" autocomplete="name" style="' + inp + '">' +
       '<input id="cliTel" type="tel" placeholder="Teléfono (WhatsApp)" autocomplete="tel" style="' + inp + '">' +
       '<input id="cliMail" type="email" placeholder="Email (opcional)" autocomplete="email" style="' + inp + '">' +
+      '<div style="font-weight:800;font-size:.8rem;margin:2px 0 6px;">¿Cómo lo recibís?</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">' +
+        '<button type="button" data-ent="casa" style="' + optBase + '">🏠 Retiro en casa del vendedor · GRATIS</button>' +
+        '<button type="button" data-ent="punto" style="' + optBase + '">🤝 Punto de encuentro · GRATIS</button>' +
+        '<button type="button" data-ent="correo" style="' + optBase + '">📦 Envío por Correo Argentino</button></div>' +
+      '<div id="cliNotaCasa" style="font-size:.72rem;opacity:.8;margin:-2px 0 10px;">Coordinamos día y hora por WhatsApp.</div>' +
+      '<div id="cliBoxPunto" style="display:none;">' +
+        '<select id="cliZona" style="' + inp + '">' + (state.settings.zonasGratis || "").split(",").map(z => z.trim()).filter(Boolean).map(z => '<option value="' + escapeHtml(z) + '">' + escapeHtml(z) + '</option>').join("") + '</select>' +
+        '<div style="font-size:.72rem;opacity:.8;margin:-4px 0 10px;">Elegí la zona y coordinamos el lugar, día y hora por WhatsApp.</div></div>' +
+      '<div id="cliBoxCorreo" style="display:none;">' +
+        '<div style="font-size:.72rem;opacity:.85;margin-bottom:8px;">¿Sos de ' + escapeHtml(state.settings.zonasGratis || "zona cercana") + '? Elegí <b>Punto de encuentro</b> o <b>Retiro</b> (gratis) y coordinamos por WhatsApp.</div>' +
+        '<select id="cliProv" style="' + inp + '"><option value="ba">Provincia de Buenos Aires</option><option value="caba">Ciudad de Buenos Aires (CABA)</option><option value="otra">Otra provincia</option></select>' +
+        '<div id="cliOtra" style="display:none;font-size:.75rem;background:rgba(255,255,255,.1);border-radius:10px;padding:8px 10px;margin-bottom:10px;">Por ahora solo enviamos por Correo dentro de Buenos Aires. Podés elegir retiro o punto de encuentro, o escribinos por WhatsApp.</div>' +
+        '<div id="cliDatosEnvio">' +
+        '<input id="cliDir" placeholder="Dirección (calle, número, localidad)" autocomplete="street-address" style="' + inp + '">' +
+        '<input id="cliCP" type="tel" inputmode="numeric" maxlength="8" placeholder="Código postal" autocomplete="postal-code" style="' + inp + '">' +
+        '<div style="display:flex;gap:8px;margin-bottom:8px;"><button type="button" id="cliSuc" style="' + btnBase + '">A sucursal</button><button type="button" id="cliDom" style="' + btnBase + '">A domicilio</button></div>' +
+        '<div id="cliCosto" style="font-size:.78rem;font-weight:800;margin-bottom:10px;"></div></div></div>' +
       '<div id="cliErr" style="color:#ff8a7a;font-size:.75rem;min-height:1em;margin-bottom:8px;"></div>' +
       '<div style="display:flex;gap:8px;"><button id="cliCancel" style="' + btnBase + 'background:rgba(255,255,255,.12);color:var(--paper);">Cancelar</button>' +
       '<button id="cliOk" style="' + btnBase + 'background:var(--gold);color:var(--ink);">Continuar</button></div></div>';
     document.body.appendChild(o);
     const $ = id => o.querySelector("#" + id);
     $("cliNombre").value = g.nombre || ""; $("cliTel").value = g.telefono || ""; $("cliMail").value = g.email || "";
+    $("cliDir").value = g.direccion || ""; $("cliCP").value = g.cp || "";
+    if(g.zona) $("cliZona").value = g.zona;
+    if(g.provincia === "caba" || g.provincia === "ba") $("cliProv").value = g.provincia;
+    let entrega = ["casa","punto","correo"].includes(g.entrega) ? g.entrega : "casa";
+    let servicio = g.servicio === "domicilio" ? "domicilio" : "sucursal";
+    const costoEnvio = () => Number(servicio === "sucursal" ? state.settings.envioSucursal : state.settings.envioDomicilio) || 0;
+    const on = "background:var(--gold);color:var(--ink);", off = "background:rgba(255,255,255,.12);color:var(--paper);";
+    const pintarEntrega = () => {
+      o.querySelectorAll("[data-ent]").forEach(b => { b.style.cssText = optBase + (b.dataset.ent === entrega ? on : off); });
+      $("cliSuc").style.cssText = btnBase + "padding:9px;font-size:.75rem;" + (servicio === "sucursal" ? on : off);
+      $("cliDom").style.cssText = btnBase + "padding:9px;font-size:.75rem;" + (servicio === "domicilio" ? on : off);
+      $("cliBoxPunto").style.display = entrega === "punto" ? "block" : "none";
+      $("cliBoxCorreo").style.display = entrega === "correo" ? "block" : "none";
+      $("cliNotaCasa").style.display = entrega === "casa" ? "block" : "none";
+      const fuera = $("cliProv").value === "otra";
+      $("cliOtra").style.display = fuera ? "block" : "none";
+      $("cliDatosEnvio").style.display = fuera ? "none" : "block";
+      $("cliCosto").textContent = "Costo del envío: " + money(costoEnvio()) + " (se suma a tu total)";
+    };
+    o.querySelectorAll("[data-ent]").forEach(b => b.onclick = () => { entrega = b.dataset.ent; pintarEntrega(); });
+    $("cliProv").onchange = pintarEntrega;
+    $("cliSuc").onclick = () => { servicio = "sucursal"; pintarEntrega(); };
+    $("cliDom").onclick = () => { servicio = "domicilio"; pintarEntrega(); };
+    pintarEntrega();
     $("cliCancel").onclick = () => { o.remove(); resolve(null); };
     $("cliOk").onclick = () => {
       const nombre = $("cliNombre").value.trim(), telefono = $("cliTel").value.trim(), email = $("cliMail").value.trim();
       if(nombre.length < 2){ $("cliErr").textContent = "Escribí tu nombre."; return; }
       if(telefono.replace(/\D/g,"").length < 8){ $("cliErr").textContent = "Escribí un teléfono válido."; return; }
       if(email && !/^\S+@\S+\.\S+$/.test(email)){ $("cliErr").textContent = "El email no parece válido."; return; }
-      const c = {nombre, telefono, email};
+      let direccion = "", cp = "", zona = "";
+      if(entrega === "punto") zona = $("cliZona").value;
+      if(entrega === "correo"){
+        if($("cliProv").value === "otra"){ $("cliErr").textContent = "Por ahora solo enviamos por Correo dentro de Buenos Aires. Elegí retiro o punto de encuentro."; return; }
+        direccion = $("cliDir").value.trim(); cp = $("cliCP").value.replace(/\D/g,"");
+        if(direccion.length < 5){ $("cliErr").textContent = "Escribí la dirección de entrega."; return; }
+        if(cp.length < 4){ $("cliErr").textContent = "Escribí tu código postal."; return; }
+      }
+      const c = {nombre, telefono, email, entrega, zona, direccion, cp, provincia: entrega === "correo" ? $("cliProv").value : "", servicio: entrega === "correo" ? servicio : "", envioCosto: entrega === "correo" ? costoEnvio() : 0};
       try{ localStorage.setItem("oriCliente", JSON.stringify(c)); }catch(e){}
       o.remove(); resolve(c);
     };
@@ -1956,10 +2024,11 @@ async function pagarConMercadoPago(){
     const info = cartLineInfo(item);
     if(!info) return;
     totalEf += info.unitEf*item.qty; totalTa += info.unitTa*item.qty;
-    items.push({id: item.type+"-"+item.id, title: info.name, quantity: item.qty, unit_price: Number(info.unitTa)});
-    pedidoItems.push({type:item.type, id:item.id, name:info.name, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
+    items.push({id: item.type+"-"+item.id, title: (info.brand ? info.brand + " - " : "") + info.name, quantity: item.qty, unit_price: Number(info.unitTa)});
+    pedidoItems.push({type:item.type, id:item.id, name:info.name, brand:info.brand, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
   });
   if(!items.length) return;
+  if(cliente.entrega === "correo" && Number(cliente.envioCosto) > 0) items.push({id:"envio", title:"Envío Correo Argentino (" + (cliente.servicio === "domicilio" ? "domicilio" : "sucursal") + ")", quantity:1, unit_price: cardFromCash(Number(cliente.envioCosto))});
   btn.disabled = true; btn.textContent = "Conectando con Mercado Pago...";
   try{
     const ctrl = new AbortController();
@@ -1967,7 +2036,7 @@ async function pagarConMercadoPago(){
     const pedidoId = state.nextPedidoId;
     const r = await fetch(MP_BACKEND + "/crear-pago", {
       method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({items, referencia: String(pedidoId), comprador: {nombre: cliente.nombre, telefono: cliente.telefono, email: cliente.email}}), signal: ctrl.signal
+      body: JSON.stringify({items, referencia: String(pedidoId), comprador: {nombre: cliente.nombre, telefono: cliente.telefono, email: cliente.email, entrega: cliente.entrega, direccion: cliente.direccion, cp: cliente.cp, zona: cliente.zona, servicio: cliente.servicio}}), signal: ctrl.signal
     });
     clearTimeout(to);
     const data = await r.json();
@@ -2533,8 +2602,8 @@ function renderPedidosList(){
   if(!pendientes.length){ box.innerHTML = `<div style="font-size:0.7rem;color:var(--muted);">No hay pedidos pendientes.</div>`; return; }
   box.innerHTML = pendientes.map(p => `
     <div class="venta-line" style="flex-direction:column;align-items:stretch;gap:6px;">
-      <div><strong>${p.fecha}</strong> — ${p.items.map(it=>`${it.qty}x ${escapeHtml(it.name)}`).join(", ")}</div>
-      <div style="font-size:0.72rem;">${p.cliente ? `👤 ${escapeHtml(p.cliente.nombre)} · 📞 ${escapeHtml(p.cliente.telefono)}` : ""} ${p.medio === "mercadopago" ? "· 💳 Mercado Pago (esperando pago)" : "· 💵 Efectivo/Transferencia (falta cobrar)"}</div>
+      <div><strong>${p.fecha}</strong> — ${p.items.map(it=>{ const pr = it.brand || ((state.products.find(x => it.type === "product" && x.id === it.id) || {}).brand) || ""; return `${it.qty}x ${pr ? "<b>" + escapeHtml(pr) + "</b> - " : ""}${escapeHtml(it.name)}`; }).join(", ")}</div>
+      <div style="font-size:0.72rem;">${p.cliente ? `👤 ${escapeHtml(p.cliente.nombre)} · 📞 ${escapeHtml(p.cliente.telefono)}` + entregaAdmin(p.cliente) : ""} ${p.medio === "mercadopago" ? "· 💳 Mercado Pago (esperando pago)" : "· 💵 Efectivo/Transferencia (falta cobrar)"}</div>
       <div>Efvo/Transf: ${money(p.totalEf)} · Tarjeta: ${money(p.totalTa)}</div>
       <div class="admin-row" style="margin:0;"><label style="width:auto;">Cobrado con</label><select data-pedido-metodo="${p.id}"><option value="efectivo">Efectivo/Transferencia</option><option value="tarjeta" ${p.medio === "mercadopago" ? "selected" : ""}>Tarjeta</option></select></div>
       <div style="display:flex;gap:6px;">
@@ -3134,12 +3203,12 @@ if(window.location.hash === "#admin"){
   document.getElementById("editToggle").classList.add("unlocked");
 }
 
-["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setAlias","setMarkupEf","setMpFee","setRoundTo","setPin"].forEach(id => {
+["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setAlias","setEnvSuc","setEnvDom","setZonas","setMarkupEf","setMpFee","setRoundTo","setPin"].forEach(id => {
   document.getElementById(id).addEventListener("change", e => {
-    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setAlias:"aliasTransferencia",setMarkupEf:"markupEfectivo",setMpFee:"mpFee",setRoundTo:"roundTo",setPin:"pin"};
+    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setAlias:"aliasTransferencia",setEnvSuc:"envioSucursal",setEnvDom:"envioDomicilio",setZonas:"zonasGratis",setMarkupEf:"markupEfectivo",setMpFee:"mpFee",setRoundTo:"roundTo",setPin:"pin"};
     const key = map[id];
     let val = e.target.value;
-    if(key === "markupEfectivo" || key === "mpFee" || key === "roundTo") val = Number(val)||0;
+    if(key === "markupEfectivo" || key === "mpFee" || key === "roundTo" || key === "envioSucursal" || key === "envioDomicilio") val = Number(val)||0;
     state.settings[key] = val;
     render(); scheduleSave();
   });
@@ -3411,6 +3480,9 @@ async function loadState(){
     if(state.settings.roundTo === undefined) state.settings.roundTo = 100;
     if(state.settings.mpFee === undefined) state.settings.mpFee = 8.57;
     if(state.settings.aliasTransferencia === undefined) state.settings.aliasTransferencia = "";
+    if(state.settings.envioSucursal === undefined) state.settings.envioSucursal = 6800;
+    if(state.settings.envioDomicilio === undefined) state.settings.envioDomicilio = 9700;
+    if(state.settings.zonasGratis === undefined) state.settings.zonasGratis = "José C. Paz, San Miguel, Grand Bourg";
     if(state.settings.accentColor === undefined) state.settings.accentColor = "#c6ff2e";
     state.products.forEach(p => {
       if(!p.images){ p.images = p.image ? [p.image] : []; }
