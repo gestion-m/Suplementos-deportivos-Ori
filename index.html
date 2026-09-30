@@ -201,6 +201,7 @@ body.edit-mode .ventas-box{display:block;}
 .contact-box .cb-title{font-weight:800;font-size:1rem;margin-bottom:12px;}
 .contact-box a{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-weight:800;font-size:.9rem;border-radius:12px;padding:12px;margin-top:8px;}
 .contact-box a.cb-phone{background:var(--gold);color:var(--ink);}
+.contact-box a{align-items:center;justify-content:center;gap:8px;}
 .contact-box a.cb-wa{background:#25d366;color:#0b2e16;}
 .contact-box a.cb-ig{background:rgba(255,255,255,.12);color:var(--paper);}
 .res-sec{margin:26px 18px 0;}
@@ -535,7 +536,7 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div class="admin-row"><label>Redondeo $</label><input id="setRoundTo" type="number" placeholder="Ej: 100" style="max-width:90px;"></div>
   </div></details>
   <details class="adm-sec" data-adm="s-pin"><summary>🔐 Acceso</summary><div class="adm-body">
-  <div style="font-size:.75rem;color:var(--muted);">El acceso ahora es con tu email y contraseña de Firebase.</div><input id="setPin" type="hidden">
+  <div style="font-size:.75rem;color:var(--muted);">El acceso ahora es con tu email y contraseña de Firebase.</div><input id="setPin" type="hidden"><button class="small-btn" id="logoutBtn" style="margin-top:8px;">Cerrar sesión</button>
   </div></details>
   <div style="font-size:0.66rem;color:var(--muted);margin-top:4px;">Los cambios se guardan solos y los ve cualquiera que abra este link.</div>
 </div>
@@ -590,7 +591,7 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
 <div class="contact-box" id="contactBox" style="display:none;">
   <div class="cb-title">📍 Contacto</div>
   <a class="cb-phone" id="cbPhone" href="#" style="display:none;"></a>
-  <a class="cb-wa" id="cbWa" href="#" target="_blank" rel="noopener" style="display:none;">💬 Escribime por WhatsApp</a>
+  <a class="cb-wa" id="cbWa" href="#" target="_blank" rel="noopener" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="flex:none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg> Escribime por WhatsApp</a>
   <a class="cb-ig" id="cbIg" href="#" target="_blank" rel="noopener" style="display:none;"></a>
 </div>
 
@@ -704,6 +705,10 @@ async function guardarPedidoNuevo(p){
   try{ await pedidosCol.doc(String(p.id)).set(p); }catch(e){ console.error("guardar pedido", e); }
 }
 /* Datos privados (solo con sesión de administrador) */
+function asegurarCompra(p){
+  if(!esAdmin() || !p) return;
+  return db.collection("compras").doc(String(p.id)).set({nombre: firstName(p.cliente && p.cliente.nombre), fecha: p.fecha || ""}).catch(e => console.error(e));
+}
 async function cargarPrivado(){
   const [vs, ps] = await Promise.all([ventasCol.get(), pedidosCol.get()]);
   let ct = {exists:true};
@@ -711,6 +716,14 @@ async function cargarPrivado(){
   state.ventas = vs.docs.map(d => d.data()).sort((a,b) => a.id - b.id);
   state.pedidos = ps.docs.map(d => d.data()).sort((a,b) => a.id - b.id);
   const max = state.pedidos.reduce((m,p) => p.id < 1e12 ? Math.max(m,p.id) : m, 0);
+  try{
+    const conf = state.pedidos.filter(p => p.status === "confirmado");
+    for(let i = 0; i < conf.length; i += 400){
+      const b = db.batch();
+      conf.slice(i, i + 400).forEach(p => b.set(db.collection("compras").doc(String(p.id)), {nombre: firstName(p.cliente && p.cliente.nombre), fecha: p.fecha || ""}));
+      await b.commit();
+    }
+  }catch(e){ console.warn("compras", e); }
   if(!ct.exists){ try{ await db.collection("contador").doc("pedidos").set({n: Math.max(max, (state.nextPedidoId||1) - 1)}); }catch(e){ console.warn(e); } }
 }
 function pedirLogin(){
@@ -2059,7 +2072,7 @@ async function refrescarPedidos(){
     if(state.nextPedidoId <= max) state.nextPedidoId = max + 1;
   }catch(e){ console.error("refrescar pedidos", e); }
 }
-function avisarClienteWA(p){
+function avisarClienteWA(p){ asegurarCompra(p);
   const lista = p.items.map(it => it.qty + "x " + it.name).join(", ");
   const msg = "Hola " + p.cliente.nombre + "! Tu pedido #" + p.id + " de " + (state.settings.brand || "Ori Sports") + " ya está confirmado 💪\n" + lista + "\nTe avisamos cuando esté listo para entregar.";
   window.open(waLink(normTel(p.cliente.telefono), msg + "\n\n¿Nos dejás una reseña de cómo te fue? Nos ayuda un montón ⭐\n" + resenaLink(p)), "_blank");
@@ -2067,8 +2080,8 @@ function avisarClienteWA(p){
 }
 function resenaLink(p){ return location.href.split(/[?#]/)[0] + "?resena=" + p.id; }
 function msgResena(p){ return "Hola " + p.cliente.nombre + "! Gracias por tu compra en " + (state.settings.brand || "Ori Sports") + " 💪\n¿Nos contás cómo te fue? Dejanos tu reseña acá (te lleva 1 minuto) ⭐\n" + resenaLink(p); }
-function pedirResenaWA(p){ window.open(waLink(normTel(p.cliente.telefono), msgResena(p)), "_blank"); }
-function pedirResenaMail(p){ window.location.href = "mailto:" + encodeURIComponent(p.cliente.email) + "?subject=" + encodeURIComponent("¿Cómo te fue con tu compra?") + "&body=" + encodeURIComponent(msgResena(p)); }
+function pedirResenaWA(p){ asegurarCompra(p); window.open(waLink(normTel(p.cliente.telefono), msgResena(p)), "_blank"); }
+function pedirResenaMail(p){ asegurarCompra(p); window.location.href = "mailto:" + encodeURIComponent(p.cliente.email) + "?subject=" + encodeURIComponent("¿Cómo te fue con tu compra?") + "&body=" + encodeURIComponent(msgResena(p)); }
 function mostrarPanelPedidos(){
   const viejo = document.getElementById("panelPedidos"); if(viejo) viejo.remove();
   const pend = state.pedidos.filter(p => p.status === "pendiente");
@@ -2131,7 +2144,7 @@ function renderContact(){
   $("cbWa").style.display = wa ? "flex" : "none";
   if(wa) $("cbWa").href = waLink(wa, "Hola! Quería consultar por sus suplementos 💪");
   $("cbIg").style.display = igUrl ? "flex" : "none";
-  if(igUrl){ $("cbIg").href = igUrl; $("cbIg").textContent = "📸 Instagram" + (igName ? " @" + igName : ""); }
+  if(igUrl){ $("cbIg").href = igUrl; $("cbIg").innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex:none"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>` + " Instagram" + (igName ? " @" + escapeHtml(igName) : ""); }
   $("contactBox").style.display = (wa || igUrl) ? "block" : "none";
 }
 
@@ -2205,11 +2218,14 @@ function resenasAdminHtml(){
         <button class="small-btn" data-res-del="${r.pedidoId}" style="flex:1;color:var(--coral);">Borrar</button>
       </div>
     </div>`).join("") : `<div style="font-size:.7rem;color:var(--muted);">Todavía no hay reseñas.</div>`;
+  h += `<div style="font-weight:800;font-size:.78rem;margin:12px 0 6px;">➕ Cliente que compró por fuera de la página</div>
+    <div style="display:flex;gap:6px;"><input id="rmNom" placeholder="Nombre" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px;"><input id="rmTel" placeholder="WhatsApp" inputmode="tel" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px;"><button class="small-btn" id="rmAdd">Agregar</button></div>`;
   if(pedir.length){
     h += `<div style="font-weight:800;font-size:.78rem;margin:12px 0 6px;">📨 Pedir reseña a clientes</div>` + pedir.map(p => `
       <div class="venta-line" style="gap:6px;">
         <div style="flex:1;">#${p.id} ${escapeHtml(p.cliente.nombre)}</div>
         ${p.cliente.telefono ? `<button class="small-btn" data-res-wa="${p.id}">WhatsApp</button>` : ""}
+        <button class="small-btn" data-res-copy="${p.id}">Copiar link</button>
         ${p.cliente.email ? `<button class="small-btn" data-res-mail="${p.id}">Mail</button>` : ""}
       </div>`).join("");
   }
@@ -2230,6 +2246,17 @@ function bindResenasAdmin(box){
     state.resenas = state.resenas.filter(x => x !== r);
     renderResenas(); renderVentasBox();
   });
+  box.querySelectorAll("[data-res-copy]").forEach(b => b.onclick = async () => { const p = pedido(b.dataset.resCopy); if(!p) return; await asegurarCompra(p); try{ await navigator.clipboard.writeText(resenaLink(p)); showToast("Link copiado ✓"); }catch(e){ prompt("Copiá este link:", resenaLink(p)); } });
+  const rmAdd = box.querySelector("#rmAdd");
+  if(rmAdd) rmAdd.onclick = async () => {
+    const nombre = box.querySelector("#rmNom").value.trim(), telefono = box.querySelector("#rmTel").value.trim();
+    if(!nombre){ showToast("Poné el nombre del cliente"); return; }
+    rmAdd.disabled = true;
+    const id = await reservarIdPedido();
+    const np = {id, fecha: new Date().toLocaleDateString("es-AR"), items: [], totalEf: 0, totalTa: 0, status: "confirmado", medio: "manual", avisado: true, cliente: {nombre, telefono, email: ""}};
+    await guardarPedidoNuevo(np); await asegurarCompra(np);
+    renderVentasBox(); showToast("Cliente agregado ✓");
+  };
   box.querySelectorAll("[data-res-wa]").forEach(b => b.onclick = () => { const p = pedido(b.dataset.resWa); if(p) pedirResenaWA(p); });
   box.querySelectorAll("[data-res-mail]").forEach(b => b.onclick = () => { const p = pedido(b.dataset.resMail); if(p) pedirResenaMail(p); });
 }
@@ -2642,6 +2669,7 @@ document.addEventListener("toggle", e => {
 }, true);
 function renderVentasBox(){
   const box = document.getElementById("ventasBox");
+  const costoVendido = state.ventas.reduce((t,v) => t + (Number(v.costoUnit)||0) * (Number(v.cantidad)||0), 0);
   const invertido = state.products.reduce((sum,p) => sum + p.costo * (stockOf(p)===Infinity?0:stockOf(p)), 0);
   const unidades = state.products.reduce((sum,p) => sum + (stockOf(p)===Infinity?0:stockOf(p)), 0);
   const agotados = state.products.filter(p => p.stock!==null && p.stock!==undefined && p.stock<=0).length;
@@ -2674,6 +2702,8 @@ function renderVentasBox(){
     ${admSec("v-resumen","📊 Resumen de ventas",`
     <div class="vsum-grid">
       <div class="vsum-card"><div class="l">INVERTIDO (stock actual)</div><div class="v">${money(invertido)}</div></div>
+      <div class="vsum-card"><div class="l">COSTO DE LO VENDIDO</div><div class="v">${money(costoVendido)}</div></div>
+      <div class="vsum-card"><div class="l">INVERTIDO TOTAL</div><div class="v">${money(invertido + costoVendido)}</div></div>
       <div class="vsum-card"><div class="l">GANANCIA TOTAL</div><div class="v">${money(ganancia)}</div></div>
       <div class="vsum-card"><div class="l">VENDIDO EFECTIVO</div><div class="v">${money(vendidoEf)}</div></div>
       <div class="vsum-card"><div class="l">VENDIDO TARJETA</div><div class="v">${money(vendidoTa)}</div></div>
@@ -3392,6 +3422,10 @@ document.getElementById("logoRemoveBtn").addEventListener("click", () => {
   render(); scheduleSave();
 });
 
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  try{ await auth.signOut(); }catch(e){}
+  editMode = false; state.pedidos = []; state.ventas = []; render(); showToast("Sesión cerrada");
+});
 document.getElementById("editToggle").addEventListener("click", async () => {
   if(editMode){ editMode = false; render(); return; }
   if(!auth.currentUser){ const ok = await pedirLogin(); if(!ok) return; }
