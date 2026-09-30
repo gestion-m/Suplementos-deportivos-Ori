@@ -705,11 +705,13 @@ async function guardarPedidoNuevo(p){
 }
 /* Datos privados (solo con sesión de administrador) */
 async function cargarPrivado(){
-  const [vs, ps, ct] = await Promise.all([ventasCol.get(), pedidosCol.get(), db.collection("contador").doc("pedidos").get()]);
+  const [vs, ps] = await Promise.all([ventasCol.get(), pedidosCol.get()]);
+  let ct = {exists:true};
+  try{ ct = await db.collection("contador").doc("pedidos").get(); }catch(e){ console.warn("contador", e); ct = {exists:true}; }
   state.ventas = vs.docs.map(d => d.data()).sort((a,b) => a.id - b.id);
   state.pedidos = ps.docs.map(d => d.data()).sort((a,b) => a.id - b.id);
   const max = state.pedidos.reduce((m,p) => p.id < 1e12 ? Math.max(m,p.id) : m, 0);
-  if(!ct.exists){ await db.collection("contador").doc("pedidos").set({n: Math.max(max, (state.nextPedidoId||1) - 1)}); }
+  if(!ct.exists){ try{ await db.collection("contador").doc("pedidos").set({n: Math.max(max, (state.nextPedidoId||1) - 1)}); }catch(e){ console.warn(e); } }
 }
 function pedirLogin(){
   return new Promise(res => {
@@ -3394,7 +3396,7 @@ document.getElementById("editToggle").addEventListener("click", async () => {
   if(editMode){ editMode = false; render(); return; }
   if(!auth.currentUser){ const ok = await pedirLogin(); if(!ok) return; }
   try{ editMode = true; await cargarPrivado(); render(); avisarPedidosAlEditar(); }
-  catch(e){ console.error(e); editMode = false; showToast("Esta cuenta no tiene permiso de administrador", 4000); }
+  catch(e){ console.error(e); editMode = false; showToast("No se pudo cargar: " + (e.code || e.message), 6000); }
 });
 
 // Secret unlock: tap the brand name 5 times to reveal the admin button (hidden from customers by default).
