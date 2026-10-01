@@ -706,7 +706,7 @@ async function reservarIdPedido(){
 }
 async function guardarPedidoNuevo(p){
   state.pedidos.push(p);
-  try{ await pedidosCol.doc(String(p.id)).set(p); }catch(e){ console.error("guardar pedido", e); }
+  try{ await pedidosCol.doc(String(p.id)).set(p); }catch(e){ console.error("guardar pedido", e); if(esAdmin()) showToast("No se pudo guardar el cliente: " + (e.code || e.message), 7000); }
 }
 /* Datos privados (solo con sesión de administrador) */
 function asegurarCompra(p){
