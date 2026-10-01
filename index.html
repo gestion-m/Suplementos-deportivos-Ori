@@ -2079,11 +2079,19 @@ async function refrescarPedidos(){
 function avisarClienteWA(p){ asegurarCompra(p);
   const lista = p.items.map(it => it.qty + "x " + it.name).join(", ");
   const msg = "Hola " + p.cliente.nombre + "! Tu pedido #" + p.id + " de " + (state.settings.brand || "Ori Sports") + " ya está confirmado 💪\n" + lista + "\nTe avisamos cuando esté listo para entregar.";
-  window.open(waLink(normTel(p.cliente.telefono), msg + "\n\n¿Nos dejás una reseña de cómo te fue? Nos ayuda un montón ⭐\n" + resenaLink(p)), "_blank");
+  window.open(waLink(normTel(p.cliente.telefono), msg + "\n\n¿Nos dejás una reseña de cómo te fue? Nos ayuda un montón ⭐\n" + resenaLink(p) + igInvite()), "_blank");
   p.avisado = true; scheduleSave();
 }
 function resenaLink(p){ return location.href.split(/[?#]/)[0] + "?resena=" + p.id; }
-function msgResena(p){ return "Hola " + p.cliente.nombre + "! Gracias por tu compra en " + (state.settings.brand || "Ori Sports") + " 💪\n¿Nos contás cómo te fue? Dejanos tu reseña acá (te lleva 1 minuto) ⭐\n" + resenaLink(p); }
+function instagramUrl(){
+  const ig = (state.settings.instagram || "").trim();
+  if(!ig) return "";
+  if(/^https?:\/\//i.test(ig)) return ig;
+  const n = ig.replace(/^@/, "").replace(/\s+/g, "");
+  return n ? "https://instagram.com/" + n : "";
+}
+function igInvite(){ const u = instagramUrl(); return u ? "\n\n📸 Seguime en Instagram: " + u : ""; }
+function msgResena(p){ return "Hola " + p.cliente.nombre + "! Gracias por tu compra en " + (state.settings.brand || "Ori Sports") + " 💪\n¿Nos contás cómo te fue? Dejanos tu reseña acá (te lleva 1 minuto) ⭐\n" + resenaLink(p) + igInvite(); }
 function pedirResenaWA(p){ asegurarCompra(p); window.open(waLink(normTel(p.cliente.telefono), msgResena(p)), "_blank"); }
 function pedirResenaMail(p){ asegurarCompra(p); window.location.href = "mailto:" + encodeURIComponent(p.cliente.email) + "?subject=" + encodeURIComponent("¿Cómo te fue con tu compra?") + "&body=" + encodeURIComponent(msgResena(p)); }
 function mostrarPanelPedidos(){
@@ -2216,7 +2224,14 @@ async function openResenaFromUrl(){
       msg.style.color = "var(--ink)"; msg.textContent = "¡Gracias! 💚 Tu reseña se va a publicar en la página en breve.";
       btn.textContent = "Enviada ✓";
       history.replaceState(null, "", location.href.split(/[?#]/)[0]);
-      setTimeout(closeAllSheets, 2500);
+      const igU = instagramUrl();
+      if(igU){
+        const a = document.createElement("a");
+        a.href = igU; a.target = "_blank"; a.rel = "noopener";
+        a.style.cssText = "display:block;margin-top:12px;padding:12px;border-radius:12px;background:#111;color:#fff;font-weight:800;text-decoration:none;text-align:center;";
+        a.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="vertical-align:-3px;margin-right:6px;"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>Seguinos en Instagram`;
+        msg.appendChild(a);
+      } else { setTimeout(closeAllSheets, 2500); }
     }catch(e){ console.error(e); btn.disabled = false; btn.textContent = "Enviar reseña"; msg.style.color = "var(--coral)"; msg.textContent = "No se pudo enviar. Probá de nuevo en un momento."; }
   };
   openSheet("resenaSheet");
@@ -2230,7 +2245,7 @@ function clientesData(){
     const key = tel.slice(-8) || String(c.email || "").toLowerCase() || String(c.nombre || "").toLowerCase();
     if(!key) return;
     let k = map.get(key);
-    if(!k){ k = {nombre:"", telefono:"", email:"", direccion:"", pedidos:[], canales:new Set(), total:0, conf:0}; map.set(key, k); }
+    if(!k){ k = {key, nombre:"", telefono:"", email:"", direccion:"", pedidos:[], canales:new Set(), total:0, conf:0}; map.set(key, k); }
     k.nombre = c.nombre || k.nombre; k.telefono = c.telefono || k.telefono; k.email = c.email || k.email;
     const dir = [c.direccion, c.zona, c.cp, c.provincia].filter(Boolean).join(", ");
     if(dir) k.direccion = dir;
@@ -2245,6 +2260,43 @@ function clientesData(){
     return k;
   });
   return out.sort((a, b) => b.ultimo.id - a.ultimo.id);
+}
+function clientesFiltrados(){
+  const q = cliQ.trim().toLowerCase();
+  return clientesData().filter(k => {
+    if(q && !(k.nombre + " " + k.telefono + " " + k.email + " " + k.direccion).toLowerCase().includes(q)) return false;
+    if(cliF === "con") return k.res.length > 0;
+    if(cliF === "sin") return k.res.length === 0;
+    if(cliF === "pagina") return k.canales.has("Página");
+    if(cliF === "fuera") return k.canales.has("Por fuera");
+    if(cliF === "mp") return k.canales.has("Mercado Pago");
+    return true;
+  });
+}
+async function exportClientesPDF(){
+  const lista = clientesFiltrados();
+  if(!lista.length){ showToast("No hay clientes para exportar"); return; }
+  showToast("Preparando PDF…");
+  if(!(await ensureJsPDF())){ showToast("No se pudo cargar la librería de PDF. Revisá tu conexión y probá de nuevo.", 6000); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+  doc.setFontSize(16);
+  doc.text(pdfText("Clientes - " + (state.settings.brand || "Tienda")), 40, 40);
+  doc.setFontSize(9);
+  doc.text(pdfText("Generado: " + new Date().toLocaleString("es-AR") + "  |  " + lista.length + " cliente(s)"), 40, 56);
+  doc.autoTable({
+    startY: 68,
+    head: [["Cliente","Telefono","Email","Direccion","Compras","Total","Compro por","Ultimo pedido","Resena"]],
+    body: lista.map(k => [
+      pdfText(k.nombre || "-"), pdfText(k.telefono || "-"), pdfText(k.email || "-"), pdfText(k.direccion || "-"),
+      String(k.conf), money(k.total), pdfText([...k.canales].join(", ")), pdfText((k.ultimo.fecha || "") + " (#" + k.ultimo.id + ")"),
+      pdfText(k.res.length ? k.res.map(r => r.puntaje + "/5 " + (r.aprobada ? "(publicada)" : "(pendiente)") + (r.comentario ? " " + String(r.comentario).slice(0, 80) : "")).join(" | ") : "Sin resena")
+    ]),
+    styles: { fontSize: 8, cellPadding: 3 }, headStyles: { fillColor: [20,21,15] },
+    columnStyles: { 8: { cellWidth: 150 } }
+  });
+  doc.save("clientes_" + new Date().toISOString().slice(0,10) + ".pdf");
+  showToast("PDF descargado ✓");
 }
 function clientesListaHtml(){
   const q = cliQ.trim().toLowerCase();
@@ -2266,6 +2318,7 @@ function clientesListaHtml(){
       ${k.direccion ? `<div style="font-size:.74rem;">📍 ${escapeHtml(k.direccion)}</div>` : ""}
       <div style="font-size:.72rem;color:var(--muted);">Compró por: ${escapeHtml([...k.canales].join(", "))} · Último pedido: ${escapeHtml(k.ultimo.fecha || "")} (#${k.ultimo.id})</div>
       ${k.res.length ? k.res.map(r => `<div style="font-size:.74rem;"><span style="color:#f5a623;">${starsTxt(r.puntaje)}</span> ${r.aprobada ? "✅ publicada" : "⏳ pendiente"}${r.comentario ? " · " + escapeHtml(r.comentario) : ""}</div>${fotoSegura(r) ? `<img src="${fotoSegura(r)}" alt="" style="max-width:100%;max-height:120px;border-radius:8px;">` : ""}`).join("") : `<div style="font-size:.72rem;color:var(--muted);">Sin reseña</div>`}
+      <button class="small-btn" data-cli-del="${escapeHtml(k.key)}" style="align-self:flex-start;color:var(--coral);">🗑 Borrar cliente</button>
     </div>`).join("");
 }
 function clientesAdminHtml(){
@@ -2273,11 +2326,29 @@ function clientesAdminHtml(){
   return `<div style="display:flex;gap:6px;margin-bottom:8px;">
     <input id="cliBuscar" placeholder="Buscar nombre, teléfono, zona…" value="${escapeHtml(cliQ)}" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px;">
     <select id="cliFiltro" style="border:1px solid var(--line);border-radius:8px;padding:8px;">${opt("todos","Todos")}${opt("con","Con reseña")}${opt("sin","Sin reseña")}${opt("pagina","Compró por la página")}${opt("fuera","Compró por fuera")}${opt("mp","Mercado Pago")}</select>
-  </div><div id="cliLista">${clientesListaHtml()}</div>`;
+  </div><div id="cliLista">${clientesListaHtml()}</div>
+  <button class="small-btn" id="cliPdf" style="margin-top:10px;width:100%;">📄 Descargar PDF / imprimir clientes</button>
+  <button class="small-btn" id="cliBorrarTodo" style="margin-top:10px;color:var(--coral);">🗑 Borrar TODOS los clientes y pedidos</button>`;
 }
 function bindClientes(box){
   const l = box.querySelector("#cliLista"); if(!l) return;
   box.querySelector("#cliBuscar").oninput = e => { cliQ = e.target.value; l.innerHTML = clientesListaHtml(); };
+  l.onclick = async e => {
+    const b = e.target.closest("[data-cli-del]"); if(!b) return;
+    const k = clientesData().find(x => x.key === b.dataset.cliDel); if(!k) return;
+    if(!confirm("¿Borrar a " + (k.nombre || "este cliente") + " con sus " + k.pedidos.length + " pedido(s) y reseñas? No se puede deshacer.")) return;
+    try{ await borrarPedidos(k.pedidos.map(p => p.id)); renderVentasBox(); showToast("Cliente borrado"); }
+    catch(err){ console.error(err); showToast("No se pudo borrar: " + (err.code || err.message), 5000); }
+  };
+  const bp = box.querySelector("#cliPdf"); if(bp) bp.onclick = exportClientesPDF;
+  const bt = box.querySelector("#cliBorrarTodo");
+  if(bt) bt.onclick = async () => {
+    const n = state.pedidos.length; if(!n){ showToast("No hay nada para borrar"); return; }
+    if(!confirm("¿Borrar TODOS los clientes, pedidos y reseñas (" + n + " pedidos)? Las ventas registradas NO se tocan. No se puede deshacer.")) return;
+    if(!confirm("Última confirmación: se borra todo para empezar de cero.")) return;
+    try{ await borrarPedidos(state.pedidos.map(p => p.id)); renderVentasBox(); showToast("Listo, todo en cero ✓"); }
+    catch(err){ console.error(err); showToast("No se pudo borrar: " + (err.code || err.message), 5000); }
+  };
   box.querySelector("#cliFiltro").onchange = e => { cliF = e.target.value; l.innerHTML = clientesListaHtml(); };
 }
 function resenasAdminHtml(){
@@ -2769,7 +2840,7 @@ function renderVentasBox(){
     </tr>`).join("");
   const ventasRows = state.ventas.slice().reverse().map(v => `
     <tr>
-      <td>${v.fecha}</td><td>${ventaMarca(v) ? `<b style="display:block;font-size:.62rem;color:var(--muted);letter-spacing:.03em;">${escapeHtml(ventaMarca(v))}</b>` : ""}${escapeHtml(v.itemNombre)}</td><td>${v.cantidad}</td><td>${v.metodo==="efectivo"?"Efvo/Transf":"Tarjeta"}</td>
+      <td>${v.fecha}</td><td>${ventaMarca(v) ? `<b style="display:block;font-size:.62rem;color:var(--muted);letter-spacing:.03em;">${escapeHtml(ventaMarca(v))}</b>` : ""}${escapeHtml(v.itemNombre)}${v.cliente ? `<div style="font-size:.62rem;color:var(--muted);">👤 ${escapeHtml(v.cliente)}</div>` : ""}</td><td>${v.cantidad}</td><td>${v.metodo==="efectivo"?"Efvo/Transf":"Tarjeta"}</td>
       <td>${money(v.total)}</td><td>${money(v.ganancia)}</td>
       <td><button data-undo-venta="${v.id}" style="border:none;background:none;color:var(--coral);font-size:0.65rem;font-weight:700;">Deshacer</button></td>
     </tr>`).join("");
@@ -2795,6 +2866,8 @@ function renderVentasBox(){
     <div class="admin-row"><label>Producto</label><select id="ventaProducto">${optionsHtml}</select></div>
     <div class="admin-row"><label>Cantidad</label><input type="number" id="ventaCantidad" value="1" min="1"></div>
     <div class="admin-row"><label>Método</label><select id="ventaMetodo"><option value="efectivo" ${ventaMetodoSel==="efectivo"?"selected":""}>Efectivo/Transferencia</option><option value="tarjeta" ${ventaMetodoSel==="tarjeta"?"selected":""}>Tarjeta</option></select></div>
+    <input id="ventaCliNom" placeholder="¿A quién se lo vendiste? Nombre (opcional)" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;margin-top:8px;">
+    <input id="ventaCliTel" placeholder="WhatsApp del cliente (opcional)" inputmode="tel" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;margin:6px 0 8px;">
     <button class="primary-btn" id="registrarVentaBtn">Registrar venta (descuenta stock)</button>
 
     `)}
@@ -2994,20 +3067,40 @@ function rechazarPedido(pedidoId){
   showToast("Pedido rechazado (no se tocó el stock)");
 }
 
+async function clienteDeVenta(cli, desc, cantidad, total){
+  if(!cli || !cli.nombre) return;
+  const id = await reservarIdPedido();
+  const np = {id, fecha: new Date().toLocaleDateString("es-AR"), items: [{name: desc, qty: cantidad}], totalEf: total, totalTa: total, status: "confirmado", medio: "manual", avisado: true, cliente: {nombre: cli.nombre, telefono: cli.telefono || "", email: ""}};
+  await guardarPedidoNuevo(np); await asegurarCompra(np);
+  renderVentasBox(); showToast("Cliente guardado. Pedile la reseña desde ⭐ Reseñas", 4500);
+}
+async function borrarPedidos(ids){
+  const lista = [...ids];
+  for(let i = 0; i < lista.length; i += 150){
+    const b = db.batch();
+    lista.slice(i, i + 150).forEach(id => { b.delete(pedidosCol.doc(String(id))); b.delete(db.collection("compras").doc(String(id))); b.delete(resenasCol.doc("p" + id)); });
+    await b.commit();
+  }
+  const set = new Set(lista);
+  state.pedidos = state.pedidos.filter(p => !set.has(p.id));
+  state.resenas = (state.resenas || []).filter(r => !set.has(r.pedidoId));
+}
 function registrarVenta(){
   const sel = document.getElementById("ventaProducto").value || "";
   const cantidad = Math.max(1, Math.floor(Number(document.getElementById("ventaCantidad").value)||1));
   const metodo = document.getElementById("ventaMetodo").value;
   const [tipo, idStr] = sel.split(":");
   const id = Number(idStr);
+  const cli = {nombre: (document.getElementById("ventaCliNom").value || "").trim(), telefono: (document.getElementById("ventaCliTel").value || "").trim()};
   const fecha = new Date().toLocaleDateString("es-AR");
   if(tipo === "c"){
     const c = state.combos.find(cc => cc.id === id);
     if(!c) return;
     const costo = comboCosto(c);
-    state.ventas.push({id:state.nextVentaId++, fecha, productId:null, comboId:c.id, itemNombre:c.name, cantidad, metodo, precioUnit:c.precio, costoUnit:costo, total:c.precio*cantidad, ganancia:(c.precio-costo)*cantidad});
+    state.ventas.push({id:state.nextVentaId++, fecha, productId:null, comboId:c.id, itemNombre:c.name, cantidad, metodo, precioUnit:c.precio, costoUnit:costo, total:c.precio*cantidad, ganancia:(c.precio-costo)*cantidad, cliente: cli.nombre});
     moverStockCombo(c, cantidad, 1);
     ventaSelId = sel;
+    clienteDeVenta(cli, "Combo " + c.name, cantidad, c.precio*cantidad);
     render(); scheduleSave();
     showToast("Venta de combo registrada — stock descontado");
     return;
@@ -3023,8 +3116,9 @@ function registrarVenta(){
   state.ventas.push({
     id: state.nextVentaId++, fecha, productId: p.id, comboId: null, marca: p.brand || "",
     itemNombre: p.name, cantidad, metodo, precioUnit, costoUnit: p.costo,
-    total: precioUnit * cantidad, ganancia: (precioUnit - p.costo) * cantidad
+    total: precioUnit * cantidad, ganancia: (precioUnit - p.costo) * cantidad, cliente: cli.nombre
   });
+  clienteDeVenta(cli, p.name, cantidad, precioUnit * cantidad);
   if(!sinControl){ p.stock = Math.max(0, p.stock - cantidad); }
   ventaSelId = sel;
   render(); scheduleSave();
