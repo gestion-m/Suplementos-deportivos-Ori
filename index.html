@@ -2368,7 +2368,7 @@ function resenasAdminHtml(){
       </div>
     </div>`).join("") : `<div style="font-size:.7rem;color:var(--muted);">Todavía no hay reseñas.</div>`;
   h += `<div style="font-weight:800;font-size:.78rem;margin:12px 0 6px;">➕ Cliente que compró por fuera de la página</div>
-    <div style="display:flex;gap:6px;"><input id="rmNom" placeholder="Nombre" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px;"><input id="rmTel" placeholder="WhatsApp" inputmode="tel" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px;"><button class="small-btn" id="rmAdd">Agregar</button></div>`;
+    <div style="display:flex;gap:6px;"><input id="rmNom" placeholder="Nombre" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px;"><input id="rmTel" placeholder="WhatsApp" inputmode="tel" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px;"><button class="small-btn" id="rmAdd">Agregar</button></div>${contactosOk() ? `<button type="button" class="small-btn" id="rmContactos" style="margin-top:6px;width:100%;">📇 Elegir de mis contactos</button>` : ""}`;
   if(pedir.length){
     h += `<div style="font-weight:800;font-size:.78rem;margin:12px 0 6px;">📨 Pedir reseña a clientes</div>` + pedir.map(p => `
       <div class="venta-line" style="gap:6px;flex-wrap:wrap;">
@@ -2866,6 +2866,7 @@ function renderVentasBox(){
     <div class="admin-row"><label>Producto</label><select id="ventaProducto">${optionsHtml}</select></div>
     <div class="admin-row"><label>Cantidad</label><input type="number" id="ventaCantidad" value="1" min="1"></div>
     <div class="admin-row"><label>Método</label><select id="ventaMetodo"><option value="efectivo" ${ventaMetodoSel==="efectivo"?"selected":""}>Efectivo/Transferencia</option><option value="tarjeta" ${ventaMetodoSel==="tarjeta"?"selected":""}>Tarjeta</option></select></div>
+    ${contactosOk() ? `<button type="button" class="small-btn" id="ventaContactos" style="width:100%;margin-top:8px;">📇 Elegir cliente de mis contactos</button>` : ""}
     <input id="ventaCliNom" placeholder="¿A quién se lo vendiste? Nombre (opcional)" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;margin-top:8px;">
     <input id="ventaCliTel" placeholder="WhatsApp del cliente (opcional)" inputmode="tel" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;margin:6px 0 8px;">
     <button class="primary-btn" id="registrarVentaBtn">Registrar venta (descuenta stock)</button>
@@ -2895,6 +2896,7 @@ function renderVentasBox(){
   renderPedidosList();
   bindResenasAdmin(box);
   bindClientes(box);
+  bindContactos();
   document.getElementById("ventaProducto").onchange = e => { ventaSelId = e.target.value; };
   document.getElementById("ventaMetodo").onchange = e => { ventaMetodoSel = e.target.value; };
   document.getElementById("registrarVentaBtn").onclick = () => registrarVenta();
@@ -3067,6 +3069,23 @@ function rechazarPedido(pedidoId){
   showToast("Pedido rechazado (no se tocó el stock)");
 }
 
+const contactosOk = () => "contacts" in navigator && "ContactsManager" in window;
+async function elegirContacto(nomId, telId){
+  try{
+    const sel = await navigator.contacts.select(["name", "tel"], {multiple: false});
+    if(!sel || !sel.length) return;
+    const c = sel[0];
+    const nom = (c.name && c.name[0]) || "", tel = ((c.tel && c.tel[0]) || "").replace(/[^\d+]/g, "");
+    const nEl = document.getElementById(nomId), tEl = document.getElementById(telId);
+    if(nom && nEl && !nEl.value.trim()) nEl.value = nom;
+    if(tel && tEl) tEl.value = tel;
+    if(!tel) showToast("Ese contacto no tiene teléfono");
+  }catch(e){ console.warn(e); showToast("No se pudieron abrir tus contactos"); }
+}
+function bindContactos(){
+  const a = document.getElementById("ventaContactos"); if(a) a.onclick = () => elegirContacto("ventaCliNom", "ventaCliTel");
+  const b = document.getElementById("rmContactos"); if(b) b.onclick = () => elegirContacto("rmNom", "rmTel");
+}
 async function clienteDeVenta(cli, desc, cantidad, total){
   if(!cli || !cli.nombre) return;
   const id = await reservarIdPedido();
