@@ -2877,6 +2877,23 @@ function renderVentasBox(){
     <div class="scroll-box"><table class="stock-table"><thead><tr><th>Producto</th><th>Cantidad</th><th>Estado</th></tr></thead><tbody>${stockRows}</tbody></table></div>
     <button class="admin-photo-btn" id="stockFileBtn" style="margin-top:8px;">📥 Cargar compra o stock (PDF, foto, Excel o CSV)</button>
     <input type="file" id="stockFileInput" accept=".csv,.xlsx,.xls,.pdf,image/*" style="display:none;">
+    <button class="admin-photo-btn" id="stockManualBtn">✍️ Cargar a mano</button>
+    <div id="stockManualPanel" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:6px;">
+      <select id="smProd" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;margin-bottom:6px;">
+        <option value="new">➕ Producto nuevo</option>
+        ${state.products.map(p => `<option value="${p.id}">${escapeHtml(p.brand)} - ${escapeHtml(p.name)} (stock: ${stockLabel(p)})</option>`).join("")}
+      </select>
+      <div id="smNewFields">
+        <input id="smMarca" placeholder="Marca (ej: ENA)" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;margin-bottom:6px;">
+        <input id="smNombre" placeholder="Nombre del suplemento" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;margin-bottom:6px;">
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:6px;">
+        <input id="smCant" type="number" min="1" inputmode="numeric" placeholder="Cantidad" style="flex:1;min-width:0;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;">
+        <input id="smCosto" type="number" min="0" inputmode="numeric" placeholder="Costo unit. (opcional)" style="flex:1;min-width:0;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;">
+      </div>
+      <div style="font-size:.62rem;color:var(--muted);margin-bottom:6px;">Si elegís un producto existente, la cantidad se suma al stock actual.</div>
+      <button class="primary-btn" id="smSaveBtn">Guardar</button>
+    </div>
 
     `)}
     ${admSec("v-ventas","📋 Ventas registradas ("+state.ventas.length+")",`
@@ -2913,6 +2930,30 @@ function renderVentasBox(){
   });
   document.getElementById("stockFileBtn").onclick = () => document.getElementById("stockFileInput").click();
   document.getElementById("stockFileInput").onchange = e => { if(e.target.files[0]) handleStockFile(e.target.files[0]); e.target.value=""; };
+  const smPanel = document.getElementById("stockManualPanel");
+  const smProd = document.getElementById("smProd");
+  const smSync = () => { document.getElementById("smNewFields").style.display = smProd.value === "new" ? "block" : "none"; };
+  smProd.onchange = smSync; smSync();
+  document.getElementById("stockManualBtn").onclick = () => { smPanel.style.display = smPanel.style.display === "none" ? "block" : "none"; };
+  document.getElementById("smSaveBtn").onclick = () => {
+    const cant = Math.floor(Number(document.getElementById("smCant").value));
+    const costo = Number(document.getElementById("smCosto").value) || 0;
+    if(!cant || cant < 1){ showToast("Poné una cantidad válida"); return; }
+    if(smProd.value === "new"){
+      const nombre = document.getElementById("smNombre").value.trim();
+      if(!nombre){ showToast("Poné el nombre del suplemento"); return; }
+      const np = Object.assign(blankProduct(state.nextProductId++), { name:nombre, brand:document.getElementById("smMarca").value.trim(), costo:costo>0?costo:0, stock:cant });
+      state.products.push(np);
+      showToast("Producto creado con " + cant + " u. ✓");
+    } else {
+      const prod = state.products.find(pp => pp.id === Number(smProd.value));
+      if(!prod) return;
+      prod.stock = (Number(prod.stock) || 0) + cant;
+      if(costo > 0) prod.costo = costo;
+      showToast("Stock sumado: " + prod.stock + " u. ✓");
+    }
+    render(); scheduleSave();
+  };
   document.getElementById("exportVentasBtn").onclick = () => exportVentasExcel();
   document.getElementById("pdfVentasBtn").onclick = () => exportVentasPDF();
 }
