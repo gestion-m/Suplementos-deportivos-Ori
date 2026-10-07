@@ -652,6 +652,8 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <button class="sheet-close" data-close-sheet>✕</button>
   <h3>Tu pedido</h3>
   <div id="cartLines"></div>
+  <div class="coupon-row" id="cartCouponRow" style="display:none;"><input id="cartCouponInput" placeholder="Código de descuento"><button id="cartCouponBtn" type="button">Aplicar</button></div>
+  <div class="coupon-res" id="cartCouponRes"></div>
   <div class="cart-totals"><span>Total efectivo/transferencia</span><span id="cartTotalEf">$0</span></div>
   <div class="cart-totals" style="border-top:none;padding-top:0;"><span>Total tarjeta</span><span id="cartTotalTa">$0</span></div>
   <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">🏠 Retiro y 🤝 punto de encuentro: <b>sin costo</b>. 📦 Envío por Correo Argentino (solo Buenos Aires por ahora): el costo se suma en el siguiente paso.</div>
@@ -829,6 +831,13 @@ const CATEGORY_RULES = [
   [/pre war|pre-entreno|pre entreno/i,"Pre-entreno"]
 ];
 function categoryOf(name){ for(const [rx,label] of CATEGORY_RULES){ if(rx.test(name)) return label; } return "Otros"; }
+function catOf(p){ return (p && p.category) ? p.category : categoryOf(p ? p.name : ""); }
+function allBrands(){ return [...new Set(state.products.map(p => p.brand).filter(Boolean))].sort(); }
+function allCats(){ return [...new Set([...CATEGORY_RULES.map(r => r[1]), ...state.products.map(p => p.category).filter(Boolean)])]; }
+function pickOptions(list, current, placeholder, otherLabel){
+  const l = list.includes(current) || !current ? list : [...list, current];
+  return `<option value="">${placeholder}</option>` + l.map(x => `<option value="${escapeHtml(x)}" ${x===current?"selected":""}>${escapeHtml(x)}</option>`).join("") + `<option value="__new">${otherLabel}</option>`;
+}
 let filterBrand = null;
 let filterCategory = null;
 
@@ -891,6 +900,8 @@ let editMode = false;
 let saveTimer = null;
 let storageOK = true;
 let cart = [];
+let cartCoupon = null; // código aplicado en el carrito
+function couponFactor(){ const st = state.settings; return (cartCoupon && st.cuponCodigo && st.cuponPct > 0) ? 1 - st.cuponPct/100 : 1; }
 let detailActiveImgIdx = 0;
 let stockReviewRows = [];
 
@@ -1187,10 +1198,10 @@ let searchQuery = "";
 function normTxt(t){ return String(t==null?"":t).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(); }
 function matchesFilters(p){
   if(filterBrand && p.brand !== filterBrand) return false;
-  if(filterCategory && categoryOf(p.name) !== filterCategory) return false;
+  if(filterCategory && catOf(p) !== filterCategory) return false;
   const q = normTxt(searchQuery).trim();
   if(q){
-    const hay = normTxt([p.name, p.brand, categoryOf(p.name), p.desc].join(" "));
+    const hay = normTxt([p.name, p.brand, catOf(p), p.desc].join(" "));
     return q.split(/\s+/).every(w => hay.includes(w));
   }
   return true;
@@ -1198,7 +1209,7 @@ function matchesFilters(p){
 
 function renderFilters(){
   const brands = [...new Set(state.products.map(p => p.brand).filter(Boolean))].sort();
-  const cats = [...new Set(state.products.map(p => categoryOf(p.name)))].sort();
+  const cats = [...new Set(state.products.map(p => catOf(p)))].sort();
 
   /* Círculos de marcas (inicio) */
   const row = document.getElementById("brandFilterRow");
@@ -1322,8 +1333,10 @@ function renderProducts(){
           <button class="admin-photo-btn" data-photo-id="${p.id}">📷 Subir fotos (hasta 4, varias juntas)</button>
           <input type="file" accept="image/*" multiple data-photo-input="${p.id}" style="display:none;">
           <div class="admin-thumb-row">${imgs.map((im,i)=>`<div class="admin-thumb"><img src="${im}"><button data-photo-remove="${p.id}" data-img-idx="${i}">✕</button><button class="thumb-edit" data-edit-img="product:${p.id}:${i}">✂</button></div>`).join("")}</div>
+          <div class="admin-row"><label>Tipo de producto</label><select data-cat-sel="${p.id}">${pickOptions(allCats(), p.category || (catOf(p)!=="Otros"?catOf(p):""), "— elegir tipo —", "➕ Otro tipo…")}</select></div>
+          <div class="admin-row"><label>Marca</label><select data-brand-sel="${p.id}">${pickOptions(allBrands(), p.brand, "— elegir marca —", "➕ Otra marca…")}</select></div>
           <div class="admin-row"><label>Nombre</label><input data-field="name" data-id="${p.id}" value="${escapeHtml(p.name)}"></div>
-          <div class="admin-row"><label>Marca</label><input data-field="brand" data-id="${p.id}" value="${escapeHtml(p.brand)}"></div>
+          <div class="admin-row"><label>Cuotas (vacío = no mostrar)</label><input type="number" min="0" data-field="cuotas" data-id="${p.id}" value="${p.cuotas||''}" placeholder="ej: 3"></div>
           <div class="admin-row"><label>Costo</label><input type="number" data-field="costo" data-id="${p.id}" value="${p.costo}"></div>
           <div class="admin-row"><label>Stock</label><input type="number" data-field="stock" data-id="${p.id}" value="${p.stock===null?'':p.stock}" placeholder="sin control"></div>
           <div class="admin-row"><label>Marg. Ef/Tr %</label><input type="number" data-field="markupEf" data-id="${p.id}" value="${p.markupEf===null?'':p.markupEf}" placeholder="${state.settings.markupEfectivo}"></div>
@@ -1448,12 +1461,29 @@ function attachProductListeners(){
       let val = e.target.value;
       if(field === "costo"){ prod.costo = Number(val)||0; }
       else if(field === "stock"){ prod.stock = val === "" ? null : Number(val); }
+      else if(field === "cuotas"){ prod.cuotas = val === "" ? null : Math.max(0, Math.floor(Number(val))||0); }
       else if(field === "markupEf" || field === "markupTa"){ prod[field] = val === "" ? null : Number(val); }
       else if(field === "precioEfManual" || field === "precioTaManual"){ prod[field] = val === "" ? null : Number(val); }
       else { prod[field] = val; }
       renderProducts(); renderCombos(); scheduleSave();
     });
   });
+  document.querySelectorAll("[data-cat-sel]").forEach(sel => sel.addEventListener("change", e => {
+    const prod = state.products.find(pp => pp.id === Number(sel.dataset.catSel)); if(!prod) return;
+    let v = e.target.value;
+    if(v === "__new"){ v = (prompt("Nombre del nuevo tipo (ej: Pre-entreno, Barras)") || "").trim(); if(!v){ renderProducts(); return; } }
+    const prev = prod.category || catOf(prod);
+    prod.category = v || null;
+    if(v && (!prod.name || prod.name === "Nuevo producto" || prod.name === prev)) prod.name = v;
+    renderProducts(); renderCombos(); scheduleSave();
+  }));
+  document.querySelectorAll("[data-brand-sel]").forEach(sel => sel.addEventListener("change", e => {
+    const prod = state.products.find(pp => pp.id === Number(sel.dataset.brandSel)); if(!prod) return;
+    let v = e.target.value;
+    if(v === "__new"){ v = (prompt("Nombre de la nueva marca") || "").trim(); if(!v){ renderProducts(); return; } }
+    prod.brand = v;
+    renderProducts(); renderCombos(); scheduleSave();
+  }));
   document.querySelectorAll("[data-suggest]").forEach(btn => {
     btn.addEventListener("click", e => {
       const id = Number(e.target.dataset.suggest);
@@ -1783,14 +1813,15 @@ function renderDetail(type, id){
     box.innerHTML = `
       <div class="detail-brand">${escapeHtml(p.brand||"")}</div>
       <h3>${escapeHtml(p.name)}</h3>
-      <span class="detail-cat">${escapeHtml(categoryOf(p.name))}</span>
+      <span class="detail-cat">${escapeHtml(catOf(p))}</span>
       <div class="detail-main-photo">${imgs[detailActiveImgIdx] ? `<img src="${imgs[detailActiveImgIdx]}">` : `<div class="ph-empty">Sin foto</div>`}</div>
       ${imgs.length>1 ? `<div class="detail-thumbs">${imgs.map((im,i)=>`<img src="${im}" class="${i===detailActiveImgIdx?'active':''}" data-set-main="${i}">`).join("")}</div>` : ""}
       <div class="detail-prices">
         <div class="dp cash"><span class="lbl">EFECTIVO / TRANSFERENCIA</span><span class="val">${money(precioEf)}</span></div>
         <div class="dp card"><span class="lbl">TARJETA</span><span class="val">${money(precioTa)}</span></div>
       </div>
-      <div class="detail-cuotas">💳 3 cuotas de ${money(precioTa/3)}</div>
+      ${p.cuotas>0 ? `<div class="detail-cuotas">💳 ${p.cuotas} cuotas de ${money(precioTa/p.cuotas)}</div>` : ""}
+      <button type="button" class="admin-photo-btn" id="envioWaBtn" style="margin:6px 0;">🛵 Envíos en moto — consultá tu zona por WhatsApp</button>
       ${state.settings.cuponCodigo && state.settings.cuponPct>0 ? `<div class="coupon-row"><input id="cuponInput" placeholder="Código de descuento"><button id="cuponBtn">Aplicar</button></div><div class="coupon-res" id="cuponRes"></div>` : ""}
       ${stock!==Infinity ? `<div class="detail-stock admin-only ${stock<=2?'low':'ok'}">${stock<=0?'Sin stock disponible':'Quedan '+stock+' unidades'}</div>` : ""}
       ${benefitsHtml ? `<div class="detail-benefits">${benefitsHtml}</div>` : (p.desc ? `<div class="detail-benefits"><div class="benefit-line">${escapeHtml(p.desc)}</div></div>` : "")}
@@ -1803,17 +1834,19 @@ function renderDetail(type, id){
       <button class="primary-btn" id="detailAddBtn" ${remaining<=0?'disabled':''}>${remaining<=0?'Sin stock':'Agregar al pedido'}</button>
     `;
     wireDetailQty("product", id, remaining);
+    const eb = document.getElementById("envioWaBtn");
+    if(eb) eb.onclick = () => window.open(waLink(state.settings.whatsapp, `Hola! Quiero consultar el envío de: ${p.name}`), "_blank");
     const cb = document.getElementById("cuponBtn");
     if(cb) cb.onclick = () => {
       const st = state.settings, res = document.getElementById("cuponRes");
       if(document.getElementById("cuponInput").value.trim().toUpperCase() === String(st.cuponCodigo).trim().toUpperCase()){
-        const f = 1 - st.cuponPct/100;
+        const f = 1 - st.cuponPct/100, cu = p.cuotas > 0 ? p.cuotas : 0;
         res.style.color = "var(--green)";
-        res.textContent = `✅ ${st.cuponPct}% OFF: ${money(precioEf*f)} efectivo · 3 cuotas de ${money(precioTa*f/3)}`;
+        res.textContent = `✅ ${st.cuponPct}% OFF: ${money(precioEf*f)} efectivo` + (cu ? ` · ${cu} cuotas de ${money(precioTa*f/cu)}` : "");
       } else { res.style.color = "var(--coral)"; res.textContent = "Código inválido"; }
     };
-    const cat = categoryOf(p.name);
-    const sim = state.products.filter(x => x.id !== p.id && categoryOf(x.name) === cat).slice(0,8);
+    const cat = catOf(p);
+    const sim = state.products.filter(x => x.id !== p.id && catOf(x) === cat).slice(0,8);
     if(sim.length){
       box.insertAdjacentHTML("beforeend", `<div class="similar-title">Productos similares</div><div class="similar-row">${sim.map(x => `<div class="sim-card" data-sim="${x.id}">${(x.images||[])[0] ? `<img src="${x.images[0]}">` : `<div class="ph-empty" style="height:110px">Sin foto</div>`}<div class="sn">${escapeHtml(x.name)}</div><div class="sp">${money(calcProductPrices(x).precioEf)}</div></div>`).join("")}</div>`);
       box.querySelectorAll("[data-sim]").forEach(el => el.onclick = () => { detailActiveImgIdx = 0; renderDetail("product", Number(el.dataset.sim)); box.parentElement.scrollTop = 0; });
@@ -1897,11 +1930,13 @@ function cartLineInfo(item){
     const p = state.products.find(pp => pp.id === item.id);
     if(!p) return null;
     const {precioEf, precioTa} = calcProductPrices(p);
-    return {name:p.name, brand:p.brand||"", unitEf:precioEf, unitTa:precioTa, image:(p.images&&p.images[0])||""};
+    const f = couponFactor();
+    return {name:p.name, brand:p.brand||"", unitEf:Math.round(precioEf*f), unitTa:Math.round(precioTa*f), image:(p.images&&p.images[0])||""};
   } else {
     const c = state.combos.find(cc => cc.id === item.id);
     if(!c) return null;
-    return {name:c.name, brand:"", unitEf:c.precio, unitTa:cardFromCash(c.precio), image:(c.images&&c.images[0])||""};
+    const f2 = couponFactor();
+    return {name:c.name, brand:"", unitEf:Math.round(c.precio*f2), unitTa:Math.round(cardFromCash(c.precio)*f2), image:(c.images&&c.images[0])||""};
   }
 }
 
@@ -1925,6 +1960,15 @@ function renderCart(){
         </div>`;
     }).join("");
   }
+  const stc = state.settings, hasCoupon = !!(stc.cuponCodigo && stc.cuponPct > 0);
+  document.getElementById("cartCouponRow").style.display = hasCoupon && cart.length ? "flex" : "none";
+  if(!hasCoupon) cartCoupon = null;
+  document.getElementById("cartCouponRes").textContent = cartCoupon ? `✅ Código ${cartCoupon} aplicado: ${stc.cuponPct}% OFF` : "";
+  document.getElementById("cartCouponBtn").onclick = () => {
+    const v = document.getElementById("cartCouponInput").value.trim();
+    if(v && v.toUpperCase() === String(stc.cuponCodigo).trim().toUpperCase()){ cartCoupon = v.toUpperCase(); renderCart(); showToast("Descuento aplicado ✓"); }
+    else { cartCoupon = null; renderCart(); showToast("Código inválido"); }
+  };
   document.getElementById("cartTotalEf").textContent = money(totalEf);
   document.getElementById("cartTotalTa").textContent = money(totalTa);
   document.getElementById("cartCount").textContent = count;
@@ -1981,6 +2025,7 @@ function renderCart(){
       pedidoItems.push({type:item.type, id:item.id, name:info.name, brand:info.brand, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
     });
     const envio = cliente.entrega === "correo" ? (Number(cliente.envioCosto) || 0) : 0, envioTa = envio ? cardFromCash(envio) : 0;
+    if(cartCoupon) msg += `\n🎟️ Código ${cartCoupon} (${state.settings.cuponPct}% OFF) aplicado`;
     msg += `\nTotal efectivo/transferencia: ${money(totalEf + envio)}\nTotal tarjeta: ${money(totalTa + envioTa)}` + (envio ? "\n(incluye envío)" : "");
     msg += `\n\nMis datos: ${cliente.nombre} - ${cliente.telefono}`;
     if(cliente.entrega === "correo") msg += `\n📦 Envío por Correo Argentino a ${cliente.servicio === "domicilio" ? "domicilio" : "sucursal"}: ${cliente.direccion}, ${cliente.provincia === "caba" ? "CABA" : "Buenos Aires"}, CP ${cliente.cp} (costo de envío ${money(cliente.envioCosto || 0)})`;
@@ -1995,7 +2040,7 @@ function renderCart(){
         body: JSON.stringify({pedidoId: pidNuevo, total: totalEf + envio, cliente: {nombre: cliente.nombre, telefono: cliente.telefono}, items: pedidoItems.map(i => ({name:conMarca(i.brand, i.name), brand:i.brand||"", qty:i.qty}))})}).catch(() => {});
     }catch(e){}
     window.open(waLink(state.settings.whatsapp, msg), "_blank");
-    cart = [];
+    cart = []; cartCoupon = null;
     renderCart(); renderProducts();
     closeAllSheets();
     showToast("Pedido enviado — vas a poder confirmarlo desde el modo edición");
@@ -2689,7 +2734,7 @@ function offerProductHtml(p){
       ${imgs[0] ? `<img src="${imgs[0]}">` : `<div class="ph-empty">Sin foto</div>`}
     </div>
     ${imgs.length>1 ? `<div class="detail-thumbs">${imgs.map(im=>`<img src="${im}" onclick="this.closest('.offer-page').querySelector('.op-main img').src=this.src">`).join("")}</div>` : ""}
-    <div class="detail-brand">${escapeHtml(p.brand||"")} · ${escapeHtml(categoryOf(p.name))}</div>
+    <div class="detail-brand">${escapeHtml(p.brand||"")} · ${escapeHtml(catOf(p))}</div>
     <div class="op-title">${escapeHtml(p.name)}</div>
     <div class="op-price-row"><span class="op-price">${money(precioEf)}</span>${anterior ? `<s class="op-old">${money(anterior)}</s>` : ""}</div>
     <div class="op-sub">efectivo / transferencia</div>
@@ -2918,7 +2963,8 @@ function renderVentasBox(){
         ${state.products.map(p => `<option value="${p.id}">${escapeHtml(p.brand)} - ${escapeHtml(p.name)} (stock: ${stockLabel(p)})</option>`).join("")}
       </select>
       <div id="smNewFields">
-        <input id="smMarca" placeholder="Marca (ej: ENA)" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;margin-bottom:6px;">
+        <select id="smCat" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;margin-bottom:6px;">${pickOptions(allCats(), "", "— tipo (creatina, proteína…) —", "➕ Otro tipo…")}</select>
+        <select id="smMarca" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;margin-bottom:6px;">${pickOptions(allBrands(), "", "— marca —", "➕ Otra marca…")}</select>
         <input id="smNombre" placeholder="Nombre del suplemento" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;margin-bottom:6px;">
       </div>
       <div style="display:flex;gap:6px;margin-bottom:6px;">
@@ -2968,6 +3014,8 @@ function renderVentasBox(){
   const smProd = document.getElementById("smProd");
   const smSync = () => { document.getElementById("smNewFields").style.display = smProd.value === "new" ? "block" : "none"; };
   smProd.onchange = smSync; smSync();
+  const smAsk = (id, msg) => { const el = document.getElementById(id); el.addEventListener("change", () => { if(el.value === "__new"){ const v = (prompt(msg) || "").trim(); if(v){ el.insertAdjacentHTML("afterbegin", `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`); el.value = v; } else el.value = ""; } if(id === "smCat" && el.value){ const n = document.getElementById("smNombre"); if(!n.value.trim()) n.value = el.value; } }); };
+  smAsk("smCat", "Nombre del nuevo tipo"); smAsk("smMarca", "Nombre de la nueva marca");
   document.getElementById("stockManualBtn").onclick = () => { smPanel.style.display = smPanel.style.display === "none" ? "block" : "none"; };
   document.getElementById("smSaveBtn").onclick = () => {
     const cant = Math.floor(Number(document.getElementById("smCant").value));
@@ -2976,7 +3024,7 @@ function renderVentasBox(){
     if(smProd.value === "new"){
       const nombre = document.getElementById("smNombre").value.trim();
       if(!nombre){ showToast("Poné el nombre del suplemento"); return; }
-      const np = Object.assign(blankProduct(state.nextProductId++), { name:nombre, brand:document.getElementById("smMarca").value.trim(), costo:costo>0?costo:0, stock:cant });
+      const np = Object.assign(blankProduct(state.nextProductId++), { name:nombre, brand:document.getElementById("smMarca").value.trim(), category:document.getElementById("smCat").value || null, costo:costo>0?costo:0, stock:cant });
       state.products.push(np);
       showToast("Producto creado con " + cant + " u. ✓");
     } else {
@@ -3915,8 +3963,6 @@ async function saveState(){
     (state.motivos || []).forEach(m => ops.push(b => b.set(motivoRef(m.id), m)));
     ops.push(b => b.set(brandLogosRef, {logos: state.brandLogos || {}}));
     ops.push(b => b.set(bannersRef, {banners: state.banners || {}}));
-    state.products.forEach(p => ops.push(b => b.set(productsCol.doc(String(p.id)), p)));
-    state.combos.forEach(c => ops.push(b => b.set(combosCol.doc(String(c.id)), c)));
     state.ventas.forEach(v => ops.push(b => b.set(ventasCol.doc(String(v.id)), v)));
     state.pedidos.forEach(p => ops.push(b => b.set(pedidosCol.doc(String(p.id)), p)));
     for(let i = 0; i < ops.length; i += 400){
@@ -3925,6 +3971,14 @@ async function saveState(){
       await batch.commit();
     }
     bgDirty = false;
+    /* Productos y combos de a uno: si uno falla (ej: fotos muy pesadas) no se pierde el resto */
+    const fallos = [];
+    const items = [...state.products.map(p => ({n:p.name, ref:productsCol.doc(String(p.id)), d:p})), ...state.combos.map(c => ({n:c.name, ref:combosCol.doc(String(c.id)), d:c}))];
+    for(let i = 0; i < items.length; i += 10){
+      const res = await Promise.allSettled(items.slice(i, i + 10).map(it => it.ref.set(it.d)));
+      res.forEach((r, k) => { if(r.status === "rejected"){ const it = items[i + k]; console.error(it.n, r.reason); fallos.push(it.n + (JSON.stringify(it.d).length > 900000 ? " (fotos muy pesadas)" : "")); } });
+    }
+    if(fallos.length){ showToast("No se guardó: " + fallos.slice(0,3).join(", ") + (fallos.length > 3 ? "…" : "") + ". Probá con menos o más livianas fotos.", 7000); return; }
     showToast("Guardado ✓");
   }catch(err){
     console.error(err);
