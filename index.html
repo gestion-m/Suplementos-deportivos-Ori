@@ -252,6 +252,18 @@ body.edit-mode .ventas-box{display:block;}
 .detail-thumbs img{width:56px;height:56px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent;}
 .detail-thumbs img.active{border-color:var(--gold);}
 .detail-brand{font-size:0.68rem;font-weight:700;color:var(--muted);margin-bottom:2px;}
+.detail-cat{display:inline-block;font-size:.62rem;font-weight:800;background:var(--ink);color:#fff;border-radius:6px;padding:2px 8px;margin-bottom:6px;}
+.detail-cuotas{font-size:.78rem;font-weight:700;margin:2px 0 8px;}
+.coupon-row{display:flex;gap:6px;margin:8px 0;}
+.coupon-row input{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:.78rem;text-transform:uppercase;}
+.coupon-row button{border:1px solid var(--ink);background:var(--card);border-radius:8px;padding:8px 12px;font-weight:700;font-size:.72rem;}
+.coupon-res{font-size:.75rem;font-weight:700;color:var(--green);margin-bottom:8px;}
+.similar-title{font-weight:800;font-size:.9rem;margin:18px 0 8px;}
+.similar-row{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;}
+.sim-card{flex:0 0 150px;scroll-snap-align:start;border:1px solid var(--line);border-radius:12px;padding:8px;background:var(--card);text-align:center;}
+.sim-card img{width:100%;height:110px;object-fit:contain;}
+.sim-card .sn{font-size:.68rem;font-weight:600;height:2.6em;overflow:hidden;margin:4px 0;}
+.sim-card .sp{font-weight:800;font-size:.85rem;color:var(--green);}
 .detail-prices{display:flex;gap:16px;margin:10px 0 6px;}
 .detail-prices .dp{display:flex;flex-direction:column;}
 .detail-prices .dp .lbl{font-size:0.62rem;color:var(--muted);font-weight:700;}
@@ -498,6 +510,8 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div class="admin-row"><label>Alias transf.</label><input id="setAlias" placeholder="Ej: mi.alias.mp"></div>
   <div class="admin-row"><label>Envío Correo a sucursal $</label><input id="setEnvSuc" type="number" placeholder="Ej: 6800" style="max-width:90px;"></div>
   <div class="admin-row"><label>Envío Correo a domicilio $</label><input id="setEnvDom" type="number" placeholder="Ej: 9700" style="max-width:90px;"></div>
+  <div class="admin-row"><label>Código de descuento (ej: PWR10)</label><input id="setCuponCodigo" placeholder="vacío = sin código"></div>
+  <div class="admin-row"><label>Descuento del código (%)</label><input id="setCuponPct" type="number" min="0" max="90" placeholder="10"></div>
   <div class="admin-row"><label>Zonas con entrega gratis</label><input id="setZonas" placeholder="José C. Paz, San Miguel, Grand Bourg"></div>
   </div></details>
   <details class="adm-sec" data-adm="s-cartel"><summary>🏋️ Cartel motivacional</summary><div class="adm-body">
@@ -827,7 +841,7 @@ const DEFAULT_STATE = {
     brand:"PWR SUPLEMENTOS", heroTitle:"ENERGÍA|PARA RENDIR",
     heroTag:"Suplementos deportivos originales. Consultá stock y precios.",
     envioTexto:"🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas",
-    whatsapp:"", markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", envioSucursal:6800, envioDomicilio:9700, zonasGratis:"José C. Paz, San Miguel, Grand Bourg", heroImage:null, accentColor:"#c6ff2e", logoImage:null,
+    whatsapp:"", cuponCodigo:"", cuponPct:0, markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", envioSucursal:6800, envioDomicilio:9700, zonasGratis:"José C. Paz, San Miguel, Grand Bourg", heroImage:null, accentColor:"#c6ff2e", logoImage:null,
     fonts:{brand:"anton",hero:"anton",sections:"anton",prices:"anton"}, textColors:{}, ofertas:[], bgMode:"default", bgFit:"cover", bgColor:"", bgImage:null
   },
   motivos:[{id:1,text:"La disciplina es hacer lo que tenés que hacer, aunque no tengas ganas.",author:"PWR · Entrená con constancia",image:null,ovl:55,bri:100,con:100,color:"#ffffff",bg:"dark"}],
@@ -1118,6 +1132,8 @@ function render(){
   document.getElementById("setBrand").value = state.settings.brand;
   document.getElementById("setHeroTitle").value = state.settings.heroTitle;
   document.getElementById("setHeroTag").value = state.settings.heroTag;
+  document.getElementById("setCuponCodigo").value = state.settings.cuponCodigo || "";
+  document.getElementById("setCuponPct").value = state.settings.cuponPct || "";
   document.getElementById("setWhatsapp").value = state.settings.whatsapp;
   document.getElementById("setInstagram").value = state.settings.instagram || "";
   document.getElementById("setAlias").value = state.settings.aliasTransferencia || "";
@@ -1767,12 +1783,15 @@ function renderDetail(type, id){
     box.innerHTML = `
       <div class="detail-brand">${escapeHtml(p.brand||"")}</div>
       <h3>${escapeHtml(p.name)}</h3>
+      <span class="detail-cat">${escapeHtml(categoryOf(p.name))}</span>
       <div class="detail-main-photo">${imgs[detailActiveImgIdx] ? `<img src="${imgs[detailActiveImgIdx]}">` : `<div class="ph-empty">Sin foto</div>`}</div>
       ${imgs.length>1 ? `<div class="detail-thumbs">${imgs.map((im,i)=>`<img src="${im}" class="${i===detailActiveImgIdx?'active':''}" data-set-main="${i}">`).join("")}</div>` : ""}
       <div class="detail-prices">
         <div class="dp cash"><span class="lbl">EFECTIVO / TRANSFERENCIA</span><span class="val">${money(precioEf)}</span></div>
         <div class="dp card"><span class="lbl">TARJETA</span><span class="val">${money(precioTa)}</span></div>
       </div>
+      <div class="detail-cuotas">💳 3 cuotas de ${money(precioTa/3)}</div>
+      ${state.settings.cuponCodigo && state.settings.cuponPct>0 ? `<div class="coupon-row"><input id="cuponInput" placeholder="Código de descuento"><button id="cuponBtn">Aplicar</button></div><div class="coupon-res" id="cuponRes"></div>` : ""}
       ${stock!==Infinity ? `<div class="detail-stock admin-only ${stock<=2?'low':'ok'}">${stock<=0?'Sin stock disponible':'Quedan '+stock+' unidades'}</div>` : ""}
       ${benefitsHtml ? `<div class="detail-benefits">${benefitsHtml}</div>` : (p.desc ? `<div class="detail-benefits"><div class="benefit-line">${escapeHtml(p.desc)}</div></div>` : "")}
       <div class="detail-info">${sections.map(([title,body])=>`<details><summary>${title}</summary><div class="dbody">${escapeHtml(body)}</div></details>`).join("")}</div>
@@ -1784,6 +1803,21 @@ function renderDetail(type, id){
       <button class="primary-btn" id="detailAddBtn" ${remaining<=0?'disabled':''}>${remaining<=0?'Sin stock':'Agregar al pedido'}</button>
     `;
     wireDetailQty("product", id, remaining);
+    const cb = document.getElementById("cuponBtn");
+    if(cb) cb.onclick = () => {
+      const st = state.settings, res = document.getElementById("cuponRes");
+      if(document.getElementById("cuponInput").value.trim().toUpperCase() === String(st.cuponCodigo).trim().toUpperCase()){
+        const f = 1 - st.cuponPct/100;
+        res.style.color = "var(--green)";
+        res.textContent = `✅ ${st.cuponPct}% OFF: ${money(precioEf*f)} efectivo · 3 cuotas de ${money(precioTa*f/3)}`;
+      } else { res.style.color = "var(--coral)"; res.textContent = "Código inválido"; }
+    };
+    const cat = categoryOf(p.name);
+    const sim = state.products.filter(x => x.id !== p.id && categoryOf(x.name) === cat).slice(0,8);
+    if(sim.length){
+      box.insertAdjacentHTML("beforeend", `<div class="similar-title">Productos similares</div><div class="similar-row">${sim.map(x => `<div class="sim-card" data-sim="${x.id}">${(x.images||[])[0] ? `<img src="${x.images[0]}">` : `<div class="ph-empty" style="height:110px">Sin foto</div>`}<div class="sn">${escapeHtml(x.name)}</div><div class="sp">${money(calcProductPrices(x).precioEf)}</div></div>`).join("")}</div>`);
+      box.querySelectorAll("[data-sim]").forEach(el => el.onclick = () => { detailActiveImgIdx = 0; renderDetail("product", Number(el.dataset.sim)); box.parentElement.scrollTop = 0; });
+    }
   } else {
     const c = state.combos.find(cc => cc.id === id);
     if(!c) return;
@@ -3697,12 +3731,12 @@ if(window.location.hash === "#admin"){
   document.getElementById("editToggle").classList.add("unlocked");
 }
 
-["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setInstagram","setAlias","setEnvSuc","setEnvDom","setZonas","setMarkupEf","setMpFee","setRoundTo","setPin"].forEach(id => {
+["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setInstagram","setAlias","setEnvSuc","setEnvDom","setZonas","setCuponCodigo","setCuponPct","setMarkupEf","setMpFee","setRoundTo","setPin"].forEach(id => {
   document.getElementById(id).addEventListener("change", e => {
-    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setInstagram:"instagram",setAlias:"aliasTransferencia",setEnvSuc:"envioSucursal",setEnvDom:"envioDomicilio",setZonas:"zonasGratis",setMarkupEf:"markupEfectivo",setMpFee:"mpFee",setRoundTo:"roundTo",setPin:"pin"};
+    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setInstagram:"instagram",setAlias:"aliasTransferencia",setEnvSuc:"envioSucursal",setEnvDom:"envioDomicilio",setZonas:"zonasGratis",setCuponCodigo:"cuponCodigo",setCuponPct:"cuponPct",setMarkupEf:"markupEfectivo",setMpFee:"mpFee",setRoundTo:"roundTo",setPin:"pin"};
     const key = map[id];
     let val = e.target.value;
-    if(key === "markupEfectivo" || key === "mpFee" || key === "roundTo" || key === "envioSucursal" || key === "envioDomicilio") val = Number(val)||0;
+    if(key === "cuponPct" || key === "markupEfectivo" || key === "mpFee" || key === "roundTo" || key === "envioSucursal" || key === "envioDomicilio") val = Number(val)||0;
     state.settings[key] = val;
     render(); scheduleSave();
   });
