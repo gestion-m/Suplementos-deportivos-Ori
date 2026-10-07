@@ -229,6 +229,14 @@ body.edit-mode .ventas-box{display:block;}
 
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:200;background:var(--paper);border-radius:20px 20px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));max-height:82vh;overflow-y:auto;box-shadow:0 -10px 30px rgba(0,0,0,0.3);display:none;}
 .sheet.show{display:block;}
+#detailSheet{top:0;max-height:none;height:100%;border-radius:0;padding-top:calc(10px + env(safe-area-inset-top));box-shadow:none;}
+.detail-back{position:sticky;top:0;z-index:2;display:block;width:100%;text-align:left;border:none;background:var(--paper);font-weight:800;font-size:.95rem;padding:8px 0 10px;color:var(--ink);}
+.detail-share{width:100%;border:1px solid var(--ink);background:var(--card);border-radius:10px;padding:9px;font-weight:700;font-size:.78rem;margin:6px 0;}
+.brand-pick{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
+.brand-pick .brand-circle{width:72px;height:72px;font-size:.62rem;font-weight:800;text-align:center;}
+.brand-pick .brand-circle.all{border-color:var(--line);}
+.brand-pick .brand-circle.active{border-color:var(--green);box-shadow:0 0 0 3px var(--green);}
+.type-select{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:.9rem;background:#fff;}
 .sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:199;display:none;}
 .sheet-overlay.show{display:block;}
 .sheet h3{margin:0 0 12px;font-size:1.1rem;padding-right:30px;}
@@ -656,7 +664,7 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div class="coupon-res" id="cartCouponRes"></div>
   <div class="cart-totals"><span>Total efectivo/transferencia</span><span id="cartTotalEf">$0</span></div>
   <div class="cart-totals" style="border-top:none;padding-top:0;"><span>Total tarjeta</span><span id="cartTotalTa">$0</span></div>
-  <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">🏠 Retiro y 🤝 punto de encuentro: <b>sin costo</b>. 📦 Envío por Correo Argentino (solo Buenos Aires por ahora): el costo se suma en el siguiente paso.</div>
+  <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">🏠 Retiro y 🤝 punto de encuentro: <b>sin costo</b>. 🛵 Envío en moto: costo según zona, lo coordinamos por WhatsApp. 📦 Envío por Correo Argentino (solo Buenos Aires por ahora): el costo se suma en el siguiente paso.</div>
   <div id="aliasBox" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:10px;">
     <div style="font-size:0.68rem;color:var(--muted);font-weight:700;">¿PAGÁS POR TRANSFERENCIA? Copiá el alias:</div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
@@ -670,7 +678,7 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
 </div>
 
 <div class="sheet" id="detailSheet">
-  <button class="sheet-close" data-close-sheet>✕</button>
+  <button class="detail-back" data-close-sheet>← Volver</button>
   <div id="detailContent"></div>
 </div>
 
@@ -1235,14 +1243,15 @@ function renderFilters(){
 
   /* Panel de filtros */
   const count = state.products.filter(matchesFilters).length;
+  const catsForBrand = [...new Set(state.products.filter(x => !filterBrand || x.brand === filterBrand).map(x => catOf(x)))].sort();
   document.getElementById("filterSheetContent").innerHTML =
-    `<div class="set-title" style="margin-top:0;">Tipo de suplemento</div>
-     <div class="chip-row"><button type="button" class="filter-chip ${!filterCategory?"active":""}" data-filter-cat="">Todo tipo</button>${cats.map(c => `<button type="button" class="filter-chip ${filterCategory===c?"active":""}" data-filter-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join("")}</div>
-     <div class="set-title">Marca</div>
-     <div class="chip-row"><button type="button" class="filter-chip ${!filterBrand?"active":""}" data-filter-brand-s="">Todas las marcas</button>${brands.map(b => `<button type="button" class="filter-chip ${filterBrand===b?"active":""}" data-filter-brand-s="${escapeHtml(b)}">${escapeHtml(b)}</button>`).join("")}</div>`;
+    `<div class="set-title" style="margin-top:0;">Marca</div>
+     <div class="brand-pick"><button type="button" class="brand-circle all ${!filterBrand?"active":""}" data-filter-brand-s="">Todas</button>${brands.map(b => { const lg = state.brandLogos[b]; return `<button type="button" class="brand-circle ${filterBrand===b?"active":""}" data-filter-brand-s="${escapeHtml(b)}" title="${escapeHtml(b)}">${lg ? `<img src="${lg}" alt="${escapeHtml(b)}">` : `<span>${escapeHtml(b)}</span>`}</button>`; }).join("")}</div>
+     <div class="set-title">Tipo de suplemento</div>
+     <select class="type-select" id="filterTypeSel"><option value="">Todos los tipos</option>${catsForBrand.map(c => `<option value="${escapeHtml(c)}" ${filterCategory===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}</select>`;
   const sc = document.getElementById("filterSheetContent");
-  sc.querySelectorAll("[data-filter-cat]").forEach(btn => { btn.onclick = () => { filterCategory = btn.dataset.filterCat || null; renderProducts(); }; });
-  sc.querySelectorAll("[data-filter-brand-s]").forEach(btn => { btn.onclick = () => { filterBrand = btn.dataset.filterBrandS || null; renderProducts(); }; });
+  document.getElementById("filterTypeSel").onchange = e => { filterCategory = e.target.value || null; renderProducts(); };
+  sc.querySelectorAll("[data-filter-brand-s]").forEach(btn => { btn.onclick = () => { filterBrand = btn.dataset.filterBrandS || null; if(filterCategory && filterBrand && !state.products.some(x => x.brand === filterBrand && catOf(x) === filterCategory)) filterCategory = null; renderProducts(); }; });
   document.getElementById("filterApplyBtn").textContent = `Ver ${count} producto${count===1?"":"s"}`;
   renderBrandLogoBox(brands);
   const fp = document.getElementById("filterPanel");
@@ -1821,6 +1830,7 @@ function renderDetail(type, id){
         <div class="dp card"><span class="lbl">TARJETA</span><span class="val">${money(precioTa)}</span></div>
       </div>
       ${p.cuotas>0 ? `<div class="detail-cuotas">💳 ${p.cuotas} cuotas de ${money(precioTa/p.cuotas)}</div>` : ""}
+      <button type="button" class="detail-share" id="shareBtn">🔗 Compartir este producto</button>
       <button type="button" class="admin-photo-btn" id="envioWaBtn" style="margin:6px 0;">🛵 Envíos en moto — consultá tu zona por WhatsApp</button>
       ${state.settings.cuponCodigo && state.settings.cuponPct>0 ? `<div class="coupon-row"><input id="cuponInput" placeholder="Código de descuento"><button id="cuponBtn">Aplicar</button></div><div class="coupon-res" id="cuponRes"></div>` : ""}
       ${stock!==Infinity ? `<div class="detail-stock admin-only ${stock<=2?'low':'ok'}">${stock<=0?'Sin stock disponible':'Quedan '+stock+' unidades'}</div>` : ""}
@@ -1834,6 +1844,12 @@ function renderDetail(type, id){
       <button class="primary-btn" id="detailAddBtn" ${remaining<=0?'disabled':''}>${remaining<=0?'Sin stock':'Agregar al pedido'}</button>
     `;
     wireDetailQty("product", id, remaining);
+    const sb = document.getElementById("shareBtn");
+    if(sb) sb.onclick = async () => {
+      const url = location.origin + location.pathname + "?p=" + p.id;
+      try{ if(navigator.share){ await navigator.share({title:p.name, text:p.name + " — " + money(precioEf), url}); return; } }catch(e){ return; }
+      try{ await navigator.clipboard.writeText(url); showToast("Link copiado ✓"); }catch(e){ prompt("Copiá este link:", url); }
+    };
     const eb = document.getElementById("envioWaBtn");
     if(eb) eb.onclick = () => window.open(waLink(state.settings.whatsapp, `Hola! Quiero consultar el envío de: ${p.name}`), "_blank");
     const cb = document.getElementById("cuponBtn");
@@ -2029,6 +2045,7 @@ function renderCart(){
     msg += `\nTotal efectivo/transferencia: ${money(totalEf + envio)}\nTotal tarjeta: ${money(totalTa + envioTa)}` + (envio ? "\n(incluye envío)" : "");
     msg += `\n\nMis datos: ${cliente.nombre} - ${cliente.telefono}`;
     if(cliente.entrega === "correo") msg += `\n📦 Envío por Correo Argentino a ${cliente.servicio === "domicilio" ? "domicilio" : "sucursal"}: ${cliente.direccion}, ${cliente.provincia === "caba" ? "CABA" : "Buenos Aires"}, CP ${cliente.cp} (costo de envío ${money(cliente.envioCosto || 0)})`;
+    else if(cliente.entrega === "moto") msg += `\n🛵 Envío en moto a: ${cliente.direccion}. Coordinemos el costo según mi zona.`;
     else if(cliente.entrega === "punto") msg += `\n🤝 Punto de encuentro en ${cliente.zona} (gratis). Coordinemos lugar, día y hora.`;
     else msg += `\n🏠 Retiro en tu casa (gratis). Coordinemos día y hora.`;
     if(state.settings.aliasTransferencia){ msg += `\n\nSi pagás por transferencia, el alias es: ${state.settings.aliasTransferencia}\nMandame el comprobante para confirmar el pedido.`; }
@@ -2057,6 +2074,7 @@ function normTel(t){
 function entregaAdmin(c){
   if(!c) return "";
   if(c.entrega === "correo") return " · 📦 Correo (" + (c.servicio === "domicilio" ? "domicilio" : "sucursal") + ") · " + escapeHtml(c.direccion || "") + " · CP " + escapeHtml(c.cp || "") + " · envío " + money(c.envioCosto || 0);
+  if(c.entrega === "moto") return " · 🛵 Envío en moto: " + escapeHtml(c.direccion || "") + " (costo a coordinar)";
   if(c.entrega === "punto") return " · 🤝 Punto de encuentro: " + escapeHtml(c.zona || "");
   return " · 🏠 Retira en tu casa";
 }
@@ -2079,7 +2097,9 @@ function pedirDatosCliente(){
       '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">' +
         '<button type="button" data-ent="casa" style="' + optBase + '">🏠 Retiro en casa del vendedor · GRATIS</button>' +
         '<button type="button" data-ent="punto" style="' + optBase + '">🤝 Punto de encuentro · GRATIS</button>' +
+        '<button type="button" data-ent="moto" style="' + optBase + '">🛵 Envío en moto · coordinamos por WhatsApp</button>' +
         '<button type="button" data-ent="correo" style="' + optBase + '">📦 Envío por Correo Argentino</button></div>' +
+      '<div id="cliBoxMoto" style="display:none;"><input id="cliDirMoto" placeholder="Dirección y zona (calle, número, localidad)" autocomplete="street-address" style="' + inp + '"><div style="font-size:.72rem;opacity:.8;margin:-4px 0 10px;">El costo del envío en moto lo coordinamos por WhatsApp según tu zona.</div></div>' +
       '<div id="cliNotaCasa" style="font-size:.72rem;opacity:.8;margin:-2px 0 10px;">Coordinamos día y hora por WhatsApp.</div>' +
       '<div id="cliBoxPunto" style="display:none;">' +
         '<select id="cliZona" style="' + inp + '">' + (state.settings.zonasGratis || "").split(",").map(z => z.trim()).filter(Boolean).map(z => '<option value="' + escapeHtml(z) + '">' + escapeHtml(z) + '</option>').join("") + '</select>' +
@@ -2102,7 +2122,7 @@ function pedirDatosCliente(){
     $("cliDir").value = g.direccion || ""; $("cliCP").value = g.cp || "";
     if(g.zona) $("cliZona").value = g.zona;
     if(g.provincia === "caba" || g.provincia === "ba") $("cliProv").value = g.provincia;
-    let entrega = ["casa","punto","correo"].includes(g.entrega) ? g.entrega : "casa";
+    let entrega = ["casa","punto","moto","correo"].includes(g.entrega) ? g.entrega : "casa";
     let servicio = g.servicio === "domicilio" ? "domicilio" : "sucursal";
     const costoEnvio = () => Number(servicio === "sucursal" ? state.settings.envioSucursal : state.settings.envioDomicilio) || 0;
     const on = "background:var(--gold);color:var(--ink);", off = "background:rgba(255,255,255,.12);color:var(--paper);";
@@ -2112,6 +2132,7 @@ function pedirDatosCliente(){
       $("cliDom").style.cssText = btnBase + "padding:9px;font-size:.75rem;" + (servicio === "domicilio" ? on : off);
       $("cliBoxPunto").style.display = entrega === "punto" ? "block" : "none";
       $("cliBoxCorreo").style.display = entrega === "correo" ? "block" : "none";
+      $("cliBoxMoto").style.display = entrega === "moto" ? "block" : "none";
       $("cliNotaCasa").style.display = entrega === "casa" ? "block" : "none";
       const fuera = $("cliProv").value === "otra";
       $("cliOtra").style.display = fuera ? "block" : "none";
@@ -2131,6 +2152,7 @@ function pedirDatosCliente(){
       if(email && !/^\S+@\S+\.\S+$/.test(email)){ $("cliErr").textContent = "El email no parece válido."; return; }
       let direccion = "", cp = "", zona = "";
       if(entrega === "punto") zona = $("cliZona").value;
+      if(entrega === "moto"){ direccion = $("cliDirMoto").value.trim(); if(direccion.length < 5){ $("cliErr").textContent = "Escribí tu dirección y zona para el envío en moto."; return; } }
       if(entrega === "correo"){
         if($("cliProv").value === "otra"){ $("cliErr").textContent = "Por ahora solo enviamos por Correo dentro de Buenos Aires. Elegí retiro o punto de encuentro."; return; }
         direccion = $("cliDir").value.trim(); cp = $("cliCP").value.replace(/\D/g,"");
@@ -4099,7 +4121,7 @@ async function loadState(){
   setTimeout(hideLoader, 20000);
   /* Despertar el servidor de pagos (Render gratis se duerme) para que "Pagar" responda rápido */
   try{ fetch(MP_BACKEND + "/", {mode:"no-cors", cache:"no-store"}).catch(() => {}); }catch(e){}
-  loadState().then(() => { loadResenas(); return (document.fonts && document.fonts.ready) || null; }).catch(() => {}).then(hideLoader);
+  loadState().then(() => { try{ const pid = Number(new URLSearchParams(location.search).get("p")); if(pid && state.products.some(x => x.id === pid)) openDetail("product", pid); }catch(e){} loadResenas(); return (document.fonts && document.fonts.ready) || null; }).catch(() => {}).then(hideLoader);
 })();
 </script>
 <div class="ie-ov" id="imgEditor"></div>
