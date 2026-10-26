@@ -443,6 +443,30 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
 .ie-actions{position:sticky;bottom:0;background:#fff;display:flex;gap:8px;padding:10px 0 14px;}
 .ie-actions button{flex:1;border-radius:12px;padding:12px 6px;font-weight:800;font-size:0.85rem;border:1.5px solid #1b1c17;background:#fff;color:#1b1c17;}
 .ie-actions button.ok{background:#1b1c17;color:#fff;}
+
+/* ---- Carteles que se mueven ---- */
+.ticker{overflow:hidden;background:var(--gold);color:var(--ink);white-space:nowrap;}
+.ticker[hidden]{display:none;}
+.ticker-track{display:flex;width:max-content;animation:tkMove var(--tk-dur,30s) linear infinite;will-change:transform;}
+.ticker:active .ticker-track{animation-play-state:paused;}
+.tk-set{display:flex;flex:0 0 auto;}
+.tk-item{padding:10px 0 10px 28px;font-size:.78rem;font-weight:800;letter-spacing:.01em;}
+.tk-item::after{content:"•";margin-left:28px;opacity:.45;}
+@keyframes tkMove{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+/* ---- Descuento por producto (círculo "15% OFF") ---- */
+.off-circle{position:absolute;top:8px;right:8px;z-index:3;width:54px;height:54px;border-radius:50%;background:var(--coral);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+.off-circle b{font-size:.95rem;}
+.off-circle span{font-size:.62rem;letter-spacing:.03em;margin-top:2px;}
+.detail-main-photo{position:relative;}
+.detail-main-photo .off-circle{width:64px;height:64px;top:10px;right:10px;}
+.detail-main-photo .off-circle b{font-size:1.15rem;}
+.price-line .val{display:flex;flex-direction:column;align-items:flex-end;line-height:1.15;}
+.price-line .old-price{margin-right:0;font-size:.7rem;}
+.dp .val s{display:block;font-size:.72rem;color:var(--muted);font-weight:600;}
+.cash-promo{font-size:.66rem;font-weight:800;color:var(--green);margin-top:4px;}
+.ship-info{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;font-size:.76rem;font-weight:700;line-height:1.45;}
+.ship-info div+div{margin-top:4px;}
+.p-stock-badge{top:auto;bottom:8px;right:auto;left:8px;}
 @media(min-width:640px){
   .hero h1{font-size:3rem;}
 }
@@ -473,6 +497,8 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   </div>
 </div>
 
+
+<div class="ticker" id="ticker" hidden><div class="ticker-track" id="tickerTrack"></div></div>
 
 <div id="offerHome"></div>
 
@@ -521,6 +547,10 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div class="admin-row"><label>Código de descuento (ej: PWR10)</label><input id="setCuponCodigo" placeholder="vacío = sin código"></div>
   <div class="admin-row"><label>Descuento del código (%)</label><input id="setCuponPct" type="number" min="0" max="90" placeholder="10"></div>
   <div class="admin-row"><label>Zonas con entrega gratis</label><input id="setZonas" placeholder="José C. Paz, San Miguel, Grand Bourg"></div>
+  <div class="admin-row"><label>Dirección</label><input id="setDireccion" placeholder="Ej: José C. Paz, Buenos Aires"></div>
+  <div class="admin-row"><label>Desc. efectivo / transf. %</label><input id="setDescEf" type="number" min="0" max="50" placeholder="10" style="max-width:80px;"></div>
+  <div style="font-size:0.66rem;color:var(--muted);margin:-4px 0 6px;">Se descuenta en el pedido cuando pagan en efectivo o transferencia. Poné 0 para sacarlo.</div>
+  <div class="admin-row"><label>Carteles que se mueven (uno por línea)</label><textarea id="setCarteles" rows="5" placeholder="Uno por línea. Podés usar {desc} para el % de descuento."></textarea></div>
   </div></details>
   <details class="adm-sec" data-adm="s-cartel"><summary>🏋️ Cartel motivacional</summary><div class="adm-body">
   <div id="motivosAdmin"></div>
@@ -611,7 +641,8 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
 </div>
 
 <div class="contact-box" id="contactBox" style="display:none;">
-  <div class="cb-title">📍 Contacto</div>
+  <div class="cb-title">Contacto</div>
+  <div id="cbAddr" style="display:none;font-weight:800;font-size:.9rem;margin:-4px 0 4px;"></div>
   <a class="cb-phone" id="cbPhone" href="#" style="display:none;"></a>
   <a class="cb-wa" id="cbWa" href="#" target="_blank" rel="noopener" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="flex:none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg> Escribime por WhatsApp</a>
   <a class="cb-ig" id="cbIg" href="#" target="_blank" rel="noopener" style="display:none;"></a>
@@ -662,9 +693,9 @@ body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:non
   <div id="cartLines"></div>
   <div class="coupon-row" id="cartCouponRow" style="display:none;"><input id="cartCouponInput" placeholder="Código de descuento"><button id="cartCouponBtn" type="button">Aplicar</button></div>
   <div class="coupon-res" id="cartCouponRes"></div>
-  <div class="cart-totals"><span>Total efectivo/transferencia</span><span id="cartTotalEf">$0</span></div>
+  <div class="cart-totals"><span id="cartTotalEfLbl">Total efectivo/transferencia</span><span id="cartTotalEf">$0</span></div>
   <div class="cart-totals" style="border-top:none;padding-top:0;"><span>Total tarjeta</span><span id="cartTotalTa">$0</span></div>
-  <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">🏠 Retiro y 🤝 punto de encuentro: <b>sin costo</b>. 🛵 Envío en moto: costo según zona, lo coordinamos por WhatsApp. 📦 Envío por Correo Argentino (solo Buenos Aires por ahora): el costo se suma en el siguiente paso.</div>
+  <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">🏠 Retiro y 🤝 punto de encuentro: <b>sin costo</b>. 🛵 Zona norte cerca de José C. Paz: <b>envío en el día por Uber o Didi Moto</b> (el costo del viaje lo coordinamos por WhatsApp). 📦 Envío por Correo Argentino (solo Buenos Aires por ahora): el costo se suma en el siguiente paso.</div>
   <div id="aliasBox" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:10px;">
     <div style="font-size:0.68rem;color:var(--muted);font-weight:700;">¿PAGÁS POR TRANSFERENCIA? Copiá el alias:</div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
@@ -791,6 +822,14 @@ const pedidosCol = db.collection("pedidos");
 const resenasCol = db.collection("resenas");
 
 const money = n => "$" + Math.round(n).toLocaleString("es-AR");
+const DEFAULT_CARTELES = "📦 Envíos por Correo Argentino\n🛵 Zona norte (cerca de José C. Paz): envío en el día por Uber o Didi Moto\n💸 {desc}% OFF abonando en efectivo o transferencia\n📍 José C. Paz, Buenos Aires";
+function visibleProducts(){ return editMode ? state.products : state.products.filter(p => stockOf(p) > 0); }
+function cashFactor(){ const d = Number(state.settings.descEfPct) || 0; return (d > 0 && d < 90) ? 1 - d/100 : 1; }
+function shipInfoHtml(){
+  const d = Number(state.settings.descEfPct) || 0;
+  return `<div class="ship-info"><div>📦 Envíos por Correo Argentino</div><div>🛵 Zona norte cerca de José C. Paz: envío en el día por Uber o Didi Moto</div>${d>0 ? `<div style="color:var(--green);">💸 ${d}% OFF abonando en efectivo o transferencia</div>` : ""}</div>`;
+}
+function cashPromoHtml(){ const d = Number(state.settings.descEfPct) || 0; return d > 0 ? `<div class="cash-promo">💸 ${d}% OFF extra abonando en efectivo o transferencia</div>` : ""; }
 
 const DESC_RULES = [
   [/creatina/i, "Ayuda a mejorar la fuerza y el rendimiento en entrenamientos de alta intensidad."],
@@ -858,7 +897,7 @@ const DEFAULT_STATE = {
     brand:"PWR SUPLEMENTOS", heroTitle:"ENERGÍA|PARA RENDIR",
     heroTag:"Suplementos deportivos originales. Consultá stock y precios.",
     envioTexto:"🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas",
-    whatsapp:"", cuponCodigo:"", cuponPct:0, markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", envioSucursal:6800, envioDomicilio:9700, zonasGratis:"José C. Paz, San Miguel, Grand Bourg", heroImage:null, accentColor:"#c6ff2e", logoImage:null,
+    whatsapp:"", cuponCodigo:"", cuponPct:0, markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", envioSucursal:6800, envioDomicilio:9700, zonasGratis:"José C. Paz, San Miguel, Grand Bourg", direccion:"José C. Paz, Buenos Aires", descEfPct:10, carteles:DEFAULT_CARTELES, heroImage:null, accentColor:"#c6ff2e", logoImage:null,
     fonts:{brand:"anton",hero:"anton",sections:"anton",prices:"anton"}, textColors:{}, ofertas:[], bgMode:"default", bgFit:"cover", bgColor:"", bgImage:null
   },
   motivos:[{id:1,text:"La disciplina es hacer lo que tenés que hacer, aunque no tengas ganas.",author:"PWR · Entrená con constancia",image:null,ovl:55,bri:100,con:100,color:"#ffffff",bg:"dark"}],
@@ -939,12 +978,18 @@ function offerPriceFor(p){
 function calcProductPrices(p){
   const base = calcBasePrices(p);
   const pr = offerPriceFor(p);
-  if(!pr) return {precioEf: base.precioEf, precioTa: base.precioTa, anterior: 0, pct: 0};
+  if(!pr){
+    const d = Number(p.descuentoPct) || 0;
+    if(d > 0 && d < 90){
+      return {precioEf: roundPrice(base.precioEf * (1 - d/100)), precioTa: roundPrice(base.precioTa * (1 - d/100)), anterior: base.precioEf, anteriorTa: base.precioTa, pct: d};
+    }
+    return {precioEf: base.precioEf, precioTa: base.precioTa, anterior: 0, anteriorTa: 0, pct: 0};
+  }
   const ef = Number(pr.ef);
   const ta = Number(pr.ta) > 0 ? Number(pr.ta) : cardFromCash(ef);
   const ant = Number(pr.ant) > 0 ? Number(pr.ant) : base.precioEf;
   const pct = ant > ef ? Math.round((1 - ef / ant) * 100) : 0;
-  return {precioEf: ef, precioTa: ta, anterior: pct > 0 ? ant : 0, pct};
+  return {precioEf: ef, precioTa: ta, anterior: pct > 0 ? ant : 0, anteriorTa: 0, pct};
 }
 function waLink(number, text){ const clean=(number||"").replace(/[^0-9]/g,""); return clean ? `https://wa.me/${clean}?text=${encodeURIComponent(text)}` : "#"; }
 function escapeHtml(str){ return String(str).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
@@ -998,6 +1043,22 @@ function motivoRestart(){
   if(motivoSlides().length > 1){
     motivoTimer = setInterval(() => { if(!motivoLbOpen && !document.hidden) motivoGo(motivoIdx + 1); }, 5000);
   }
+}
+let tickerSig = "";
+function cartelesList(){
+  const raw = (state.settings.carteles === undefined || state.settings.carteles === null) ? DEFAULT_CARTELES : state.settings.carteles;
+  const d = Number(state.settings.descEfPct) || 0;
+  return String(raw).split("\n").map(x => x.replace(/\{desc\}/g, d).trim()).filter(Boolean);
+}
+function renderTicker(){
+  const box = document.getElementById("ticker"), track = document.getElementById("tickerTrack");
+  const list = cartelesList();
+  box.hidden = !list.length;
+  const html = list.map(t => `<span class="tk-item">${escapeHtml(t)}</span>`).join("");
+  if(html === tickerSig) return;
+  tickerSig = html;
+  track.innerHTML = `<div class="tk-set">${html}</div><div class="tk-set" aria-hidden="true">${html}</div>`;
+  track.style.setProperty("--tk-dur", Math.max(16, Math.round(list.join(" ").length * 0.3)) + "s");
 }
 function renderMotivo(){
   const box = document.getElementById("motivo");
@@ -1139,6 +1200,7 @@ function render(){
   const [line1, line2] = (state.settings.heroTitle||"").split("|");
   document.getElementById("heroTitle").innerHTML = `${escapeHtml(line1||"")}<br><span class="accent">${escapeHtml(line2||"")}</span>`;
   document.getElementById("heroTag").textContent = state.settings.heroTag;
+  renderTicker();
   renderMotivo();
   if(!document.activeElement || !document.activeElement.closest || !document.activeElement.closest("#motivosAdmin")) renderMotivosAdmin();
 
@@ -1159,6 +1221,9 @@ function render(){
   document.getElementById("setEnvSuc").value = state.settings.envioSucursal ?? "";
   document.getElementById("setEnvDom").value = state.settings.envioDomicilio ?? "";
   document.getElementById("setZonas").value = state.settings.zonasGratis || "";
+  document.getElementById("setDireccion").value = state.settings.direccion || "";
+  document.getElementById("setDescEf").value = state.settings.descEfPct ?? "";
+  document.getElementById("setCarteles").value = (state.settings.carteles === undefined || state.settings.carteles === null) ? DEFAULT_CARTELES : state.settings.carteles;
   const heroEl = document.querySelector(".hero");
   const heroIllustration = document.getElementById("heroIllustration");
   if(state.settings.heroImage){
@@ -1205,6 +1270,7 @@ function render(){
 let searchQuery = "";
 function normTxt(t){ return String(t==null?"":t).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(); }
 function matchesFilters(p){
+  if(!editMode && stockOf(p) <= 0) return false;
   if(filterBrand && p.brand !== filterBrand) return false;
   if(filterCategory && catOf(p) !== filterCategory) return false;
   const q = normTxt(searchQuery).trim();
@@ -1216,8 +1282,8 @@ function matchesFilters(p){
 }
 
 function renderFilters(){
-  const brands = [...new Set(state.products.map(p => p.brand).filter(Boolean))].sort();
-  const cats = [...new Set(state.products.map(p => catOf(p)))].sort();
+  const brands = [...new Set(visibleProducts().map(p => p.brand).filter(Boolean))].sort();
+  const cats = [...new Set(visibleProducts().map(p => catOf(p)))].sort();
 
   /* Círculos de marcas (inicio) */
   const row = document.getElementById("brandFilterRow");
@@ -1243,7 +1309,7 @@ function renderFilters(){
 
   /* Panel de filtros */
   const count = state.products.filter(matchesFilters).length;
-  const catsForBrand = [...new Set(state.products.filter(x => !filterBrand || x.brand === filterBrand).map(x => catOf(x)))].sort();
+  const catsForBrand = [...new Set(visibleProducts().filter(x => !filterBrand || x.brand === filterBrand).map(x => catOf(x)))].sort();
   document.getElementById("filterSheetContent").innerHTML =
     `<div class="set-title" style="margin-top:0;">Marca</div>
      <div class="brand-pick"><button type="button" class="brand-circle all ${!filterBrand?"active":""}" data-filter-brand-s="">Todas</button>${brands.map(b => { const lg = state.brandLogos[b]; return `<button type="button" class="brand-circle ${filterBrand===b?"active":""}" data-filter-brand-s="${escapeHtml(b)}" title="${escapeHtml(b)}">${lg ? `<img src="${lg}" alt="${escapeHtml(b)}">` : `<span>${escapeHtml(b)}</span>`}</button>`; }).join("")}</div>
@@ -1251,7 +1317,7 @@ function renderFilters(){
      <select class="type-select" id="filterTypeSel"><option value="">Todos los tipos</option>${catsForBrand.map(c => `<option value="${escapeHtml(c)}" ${filterCategory===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}</select>`;
   const sc = document.getElementById("filterSheetContent");
   document.getElementById("filterTypeSel").onchange = e => { filterCategory = e.target.value || null; renderProducts(); };
-  sc.querySelectorAll("[data-filter-brand-s]").forEach(btn => { btn.onclick = () => { filterBrand = btn.dataset.filterBrandS || null; if(filterCategory && filterBrand && !state.products.some(x => x.brand === filterBrand && catOf(x) === filterCategory)) filterCategory = null; renderProducts(); }; });
+  sc.querySelectorAll("[data-filter-brand-s]").forEach(btn => { btn.onclick = () => { filterBrand = btn.dataset.filterBrandS || null; if(filterCategory && filterBrand && !visibleProducts().some(x => x.brand === filterBrand && catOf(x) === filterCategory)) filterCategory = null; renderProducts(); }; });
   document.getElementById("filterApplyBtn").textContent = `Ver ${count} producto${count===1?"":"s"}`;
   renderBrandLogoBox(brands);
   const fp = document.getElementById("filterPanel");
@@ -1313,9 +1379,9 @@ function renderProducts(){
   const grid = document.getElementById("productGrid");
   grid.innerHTML = "";
   const filtered = state.products.filter(matchesFilters);
-  document.getElementById("prodCount").textContent = `${filtered.length} de ${state.products.length} productos`;
+  document.getElementById("prodCount").textContent = `${filtered.length} de ${visibleProducts().length} productos`;
   filtered.forEach(p => {
-    const {precioEf, precioTa, anterior, pct} = calcProductPrices(p);
+    const {precioEf, precioTa, anterior, anteriorTa, pct} = calcProductPrices(p);
     const imgs = p.images || [];
     const stock = stockOf(p);
     const remaining = stock === Infinity ? Infinity : Math.max(0, stock - inCartQty("product", p.id));
@@ -1326,17 +1392,18 @@ function renderProducts(){
         ${imgs[0] ? `<img src="${imgs[0]}">` : `<div class="ph-empty">Sin foto</div>`}
         <div class="p-brand-tag ${state.brandLogos[p.brand]?'has-logo':''}">${state.brandLogos[p.brand]?`<img src="${state.brandLogos[p.brand]}">`:""}${escapeHtml(p.brand||"")}</div>
         ${imgs.length>1 ? `<div class="p-multi-badge">📷 ${imgs.length}</div>` : ""}
-        ${pct>0 ? `<div class="off-badge">-${pct}% OFF</div>` : ""}
-        ${stock!==Infinity ? `<div class="p-stock-badge admin-only ${stock<=2?'low':'ok'}">${stock<=0?'Sin stock':'Quedan '+stock}</div>` : ""}
+        ${pct>0 ? `<div class="off-circle"><b>${pct}%</b><span>OFF</span></div>` : ""}
+        ${stock!==Infinity ? `<div class="p-stock-badge admin-only ${stock<=2?'low':'ok'}">${stock<=0?'Sin stock · oculto a clientes':'Quedan '+stock}</div>` : ""}
       </div>
       <div class="p-body">
         <div class="p-name" data-open-detail="product:${p.id}">${escapeHtml(p.name)}</div>
         ${p.desc ? `<div class="p-desc">${escapeHtml(p.desc)}</div>` : ""}
         <div class="p-prices">
-          <div class="price-line cash"><span class="lbl">EFECTIVO/TRANSF.</span><span class="val">${anterior ? `<s class="old-price">${money(anterior)}</s>` : ""}${money(precioEf)}</span></div>
-          <div class="price-line card"><span class="lbl">TARJETA</span><span class="val">${money(precioTa)}</span></div>
+          <div class="price-line cash"><span class="lbl">EFECTIVO/TRANSF.</span><span class="val">${anterior ? `<s class="old-price">${money(anterior)}</s>` : ""}<span>${money(precioEf)}</span></span></div>
+          <div class="price-line card"><span class="lbl">TARJETA</span><span class="val">${anteriorTa ? `<s class="old-price">${money(anteriorTa)}</s>` : ""}<span>${money(precioTa)}</span></span></div>
+          ${cashPromoHtml()}
         </div>
-        <button class="add-cart-btn" data-add-product="${p.id}" ${remaining<=0?'disabled':''}>${remaining<=0?'Sin stock':'+ Agregar al pedido'}</button>
+        <button class="add-cart-btn" data-add-product="${p.id}" ${remaining<=0?'disabled':''}>${remaining<=0?(stock>0?'Todo el stock está en tu pedido':'Sin stock'):'+ Agregar al pedido'}</button>
       </div>
       <div class="admin-panel">
           <button class="admin-photo-btn" data-photo-id="${p.id}">📷 Subir fotos (hasta 4, varias juntas)</button>
@@ -1348,6 +1415,7 @@ function renderProducts(){
           <div class="admin-row"><label>Cuotas (vacío = no mostrar)</label><input type="number" min="0" data-field="cuotas" data-id="${p.id}" value="${p.cuotas||''}" placeholder="ej: 3"></div>
           <div class="admin-row"><label>Costo</label><input type="number" data-field="costo" data-id="${p.id}" value="${p.costo}"></div>
           <div class="admin-row"><label>Stock</label><input type="number" data-field="stock" data-id="${p.id}" value="${p.stock===null?'':p.stock}" placeholder="sin control"></div>
+          <div class="admin-row"><label>Descuento % (vacío = sin)</label><input type="number" min="0" max="90" data-field="descuentoPct" data-id="${p.id}" value="${p.descuentoPct||''}" placeholder="ej: 15"></div>
           <div class="admin-row"><label>Marg. Ef/Tr %</label><input type="number" data-field="markupEf" data-id="${p.id}" value="${p.markupEf===null?'':p.markupEf}" placeholder="${state.settings.markupEfectivo}"></div>
           <div class="admin-row"><label>Precio manual Ef/Tr</label><input type="number" data-field="precioEfManual" data-id="${p.id}" value="${p.precioEfManual===null?'':p.precioEfManual}" placeholder="automático"></div>
           <div class="admin-row"><label>Precio manual Tarj.</label><input type="number" data-field="precioTaManual" data-id="${p.id}" value="${p.precioTaManual===null?'':p.precioTaManual}" placeholder="automático"></div>
@@ -1379,6 +1447,7 @@ function renderCombos(){
   const list = document.getElementById("comboList");
   list.innerHTML = "";
   state.combos.forEach(c => {
+    if(!editMode && c.items.some(it => { const pr = state.products.find(p => p.id === it.productId); return pr && stockOf(pr) < it.qty; })) return;
     let costo=0, valorIndividual=0, itemsText=[];
     c.items.forEach(it => {
       const prod = state.products.find(p => p.id === it.productId);
@@ -1470,6 +1539,7 @@ function attachProductListeners(){
       let val = e.target.value;
       if(field === "costo"){ prod.costo = Number(val)||0; }
       else if(field === "stock"){ prod.stock = val === "" ? null : Number(val); }
+      else if(field === "descuentoPct"){ const n = Math.floor(Number(val)); prod.descuentoPct = (val === "" || !(n > 0)) ? null : Math.min(90, n); }
       else if(field === "cuotas"){ prod.cuotas = val === "" ? null : Math.max(0, Math.floor(Number(val))||0); }
       else if(field === "markupEf" || field === "markupTa"){ prod[field] = val === "" ? null : Number(val); }
       else if(field === "precioEfManual" || field === "precioTaManual"){ prod[field] = val === "" ? null : Number(val); }
@@ -1814,7 +1884,7 @@ function renderDetail(type, id){
     const p = state.products.find(pp => pp.id === id);
     if(!p) return;
     const imgs = p.images || [];
-    const {precioEf, precioTa} = calcProductPrices(p);
+    const {precioEf, precioTa, anterior, anteriorTa, pct} = calcProductPrices(p);
     const stock = stockOf(p);
     const remaining = stock === Infinity ? Infinity : Math.max(0, stock - inCartQty("product", p.id));
     const sections = [["Modo de uso", p.modoDeUso],["Ingredientes", p.ingredientes],["Advertencias", p.advertencias]].filter(([_,v]) => v && v.trim());
@@ -1823,15 +1893,17 @@ function renderDetail(type, id){
       <div class="detail-brand">${escapeHtml(p.brand||"")}</div>
       <h3>${escapeHtml(p.name)}</h3>
       <span class="detail-cat">${escapeHtml(catOf(p))}</span>
-      <div class="detail-main-photo">${imgs[detailActiveImgIdx] ? `<img src="${imgs[detailActiveImgIdx]}">` : `<div class="ph-empty">Sin foto</div>`}</div>
+      <div class="detail-main-photo">${imgs[detailActiveImgIdx] ? `<img src="${imgs[detailActiveImgIdx]}">` : `<div class="ph-empty">Sin foto</div>`}${pct>0 ? `<div class="off-circle"><b>${pct}%</b><span>OFF</span></div>` : ""}</div>
       ${imgs.length>1 ? `<div class="detail-thumbs">${imgs.map((im,i)=>`<img src="${im}" class="${i===detailActiveImgIdx?'active':''}" data-set-main="${i}">`).join("")}</div>` : ""}
       <div class="detail-prices">
-        <div class="dp cash"><span class="lbl">EFECTIVO / TRANSFERENCIA</span><span class="val">${money(precioEf)}</span></div>
-        <div class="dp card"><span class="lbl">TARJETA</span><span class="val">${money(precioTa)}</span></div>
+        <div class="dp cash"><span class="lbl">EFECTIVO / TRANSFERENCIA</span><span class="val">${anterior ? `<s>${money(anterior)}</s>` : ""}${money(precioEf)}</span></div>
+        <div class="dp card"><span class="lbl">TARJETA</span><span class="val">${anteriorTa ? `<s>${money(anteriorTa)}</s>` : ""}${money(precioTa)}</span></div>
       </div>
+      ${cashPromoHtml()}
+      ${shipInfoHtml()}
       ${p.cuotas>0 ? `<div class="detail-cuotas">💳 ${p.cuotas} cuotas de ${money(precioTa/p.cuotas)}</div>` : ""}
       <button type="button" class="detail-share" id="shareBtn">🔗 Compartir este producto</button>
-      <button type="button" class="admin-photo-btn" id="envioWaBtn" style="margin:6px 0;">🛵 Envíos en moto — consultá tu zona por WhatsApp</button>
+      <button type="button" class="admin-photo-btn" id="envioWaBtn" style="margin:6px 0;">🛵 Envío en el día por Uber / Didi Moto — consultá tu zona</button>
       ${state.settings.cuponCodigo && state.settings.cuponPct>0 ? `<div class="coupon-row"><input id="cuponInput" placeholder="Código de descuento"><button id="cuponBtn">Aplicar</button></div><div class="coupon-res" id="cuponRes"></div>` : ""}
       ${stock!==Infinity ? `<div class="detail-stock admin-only ${stock<=2?'low':'ok'}">${stock<=0?'Sin stock disponible':'Quedan '+stock+' unidades'}</div>` : ""}
       ${benefitsHtml ? `<div class="detail-benefits">${benefitsHtml}</div>` : (p.desc ? `<div class="detail-benefits"><div class="benefit-line">${escapeHtml(p.desc)}</div></div>` : "")}
@@ -1862,7 +1934,7 @@ function renderDetail(type, id){
       } else { res.style.color = "var(--coral)"; res.textContent = "Código inválido"; }
     };
     const cat = catOf(p);
-    const sim = state.products.filter(x => x.id !== p.id && catOf(x) === cat).slice(0,8);
+    const sim = visibleProducts().filter(x => x.id !== p.id && catOf(x) === cat).slice(0,8);
     if(sim.length){
       box.insertAdjacentHTML("beforeend", `<div class="similar-title">Productos similares</div><div class="similar-row">${sim.map(x => `<div class="sim-card" data-sim="${x.id}">${(x.images||[])[0] ? `<img src="${x.images[0]}">` : `<div class="ph-empty" style="height:110px">Sin foto</div>`}<div class="sn">${escapeHtml(x.name)}</div><div class="sp">${money(calcProductPrices(x).precioEf)}</div></div>`).join("")}</div>`);
       box.querySelectorAll("[data-sim]").forEach(el => el.onclick = () => { detailActiveImgIdx = 0; renderDetail("product", Number(el.dataset.sim)); box.parentElement.scrollTop = 0; });
@@ -1947,12 +2019,12 @@ function cartLineInfo(item){
     if(!p) return null;
     const {precioEf, precioTa} = calcProductPrices(p);
     const f = couponFactor();
-    return {name:p.name, brand:p.brand||"", unitEf:Math.round(precioEf*f), unitTa:Math.round(precioTa*f), image:(p.images&&p.images[0])||""};
+    return {name:p.name, brand:p.brand||"", unitEf:Math.round(precioEf*f*cashFactor()), unitTa:Math.round(precioTa*f), image:(p.images&&p.images[0])||""};
   } else {
     const c = state.combos.find(cc => cc.id === item.id);
     if(!c) return null;
     const f2 = couponFactor();
-    return {name:c.name, brand:"", unitEf:Math.round(c.precio*f2), unitTa:Math.round(cardFromCash(c.precio)*f2), image:(c.images&&c.images[0])||""};
+    return {name:c.name, brand:"", unitEf:Math.round(c.precio*f2*cashFactor()), unitTa:Math.round(cardFromCash(c.precio)*f2), image:(c.images&&c.images[0])||""};
   }
 }
 
@@ -1985,6 +2057,7 @@ function renderCart(){
     if(v && v.toUpperCase() === String(stc.cuponCodigo).trim().toUpperCase()){ cartCoupon = v.toUpperCase(); renderCart(); showToast("Descuento aplicado ✓"); }
     else { cartCoupon = null; renderCart(); showToast("Código inválido"); }
   };
+  { const dEf = Number(state.settings.descEfPct) || 0; document.getElementById("cartTotalEfLbl").textContent = dEf > 0 ? `Total efectivo/transferencia (${dEf}% OFF incluido)` : "Total efectivo/transferencia"; }
   document.getElementById("cartTotalEf").textContent = money(totalEf);
   document.getElementById("cartTotalTa").textContent = money(totalTa);
   document.getElementById("cartCount").textContent = count;
@@ -2042,10 +2115,11 @@ function renderCart(){
     });
     const envio = cliente.entrega === "correo" ? (Number(cliente.envioCosto) || 0) : 0, envioTa = envio ? cardFromCash(envio) : 0;
     if(cartCoupon) msg += `\n🎟️ Código ${cartCoupon} (${state.settings.cuponPct}% OFF) aplicado`;
+    if(Number(state.settings.descEfPct) > 0) msg += `\n💸 Incluye ${state.settings.descEfPct}% OFF por pagar en efectivo o transferencia`;
     msg += `\nTotal efectivo/transferencia: ${money(totalEf + envio)}\nTotal tarjeta: ${money(totalTa + envioTa)}` + (envio ? "\n(incluye envío)" : "");
     msg += `\n\nMis datos: ${cliente.nombre} - ${cliente.telefono}`;
     if(cliente.entrega === "correo") msg += `\n📦 Envío por Correo Argentino a ${cliente.servicio === "domicilio" ? "domicilio" : "sucursal"}: ${cliente.direccion}, ${cliente.provincia === "caba" ? "CABA" : "Buenos Aires"}, CP ${cliente.cp} (costo de envío ${money(cliente.envioCosto || 0)})`;
-    else if(cliente.entrega === "moto") msg += `\n🛵 Envío en moto a: ${cliente.direccion}. Coordinemos el costo según mi zona.`;
+    else if(cliente.entrega === "moto") msg += `\n🛵 Envío en el día por Uber/Didi Moto a: ${cliente.direccion}. Coordinemos el costo del viaje según mi zona.`;
     else if(cliente.entrega === "punto") msg += `\n🤝 Punto de encuentro en ${cliente.zona} (gratis). Coordinemos lugar, día y hora.`;
     else msg += `\n🏠 Retiro en tu casa (gratis). Coordinemos día y hora.`;
     if(state.settings.aliasTransferencia){ msg += `\n\nSi pagás por transferencia, el alias es: ${state.settings.aliasTransferencia}\nMandame el comprobante para confirmar el pedido.`; }
@@ -2097,9 +2171,9 @@ function pedirDatosCliente(){
       '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">' +
         '<button type="button" data-ent="casa" style="' + optBase + '">🏠 Retiro en casa del vendedor · GRATIS</button>' +
         '<button type="button" data-ent="punto" style="' + optBase + '">🤝 Punto de encuentro · GRATIS</button>' +
-        '<button type="button" data-ent="moto" style="' + optBase + '">🛵 Envío en moto · coordinamos por WhatsApp</button>' +
+        '<button type="button" data-ent="moto" style="' + optBase + '">🛵 Zona norte (cerca de José C. Paz) · envío en el día por Uber o Didi Moto</button>' +
         '<button type="button" data-ent="correo" style="' + optBase + '">📦 Envío por Correo Argentino</button></div>' +
-      '<div id="cliBoxMoto" style="display:none;"><input id="cliDirMoto" placeholder="Dirección y zona (calle, número, localidad)" autocomplete="street-address" style="' + inp + '"><div style="font-size:.72rem;opacity:.8;margin:-4px 0 10px;">El costo del envío en moto lo coordinamos por WhatsApp según tu zona.</div></div>' +
+      '<div id="cliBoxMoto" style="display:none;"><input id="cliDirMoto" placeholder="Dirección y zona (calle, número, localidad)" autocomplete="street-address" style="' + inp + '"><div style="font-size:.72rem;opacity:.8;margin:-4px 0 10px;">Entrega en el día por Uber o Didi Moto. El costo del viaje lo coordinamos por WhatsApp según tu zona.</div></div>' +
       '<div id="cliNotaCasa" style="font-size:.72rem;opacity:.8;margin:-2px 0 10px;">Coordinamos día y hora por WhatsApp.</div>' +
       '<div id="cliBoxPunto" style="display:none;">' +
         '<select id="cliZona" style="' + inp + '">' + (state.settings.zonasGratis || "").split(",").map(z => z.trim()).filter(Boolean).map(z => '<option value="' + escapeHtml(z) + '">' + escapeHtml(z) + '</option>').join("") + '</select>' +
@@ -2259,7 +2333,9 @@ function renderContact(){
   $("cbIg").style.display = igUrl ? "flex" : "none";
   if(igUrl){ $("cbIg").href = igUrl; $("cbIg").innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex:none"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>` + " Instagram" + (igName ? " @" + escapeHtml(igName) : ""); }
   $("menuIg").style.display = igUrl ? "flex" : "none"; if(igUrl) $("menuIg").href = igUrl;
-  $("contactBox").style.display = (wa || igUrl) ? "block" : "none";
+  const dirTxt = (state.settings.direccion || "").trim();
+  $("cbAddr").style.display = dirTxt ? "block" : "none"; $("cbAddr").textContent = "📍 " + dirTxt;
+  $("contactBox").style.display = (wa || igUrl || dirTxt) ? "block" : "none";
 }
 
 /* ---------- RESEÑAS ---------- */
@@ -2780,7 +2856,7 @@ function offerComboHtml(c){
 }
 function offerBlockHtml(o){
   const combos = (o.comboIds || []).map(id => state.combos.find(c => c.id === id)).filter(Boolean);
-  const prods = (o.productIds || []).map(id => state.products.find(p => p.id === id)).filter(Boolean);
+  const prods = (o.productIds || []).map(id => state.products.find(p => p.id === id)).filter(Boolean).filter(p => editMode || stockOf(p) > 0);
   return `
     <div class="offer-block">
       <h4>🔥 ${escapeHtml(o.title || "Oferta")}</h4>
@@ -3801,12 +3877,12 @@ if(window.location.hash === "#admin"){
   document.getElementById("editToggle").classList.add("unlocked");
 }
 
-["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setInstagram","setAlias","setEnvSuc","setEnvDom","setZonas","setCuponCodigo","setCuponPct","setMarkupEf","setMpFee","setRoundTo","setPin"].forEach(id => {
+["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setInstagram","setAlias","setEnvSuc","setEnvDom","setZonas","setDireccion","setDescEf","setCarteles","setCuponCodigo","setCuponPct","setMarkupEf","setMpFee","setRoundTo","setPin"].forEach(id => {
   document.getElementById(id).addEventListener("change", e => {
-    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setInstagram:"instagram",setAlias:"aliasTransferencia",setEnvSuc:"envioSucursal",setEnvDom:"envioDomicilio",setZonas:"zonasGratis",setCuponCodigo:"cuponCodigo",setCuponPct:"cuponPct",setMarkupEf:"markupEfectivo",setMpFee:"mpFee",setRoundTo:"roundTo",setPin:"pin"};
+    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setInstagram:"instagram",setAlias:"aliasTransferencia",setEnvSuc:"envioSucursal",setEnvDom:"envioDomicilio",setZonas:"zonasGratis",setDireccion:"direccion",setDescEf:"descEfPct",setCarteles:"carteles",setCuponCodigo:"cuponCodigo",setCuponPct:"cuponPct",setMarkupEf:"markupEfectivo",setMpFee:"mpFee",setRoundTo:"roundTo",setPin:"pin"};
     const key = map[id];
     let val = e.target.value;
-    if(key === "cuponPct" || key === "markupEfectivo" || key === "mpFee" || key === "roundTo" || key === "envioSucursal" || key === "envioDomicilio") val = Number(val)||0;
+    if(key === "cuponPct" || key === "markupEfectivo" || key === "mpFee" || key === "roundTo" || key === "envioSucursal" || key === "envioDomicilio" || key === "descEfPct") val = Number(val)||0;
     state.settings[key] = val;
     render(); scheduleSave();
   });
@@ -4089,6 +4165,9 @@ async function loadState(){
     if(state.settings.envioSucursal === undefined) state.settings.envioSucursal = 6800;
     if(state.settings.envioDomicilio === undefined) state.settings.envioDomicilio = 9700;
     if(state.settings.zonasGratis === undefined) state.settings.zonasGratis = "José C. Paz, San Miguel, Grand Bourg";
+    if(state.settings.direccion === undefined) state.settings.direccion = "José C. Paz, Buenos Aires";
+    if(state.settings.descEfPct === undefined) state.settings.descEfPct = 10;
+    if(state.settings.carteles === undefined) state.settings.carteles = DEFAULT_CARTELES;
     if(state.settings.accentColor === undefined) state.settings.accentColor = "#c6ff2e";
     state.products.forEach(p => {
       if(!p.images){ p.images = p.image ? [p.image] : []; }
@@ -4121,7 +4200,7 @@ async function loadState(){
   setTimeout(hideLoader, 20000);
   /* Despertar el servidor de pagos (Render gratis se duerme) para que "Pagar" responda rápido */
   try{ fetch(MP_BACKEND + "/", {mode:"no-cors", cache:"no-store"}).catch(() => {}); }catch(e){}
-  loadState().then(() => { try{ const pid = Number(new URLSearchParams(location.search).get("p")); if(pid && state.products.some(x => x.id === pid)) openDetail("product", pid); }catch(e){} loadResenas(); return (document.fonts && document.fonts.ready) || null; }).catch(() => {}).then(hideLoader);
+  loadState().then(() => { try{ const pid = Number(new URLSearchParams(location.search).get("p")); if(pid && visibleProducts().some(x => x.id === pid)) openDetail("product", pid); }catch(e){} loadResenas(); return (document.fonts && document.fonts.ready) || null; }).catch(() => {}).then(hideLoader);
 })();
 </script>
 <div class="ie-ov" id="imgEditor"></div>
