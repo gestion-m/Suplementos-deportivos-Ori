@@ -297,7 +297,7 @@ body.edit-mode .ventas-box{display:block;}
 .hamb{font-size:1.15rem;line-height:1;padding:6px 10px;}
 body:not(.view-catalog) #catalogo{display:none;}
 body:not(.view-combos) #combos{display:none;}
-body:not(.view-home) #offerHome, body:not(.view-home) .hero, body:not(.view-home) #homeSection, body:not(.view-home) .motivo{display:none;}
+body:not(.view-home) #offerHome, body:not(.view-home) .hero, body:not(.view-home) #homeSection, body:not(.view-home) #homeBanners, body:not(.view-home) .motivo{display:none;}
 body:not(.view-home) .settings-box, body:not(.view-home) .ventas-box{display:none !important;}
 .back-btn{border:none;background:none;font-size:0.8rem;font-weight:700;color:var(--muted);padding:0 0 10px;}
 .brand-circles{display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;padding:4px 2px 12px;scrollbar-width:none;cursor:grab;user-select:none;-webkit-overflow-scrolling:touch;}
@@ -473,7 +473,14 @@ body:not(.view-home) .ticker{display:none;}
 .detail-prices .dp.card .val{font-size:1.3rem;font-weight:800;color:var(--ink);}
 .detail-prices .dp.cash .val{font-size:1.05rem;}
 .add-cart-btn{background:#f5c518;color:#14150f;border:2px solid #14150f;letter-spacing:.06em;text-transform:uppercase;}
-.p-prices .price-line.cash .val{color:var(--coral);}
+.p-prices .price-line.cash .val{color:var(--green);}
+.p-prices .price-line.card{justify-content:flex-start;}
+.p-prices .price-line.card .val{align-items:flex-start;}
+.detail-prices{flex-direction:column;gap:2px;}
+.detail-prices .dp.card .val{font-size:2rem;}
+.detail-prices .dp.cash{flex-direction:row;align-items:baseline;gap:8px;flex-wrap:wrap;}
+.detail-prices .dp.cash .val{font-size:1.3rem;color:var(--green);font-weight:800;}
+.detail-prices .dp.cash .lbl{color:var(--green);font-size:.68rem;font-weight:800;}
 .cp-box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;}
 .cp-row{display:flex;align-items:center;gap:8px;font-size:.8rem;font-weight:700;flex-wrap:wrap;}
 .cp-row input{width:90px;border:1px solid var(--line);border-radius:8px;padding:9px;font-size:.9rem;font-weight:800;}
@@ -496,7 +503,7 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
 .sc-card img{width:100%;height:150px;object-fit:contain;}
 .sc-name{font-size:.78rem;font-weight:600;line-height:1.25;min-height:2.5em;}
 .sc-price{font-size:1.02rem;font-weight:800;}
-.sc-cash{font-size:.72rem;font-weight:800;color:var(--coral);}
+.sc-cash{font-size:.72rem;font-weight:800;color:var(--green);}
 .sc-nav{display:flex;justify-content:center;align-items:center;gap:18px;margin-top:10px;font-weight:800;}
 .sc-nav button{border:none;background:none;font-size:1.5rem;padding:2px 10px;}
 .info-trio{margin:28px 18px 0;display:grid;gap:12px;}
@@ -515,6 +522,23 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
 #pageLoader .pl-spin{width:44px;height:44px;border-radius:50%;border:4px solid rgba(238,240,234,.18);border-top-color:var(--gold);animation:plspin .8s linear infinite;}
 #pageLoader .pl-txt{font-family:'Inter',sans-serif;font-weight:700;font-size:.9rem;letter-spacing:.02em;}
 @keyframes plspin{to{transform:rotate(360deg);}}
+
+/* ---- Bloque de precios (tarjeta / transferencia / efectivo / envío) ---- */
+.pb-card{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;}
+.pb-main{font-size:1.15rem;font-weight:800;color:var(--c-prices,var(--ink));}
+.pb-tr{display:flex;flex-direction:column;line-height:1.15;margin-top:3px;}
+.pb-trv{font-size:.82rem;font-weight:700;color:var(--ink);}
+.pb-ef{display:flex;flex-direction:column;line-height:1.15;margin-top:3px;}
+.pb-efv{font-size:.95rem;font-weight:800;color:var(--green);}
+.pb-ef .pb-sub{color:var(--green);font-weight:800;}
+.pb-sub{font-size:.6rem;color:var(--muted);font-weight:700;letter-spacing:.01em;}
+.pb-env{font-size:.64rem;color:var(--muted);font-weight:600;margin-top:5px;}
+.pb-env b{color:var(--ink);}
+.detail-prices .pb-main{font-size:2rem;}
+.detail-prices .pb-trv{font-size:1.1rem;}
+.detail-prices .pb-efv{font-size:1.35rem;}
+.detail-prices .pb-sub{font-size:.7rem;}
+.detail-prices .pb-env{font-size:.76rem;}
 </style>
 </head>
 <body class="view-home">
@@ -583,11 +607,16 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
   <div class="admin-row"><label>Alias transf.</label><input id="setAlias" placeholder="Ej: mi.alias.mp"></div>
   <div class="admin-row"><label>Envío Correo a sucursal $</label><input id="setEnvSuc" type="number" placeholder="Ej: 6800" style="max-width:90px;"></div>
   <div class="admin-row"><label>Envío Correo a domicilio $</label><input id="setEnvDom" type="number" placeholder="Ej: 9700" style="max-width:90px;"></div>
+  <div class="admin-row"><label>Envío gratis a GBA desde $</label><input id="setEnvGratis" type="number" placeholder="Ej: 90000" style="max-width:90px;"></div>
+  <div style="font-size:0.66rem;color:var(--muted);margin:-4px 0 6px;">Compras de ese monto o más tienen envío por Correo gratis en Gran Buenos Aires (CABA y conurbano). Poné 0 para desactivarlo.</div>
   <div class="admin-row"><label>Código de descuento (ej: PWR10)</label><input id="setCuponCodigo" placeholder="vacío = sin código"></div>
   <div class="admin-row"><label>Descuento del código (%)</label><input id="setCuponPct" type="number" min="0" max="90" placeholder="10"></div>
   <div class="admin-row"><label>Zonas con entrega gratis</label><input id="setZonas" placeholder="José C. Paz, San Miguel, Grand Bourg"></div>
   <div class="admin-row"><label>Dirección</label><input id="setDireccion" placeholder="Ej: José C. Paz, Buenos Aires"></div>
   <div class="admin-row"><label>CP zona cercana (envío gratis)</label><input id="setCpCercanos" placeholder="1665, 1663, 1615"></div>
+  <div class="admin-row"><label>Desc. transferencia % (solo se muestra)</label><input id="setDescTr" type="number" min="0" max="50" placeholder="5" style="max-width:80px;"></div>
+  <div class="admin-row"><label>Envío José C. Paz / Zona Norte $</label><input id="setEnvLocal" type="number" placeholder="3900" style="max-width:90px;"></div>
+  <div class="admin-row"><label>Zonas de ese envío</label><input id="setEnvLocalZonas" placeholder="José C. Paz / Zona Norte"></div>
   <div class="admin-row"><label>Desc. efectivo / transf. %</label><input id="setDescEf" type="number" min="0" max="50" placeholder="10" style="max-width:80px;"></div>
   <div style="font-size:0.66rem;color:var(--muted);margin:-4px 0 6px;">Se descuenta en el pedido cuando pagan en efectivo o transferencia. Poné 0 para sacarlo.</div>
   <div class="admin-row"><label>Carteles que se mueven (uno por línea)</label><textarea id="setCarteles" rows="5" placeholder="Uno por línea. Podés usar {desc} para el % de descuento."></textarea></div>
@@ -638,10 +667,11 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
 <div class="section" id="homeSection">
   <div class="brand-logo-box" id="brandLogoBox"></div>
   <div class="brand-circles" id="brandFilterRow"></div>
-  <div id="banners"></div>
 </div>
 
 <div id="homeShowcase"></div>
+
+<div class="section" id="homeBanners" style="padding-top:18px;"><div id="banners"></div></div>
 
 <div class="section" id="combos">
   <button type="button" class="back-btn" data-go="home">← Inicio</button>
@@ -683,7 +713,7 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
 </div>
 
 <div class="info-trio" id="infoTrio">
-  <div class="it"><div class="ic">📦</div><h3>Medios de envío</h3><p>Correo Argentino a todo Buenos Aires. En zona cercana a José C. Paz, envío gratis en el día por Uber o Didi Moto.</p></div>
+  <div class="it"><div class="ic">📦</div><h3>Medios de envío</h3><p>Correo Argentino a todo Buenos Aires. En José C. Paz / Zona Norte, envío en el día por Uber o Didi Moto por $3.900.</p></div>
   <div class="it"><div class="ic">💳</div><h3>Formas de pago</h3><p>Pagá con tarjeta, transferencia o efectivo. Elegís al confirmar tu pedido.</p></div>
   <div class="it"><div class="ic">🔒</div><h3>Entrega segura</h3><p>Productos originales con empaque sellado. Te avisamos por WhatsApp cuando tu pedido está listo.</p></div>
 </div>
@@ -743,7 +773,7 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
   <div class="coupon-res" id="cartCouponRes"></div>
   <div class="cart-totals"><span id="cartTotalEfLbl">Total efectivo/transferencia</span><span id="cartTotalEf">$0</span></div>
   <div class="cart-totals" style="border-top:none;padding-top:0;"><span>Total tarjeta</span><span id="cartTotalTa">$0</span></div>
-  <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">🏠 Retiro y 🤝 punto de encuentro: <b>sin costo</b>. 🛵 Zona cercana (José C. Paz, San Miguel, Grand Bourg): <b>envío gratis</b>, en el día por Uber o Didi Moto. 📦 Envío por Correo Argentino (solo Buenos Aires por ahora): el costo se suma en el siguiente paso.</div>
+  <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">🏠 Retiro y 🤝 punto de encuentro: <b>sin costo</b>. 🛵 José C. Paz / Zona Norte: <b>envío $3.900</b>, en el día por Uber o Didi Moto. 📦 Envío por Correo Argentino (solo Buenos Aires por ahora): el costo se suma en el siguiente paso.</div>
   <div id="aliasBox" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:10px;">
     <div style="font-size:0.68rem;color:var(--muted);font-weight:700;">¿PAGÁS POR TRANSFERENCIA? Copiá el alias:</div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
@@ -899,6 +929,17 @@ function autoLoop(el, speed){
 function visibleProducts(){ return editMode ? state.products : state.products.filter(p => stockOf(p) > 0); }
 function cashOn(){ const d = Number(state.settings.descEfPct) || 0; return d > 0 && d < 90; }
 function cashFromCard(ta){ return cashOn() ? roundPrice(ta * (1 - Number(state.settings.descEfPct)/100)) : ta; }
+function trOn(){ const d = Number(state.settings.descTrPct); return isFinite(d) && d > 0 && d < 90; }
+function transFromCard(ta){ return trOn() ? roundPrice(ta * (1 - Number(state.settings.descTrPct)/100)) : ta; }
+function envioLocalMonto(){ return Number(state.settings.envioLocal) || 0; }
+function envioLocalTxt(){ const v = Number(state.settings.envioLocal); return v > 0 ? `🛵 Envío a ${escapeHtml(state.settings.envioLocalZonas || 'José C. Paz / Zona Norte')}: <b>${money(v)}</b>` : ""; }
+function priceBlock(precioTa, precioEf, anteriorTa, big){
+  const tr = trOn() ? transFromCard(precioTa) : 0;
+  return `<div class="pb-card">${anteriorTa ? `<s class="old-price">${money(anteriorTa)}</s>` : ""}<span class="pb-main">${money(precioTa)}</span><span class="pb-sub">💳 Tarjeta o Mercado Pago</span></div>`
+   + (tr ? `<div class="pb-tr"><span class="pb-trv">${money(tr)}</span><span class="pb-sub">🏦 Transferencia${Number(state.settings.descTrPct)?` · ${Number(state.settings.descTrPct)}% OFF`:""}</span></div>` : "")
+   + (cashOn() ? `<div class="pb-ef"><span class="pb-efv">${money(precioEf)}</span><span class="pb-sub">💵 Efectivo · ${Number(state.settings.descEfPct)}% OFF</span></div>` : "")
+   + (envioLocalTxt() ? `<div class="pb-env">${envioLocalTxt()}</div>` : "");
+}
 function cashLabel(){ return cashOn() ? `${Number(state.settings.descEfPct)}% OFF · EFECTIVO/TRANSF.` : "EFECTIVO/TRANSF."; }
 
 const DESC_RULES = [
@@ -967,7 +1008,7 @@ const DEFAULT_STATE = {
     brand:"PWR SUPLEMENTOS", heroTitle:"ENERGÍA|PARA RENDIR",
     heroTag:"Suplementos deportivos originales. Consultá stock y precios.",
     envioTexto:"🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas",
-    whatsapp:"", cuponCodigo:"", cuponPct:0, markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", envioSucursal:6800, envioDomicilio:9700, zonasGratis:"José C. Paz, San Miguel, Grand Bourg", direccion:"José C. Paz, Buenos Aires", cpCercanos:"1665, 1663, 1615", descEfPct:10, cartelesInicio:DEFAULT_CARTELES, heroImage:null, accentColor:"#c6ff2e", logoImage:null,
+    whatsapp:"", cuponCodigo:"", cuponPct:0, markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", envioSucursal:6800, envioDomicilio:9700, envioGratisDesde:90000, zonasGratis:"José C. Paz, San Miguel, Grand Bourg", direccion:"José C. Paz, Buenos Aires", cpCercanos:"1665, 1663, 1615", descEfPct:10, descTrPct:5, envioLocal:3900, envioLocalZonas:"José C. Paz / Zona Norte", cartelesInicio:DEFAULT_CARTELES, heroImage:null, accentColor:"#c6ff2e", logoImage:null,
     fonts:{brand:"anton",hero:"anton",sections:"anton",prices:"anton"}, textColors:{}, ofertas:[], bgMode:"default", bgFit:"cover", bgColor:"", bgImage:null
   },
   motivos:[{id:1,text:"La disciplina es hacer lo que tenés que hacer, aunque no tengas ganas.",author:"PWR · Entrená con constancia",image:null,ovl:55,bri:100,con:100,color:"#ffffff",bg:"dark"}],
@@ -1123,7 +1164,7 @@ function motivoRestart(){
 let showcaseSig = "";
 function scCard(p){
   const {precioEf, precioTa, anteriorTa, pct} = calcProductPrices(p), img = (p.images || [])[0];
-  return `<div class="sc-card">${pct > 0 ? `<div class="off-circle"><b>${pct}%</b><span>OFF</span></div>` : ""}<div data-sc-open="${p.id}" style="cursor:pointer;">${img ? `<img src="${img}" alt="">` : `<div style="height:150px;display:flex;align-items:center;justify-content:center;color:#a9ab9c;font-size:.7rem;">Sin foto</div>`}<div class="sc-name">${escapeHtml(conMarca(p.brand, p.name))}</div></div><div class="sc-price">${anteriorTa ? `<s class="old-price">${money(anteriorTa)}</s> ` : ""}${money(precioTa)}</div>${cashOn() ? `<div class="sc-cash">${money(precioEf)} efectivo o transferencia</div>` : ""}<button type="button" class="add-cart-btn" data-sc-add="${p.id}">Comprar</button></div>`;
+  return `<div class="sc-card">${pct > 0 ? `<div class="off-circle"><b>${pct}%</b><span>OFF</span></div>` : ""}<div data-sc-open="${p.id}" style="cursor:pointer;">${img ? `<img src="${img}" alt="">` : `<div style="height:150px;display:flex;align-items:center;justify-content:center;color:#a9ab9c;font-size:.7rem;">Sin foto</div>`}<div class="sc-name">${escapeHtml(conMarca(p.brand, p.name))}</div></div><div class="sc-price">${anteriorTa ? `<s class="old-price">${money(anteriorTa)}</s> ` : ""}${money(precioTa)}</div>${trOn() ? `<div class="sc-cash" style="color:var(--ink)">${money(transFromCard(precioTa))} transferencia</div>` : ""}${cashOn() ? `<div class="sc-cash">${money(precioEf)} efectivo</div>` : ""}<button type="button" class="add-cart-btn" data-sc-add="${p.id}">Comprar</button></div>`;
 }
 function renderShowcase(){
   const box = document.getElementById("homeShowcase");
@@ -1328,10 +1369,14 @@ function render(){
   document.getElementById("setAlias").value = state.settings.aliasTransferencia || "";
   document.getElementById("setEnvSuc").value = state.settings.envioSucursal ?? "";
   document.getElementById("setEnvDom").value = state.settings.envioDomicilio ?? "";
+  document.getElementById("setEnvGratis").value = state.settings.envioGratisDesde ?? "";
   document.getElementById("setZonas").value = state.settings.zonasGratis || "";
   document.getElementById("setDireccion").value = state.settings.direccion || "";
   document.getElementById("setCpCercanos").value = state.settings.cpCercanos || "";
   document.getElementById("setDescEf").value = state.settings.descEfPct ?? "";
+  document.getElementById("setDescTr").value = state.settings.descTrPct ?? "";
+  document.getElementById("setEnvLocal").value = state.settings.envioLocal ?? "";
+  document.getElementById("setEnvLocalZonas").value = state.settings.envioLocalZonas || "";
   document.getElementById("setCarteles").value = (state.settings.cartelesInicio === undefined || state.settings.cartelesInicio === null) ? DEFAULT_CARTELES : state.settings.cartelesInicio;
   const heroEl = document.querySelector(".hero");
   const heroIllustration = document.getElementById("heroIllustration");
@@ -1510,8 +1555,7 @@ function renderProducts(){
         <div class="p-name" data-open-detail="product:${p.id}">${escapeHtml(p.name)}</div>
         ${p.desc ? `<div class="p-desc">${escapeHtml(p.desc)}</div>` : ""}
         <div class="p-prices">
-          <div class="price-line card"><span class="lbl">TARJETA</span><span class="val">${anteriorTa ? `<s class="old-price">${money(anteriorTa)}</s>` : ""}<span>${money(precioTa)}</span></span></div>
-          <div class="price-line cash"><span class="lbl">${cashLabel()}</span><span class="val"><span>${money(precioEf)}</span></span></div>
+          ${priceBlock(precioTa, precioEf, anteriorTa)}
         </div>
         <button class="add-cart-btn" data-add-product="${p.id}" ${remaining<=0?'disabled':''}>${remaining<=0?(stock>0?'Todo el stock está en tu pedido':'Sin stock'):'Comprar'}</button>
       </div>
@@ -2006,10 +2050,8 @@ function renderDetail(type, id){
       <div class="detail-main-photo">${imgs[detailActiveImgIdx] ? `<img src="${imgs[detailActiveImgIdx]}">` : `<div class="ph-empty">Sin foto</div>`}${pct>0 ? `<div class="off-circle"><b>${pct}%</b><span>OFF</span></div>` : ""}</div>
       ${imgs.length>1 ? `<div class="detail-thumbs">${imgs.map((im,i)=>`<img src="${im}" class="${i===detailActiveImgIdx?'active':''}" data-set-main="${i}">`).join("")}</div>` : ""}
       <div class="detail-prices">
-        <div class="dp card"><span class="lbl">TARJETA</span><span class="val">${anteriorTa ? `<s>${money(anteriorTa)}</s>` : ""}${money(precioTa)}</span></div>
-        <div class="dp cash"><span class="lbl">${cashLabel()}</span><span class="val">${money(precioEf)}</span></div>
+        ${priceBlock(precioTa, precioEf, anteriorTa)}
       </div>
-      <div class="cp-box"><div class="cp-row"><span>Entregas para el CP:</span><input id="cpInput" inputmode="numeric" maxlength="4" placeholder="1665"><button id="cpBtn" type="button">Calcular</button></div><div id="cpRes"></div></div>
       ${p.cuotas>0 ? `<div class="detail-cuotas">💳 ${p.cuotas} cuotas de ${money(precioTa/p.cuotas)}</div>` : ""}
       <button type="button" class="detail-share" id="shareBtn">🔗 Compartir este producto</button>
       ${state.settings.cuponCodigo && state.settings.cuponPct>0 ? `<div class="coupon-row"><input id="cuponInput" placeholder="Código de descuento"><button id="cuponBtn">Aplicar</button></div><div class="coupon-res" id="cuponRes"></div>` : ""}
@@ -2022,6 +2064,7 @@ function renderDetail(type, id){
         <button data-detail-qty-inc>+</button>
       </div>
       <button class="primary-btn" id="detailAddBtn" ${remaining<=0?'disabled':''}>${remaining<=0?'Sin stock':'Agregar al pedido'}</button>
+      <div class="cp-box"><div class="cp-row"><span>Entregas para el CP:</span><input id="cpInput" inputmode="numeric" maxlength="4" placeholder="1665"><button id="cpBtn" type="button">Calcular</button></div><div id="cpRes"></div></div>
     `;
     wireDetailQty("product", id, remaining);
     { const cpIn = document.getElementById("cpInput"), cpRes = document.getElementById("cpRes");
@@ -2033,9 +2076,11 @@ function renderDetail(type, id){
         const st = state.settings, near = String(st.cpCercanos || "").split(",").map(x => x.trim()).filter(Boolean).includes(cp);
         const rows = [];
         if(near){ rows.push(["🛵 Envío en el día por Uber o Didi Moto", "GRATIS"]); rows.push(["🤝 Punto de encuentro / retiro", "GRATIS"]); }
-        if(Number(st.envioSucursal) > 0) rows.push(["📦 Correo Argentino a sucursal", money(st.envioSucursal)]);
-        if(Number(st.envioDomicilio) > 0) rows.push(["📦 Correo Argentino a domicilio", money(st.envioDomicilio)]);
-        cpRes.innerHTML = rows.map(r => `<div class="cp-opt"><span>${r[0]}</span><b class="${r[1] === "GRATIS" ? "free" : ""}">${r[1]}</b></div>`).join("") + `<div class="cp-note">${near ? "Coordinamos horario por WhatsApp. " : ""}El costo del Correo es estimado y se confirma al hacer el pedido.</div>`;
+        const gratisGBA = envioGratisAplica(cp, precioEf), minG = Number(st.envioGratisDesde) || 0;
+        if(Number(st.envioSucursal) > 0) rows.push(["📦 Correo Argentino a sucursal", gratisGBA ? "GRATIS" : money(st.envioSucursal)]);
+        if(Number(st.envioDomicilio) > 0) rows.push(["📦 Correo Argentino a domicilio", gratisGBA ? "GRATIS" : money(st.envioDomicilio)]);
+        const notaGBA = (minG > 0 && esGBA(cp)) ? (gratisGBA ? "🎉 Envío gratis a Gran Buenos Aires por superar " + money(minG) + ". " : "Envío gratis a Gran Buenos Aires en compras desde " + money(minG) + ". ") : "";
+        cpRes.innerHTML = rows.map(r => `<div class="cp-opt"><span>${r[0]}</span><b class="${r[1] === "GRATIS" ? "free" : ""}">${r[1]}</b></div>`).join("") + `<div class="cp-note">${notaGBA}${near ? "Coordinamos horario por WhatsApp. " : ""}El costo del Correo es estimado y se confirma al hacer el pedido.</div>`;
       };
       document.getElementById("cpBtn").onclick = calcCP;
       cpIn.addEventListener("keydown", e => { if(e.key === "Enter") calcCP(); });
@@ -2239,13 +2284,14 @@ function renderCart(){
       msg += `- ${item.qty}x ${info.brand ? info.brand + " - " : ""}${info.name} (${money(info.unitEf*item.qty)})\n`;
       pedidoItems.push({type:item.type, id:item.id, name:info.name, brand:info.brand, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
     });
-    const envio = cliente.entrega === "correo" ? (Number(cliente.envioCosto) || 0) : 0, envioTa = envio ? cardFromCash(envio) : 0;
+    const envio = (cliente.entrega === "correo" || cliente.entrega === "moto") ? (Number(cliente.envioCosto) || 0) : 0, envioTa = envio ? cardFromCash(envio) : 0;
+    let totalTr = 0; cart.forEach(it2 => { const i2 = cartLineInfo(it2); if(i2) totalTr += transFromCard(i2.unitTa) * it2.qty; });
     if(cartCoupon) msg += `\n🎟️ Código ${cartCoupon} (${state.settings.cuponPct}% OFF) aplicado`;
     if(cashOn()) msg += `\n💸 Incluye ${state.settings.descEfPct}% OFF por pagar en efectivo o transferencia`;
-    msg += `\nTotal efectivo/transferencia: ${money(totalEf + envio)}\nTotal tarjeta: ${money(totalTa + envioTa)}` + (envio ? "\n(incluye envío)" : "");
+    msg += `\nTotal efectivo: ${money(totalEf + envio)}` + (trOn() ? `\nTotal transferencia: ${money(totalTr + envio)}` : "") + `\nTotal tarjeta/Mercado Pago: ${money(totalTa + envioTa)}` + (envio ? "\n(incluye envío)" : "");
     msg += `\n\nMis datos: ${cliente.nombre} - ${cliente.telefono}`;
     if(cliente.entrega === "correo") msg += `\n📦 Envío por Correo Argentino a ${cliente.servicio === "domicilio" ? "domicilio" : "sucursal"}: ${cliente.direccion}, ${cliente.provincia === "caba" ? "CABA" : "Buenos Aires"}, CP ${cliente.cp} (costo de envío ${money(cliente.envioCosto || 0)})`;
-    else if(cliente.entrega === "moto") msg += `\n🛵 Envío GRATIS en el día por Uber/Didi Moto (${cliente.zona}) a: ${cliente.direccion}. Coordinemos el horario.`;
+    else if(cliente.entrega === "moto") msg += `\n🛵 Envío en el día por Uber/Didi Moto (${cliente.zona}) a: ${cliente.direccion}` + (envio ? ` (costo de envío ${money(envio)})` : " (gratis)") + `. Coordinemos el horario.`;
     else if(cliente.entrega === "punto") msg += `\n🤝 Punto de encuentro en ${cliente.zona} (gratis). Coordinemos lugar, día y hora.`;
     else msg += `\n🏠 Retiro en tu casa (gratis). Coordinemos día y hora.`;
     if(state.settings.aliasTransferencia){ msg += `\n\nSi pagás por transferencia, el alias es: ${state.settings.aliasTransferencia}\nMandame el comprobante para confirmar el pedido.`; }
@@ -2274,9 +2320,25 @@ function normTel(t){
 function entregaAdmin(c){
   if(!c) return "";
   if(c.entrega === "correo") return " · 📦 Correo (" + (c.servicio === "domicilio" ? "domicilio" : "sucursal") + ") · " + escapeHtml(c.direccion || "") + " · CP " + escapeHtml(c.cp || "") + " · envío " + money(c.envioCosto || 0);
-  if(c.entrega === "moto") return " · 🛵 Envío gratis Uber/Didi (" + escapeHtml(c.zona || "") + "): " + escapeHtml(c.direccion || "");
+  if(c.entrega === "moto") return " · 🛵 Envío Uber/Didi (" + escapeHtml(c.zona || "") + "): " + escapeHtml(c.direccion || "") + " · envío " + money(c.envioCosto || 0);
   if(c.entrega === "punto") return " · 🤝 Punto de encuentro: " + escapeHtml(c.zona || "");
   return " · 🏠 Retira en tu casa";
+}
+/* Gran Buenos Aires = CABA (1000-1499) + conurbano (1600-1899) + los CP "cercanos" de Configuración */
+function esGBA(cp){
+  const n = Number(String(cp || "").replace(/\D/g, "").slice(0, 4));
+  if(!n) return false;
+  if((n >= 1000 && n <= 1499) || (n >= 1600 && n <= 1899)) return true;
+  return String(state.settings.cpCercanos || "").split(",").map(x => x.trim()).filter(Boolean).includes(String(n));
+}
+function subtotalCarritoEf(){
+  let t = 0;
+  cart.forEach(item => { const info = cartLineInfo(item); if(info) t += info.unitEf * item.qty; });
+  return t;
+}
+function envioGratisAplica(cp, extraEf){
+  const min = Number(state.settings.envioGratisDesde) || 0;
+  return min > 0 && esGBA(cp) && (subtotalCarritoEf() + (extraEf || 0)) >= min;
 }
 function pedirDatosCliente(){
   return new Promise(resolve => {
@@ -2297,15 +2359,15 @@ function pedirDatosCliente(){
       '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">' +
         '<button type="button" data-ent="casa" style="' + optBase + '">🏠 Retiro en casa del vendedor · GRATIS</button>' +
         '<button type="button" data-ent="punto" style="' + optBase + '">🤝 Punto de encuentro · GRATIS</button>' +
-        '<button type="button" data-ent="moto" style="' + optBase + '">🛵 Soy de zona cercana · envío GRATIS</button>' +
+        '<button type="button" data-ent="moto" style="' + optBase + '">🛵 ' + escapeHtml(state.settings.envioLocalZonas || "José C. Paz / Zona Norte") + (envioLocalMonto() > 0 ? " · envío " + money(envioLocalMonto()) : " · envío GRATIS") + '</button>' +
         '<button type="button" data-ent="correo" style="' + optBase + '">📦 Envío por Correo Argentino</button></div>' +
-      '<div id="cliBoxMoto" style="display:none;"><select id="cliZonaMoto" style="' + inp + '">' + (state.settings.zonasGratis || "").split(",").map(z => z.trim()).filter(Boolean).map(z => '<option value="' + escapeHtml(z) + '">' + escapeHtml(z) + '</option>').join("") + '</select><input id="cliDirMoto" placeholder="Dirección y zona (calle, número, localidad)" autocomplete="street-address" style="' + inp + '"><div style="font-size:.72rem;opacity:.8;margin:-4px 0 10px;">🎉 ¡Envío gratis! Se hace en el día por Uber o Didi Moto. Coordinamos el horario por WhatsApp.</div></div>' +
+      '<div id="cliBoxMoto" style="display:none;"><select id="cliZonaMoto" style="' + inp + '">' + (state.settings.zonasGratis || "").split(",").map(z => z.trim()).filter(Boolean).map(z => '<option value="' + escapeHtml(z) + '">' + escapeHtml(z) + '</option>').join("") + '</select><input id="cliDirMoto" placeholder="Dirección y zona (calle, número, localidad)" autocomplete="street-address" style="' + inp + '"><div style="font-size:.72rem;opacity:.8;margin:-4px 0 10px;">' + (envioLocalMonto() > 0 ? '🛵 Envío ' + money(envioLocalMonto()) + ' (se suma a tu total). ' : '🎉 ¡Envío gratis! ') + 'Se hace en el día por Uber o Didi Moto. Coordinamos el horario por WhatsApp.</div></div>' +
       '<div id="cliNotaCasa" style="font-size:.72rem;opacity:.8;margin:-2px 0 10px;">Coordinamos día y hora por WhatsApp.</div>' +
       '<div id="cliBoxPunto" style="display:none;">' +
         '<select id="cliZona" style="' + inp + '">' + (state.settings.zonasGratis || "").split(",").map(z => z.trim()).filter(Boolean).map(z => '<option value="' + escapeHtml(z) + '">' + escapeHtml(z) + '</option>').join("") + '</select>' +
         '<div style="font-size:.72rem;opacity:.8;margin:-4px 0 10px;">Elegí la zona y coordinamos el lugar, día y hora por WhatsApp.</div></div>' +
       '<div id="cliBoxCorreo" style="display:none;">' +
-        '<div style="font-size:.72rem;opacity:.85;margin-bottom:8px;">¿Sos de ' + escapeHtml(state.settings.zonasGratis || "zona cercana") + '? Elegí <b>Soy de zona cercana</b> (envío gratis) y coordinamos por WhatsApp.</div>' +
+        '<div style="font-size:.72rem;opacity:.85;margin-bottom:8px;">¿Sos de ' + escapeHtml(state.settings.envioLocalZonas || state.settings.zonasGratis || "zona cercana") + '? Elegí la opción de zona cercana (más barata) y coordinamos por WhatsApp.</div>' +
         '<select id="cliProv" style="' + inp + '"><option value="ba">Provincia de Buenos Aires</option><option value="caba">Ciudad de Buenos Aires (CABA)</option><option value="otra">Otra provincia</option></select>' +
         '<div id="cliOtra" style="display:none;font-size:.75rem;background:rgba(255,255,255,.1);border-radius:10px;padding:8px 10px;margin-bottom:10px;">Por ahora solo enviamos por Correo dentro de Buenos Aires. Podés elegir retiro o punto de encuentro, o escribinos por WhatsApp.</div>' +
         '<div id="cliDatosEnvio">' +
@@ -2325,7 +2387,7 @@ function pedirDatosCliente(){
     if(g.provincia === "caba" || g.provincia === "ba") $("cliProv").value = g.provincia;
     let entrega = ["casa","punto","moto","correo"].includes(g.entrega) ? g.entrega : "casa";
     let servicio = g.servicio === "domicilio" ? "domicilio" : "sucursal";
-    const costoEnvio = () => Number(servicio === "sucursal" ? state.settings.envioSucursal : state.settings.envioDomicilio) || 0;
+    const costoEnvio = () => envioGratisAplica($("cliCP").value) ? 0 : (Number(servicio === "sucursal" ? state.settings.envioSucursal : state.settings.envioDomicilio) || 0);
     const on = "background:var(--gold);color:var(--ink);", off = "background:rgba(255,255,255,.12);color:var(--paper);";
     const pintarEntrega = () => {
       o.querySelectorAll("[data-ent]").forEach(b => { b.style.cssText = optBase + (b.dataset.ent === entrega ? on : off); });
@@ -2338,8 +2400,16 @@ function pedirDatosCliente(){
       const fuera = $("cliProv").value === "otra";
       $("cliOtra").style.display = fuera ? "block" : "none";
       $("cliDatosEnvio").style.display = fuera ? "none" : "block";
-      $("cliCosto").textContent = "Costo del envío: " + money(costoEnvio()) + " (se suma a tu total)";
+      const minG = Number(state.settings.envioGratisDesde) || 0, cpv = $("cliCP").value;
+      if(envioGratisAplica(cpv)) $("cliCosto").textContent = "🎉 ¡Envío GRATIS a Gran Buenos Aires!";
+      else {
+        let t = "Costo del envío: " + money(costoEnvio()) + " (se suma a tu total)";
+        if(minG > 0 && (esGBA(cpv) || !cpv)) t += "\nEnvío gratis a Gran Buenos Aires en compras desde " + money(minG) + (subtotalCarritoEf() < minG ? " (te faltan " + money(minG - subtotalCarritoEf()) + ")" : "");
+        $("cliCosto").textContent = t;
+      }
+      $("cliCosto").style.whiteSpace = "pre-line";
     };
+    $("cliCP").addEventListener("input", pintarEntrega);
     o.querySelectorAll("[data-ent]").forEach(b => b.onclick = () => { entrega = b.dataset.ent; pintarEntrega(); });
     $("cliProv").onchange = pintarEntrega;
     $("cliSuc").onclick = () => { servicio = "sucursal"; pintarEntrega(); };
@@ -2360,7 +2430,7 @@ function pedirDatosCliente(){
         if(direccion.length < 5){ $("cliErr").textContent = "Escribí la dirección de entrega."; return; }
         if(cp.length < 4){ $("cliErr").textContent = "Escribí tu código postal."; return; }
       }
-      const c = {nombre, telefono, email, entrega, zona, direccion, cp, provincia: entrega === "correo" ? $("cliProv").value : "", servicio: entrega === "correo" ? servicio : "", envioCosto: entrega === "correo" ? costoEnvio() : 0};
+      const c = {nombre, telefono, email, entrega, zona, direccion, cp, provincia: entrega === "correo" ? $("cliProv").value : "", servicio: entrega === "correo" ? servicio : "", envioCosto: entrega === "correo" ? costoEnvio() : (entrega === "moto" ? envioLocalMonto() : 0)};
       try{ localStorage.setItem("oriCliente", JSON.stringify(c)); }catch(e){}
       o.remove(); resolve(c);
     };
@@ -2731,7 +2801,7 @@ async function pagarConMercadoPago(){
     pedidoItems.push({type:item.type, id:item.id, name:info.name, brand:info.brand, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
   });
   if(!items.length) return;
-  if(cliente.entrega === "correo" && Number(cliente.envioCosto) > 0) items.push({id:"envio", title:"Envío Correo Argentino (" + (cliente.servicio === "domicilio" ? "domicilio" : "sucursal") + ")", quantity:1, unit_price: cardFromCash(Number(cliente.envioCosto))});
+  if((cliente.entrega === "correo" || cliente.entrega === "moto") && Number(cliente.envioCosto) > 0) items.push({id:"envio", title:(cliente.entrega === "moto" ? "Envío en el día (Uber/Didi Moto)" : "Envío Correo Argentino (" + (cliente.servicio === "domicilio" ? "domicilio" : "sucursal") + ")"), quantity:1, unit_price: cardFromCash(Number(cliente.envioCosto))});
   btn.disabled = true; btn.textContent = "Conectando con Mercado Pago...";
   try{
     const ctrl = new AbortController();
@@ -4004,12 +4074,12 @@ if(window.location.hash === "#admin"){
   document.getElementById("editToggle").classList.add("unlocked");
 }
 
-["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setInstagram","setAlias","setEnvSuc","setEnvDom","setZonas","setDireccion","setCpCercanos","setDescEf","setCarteles","setCuponCodigo","setCuponPct","setMarkupEf","setMpFee","setRoundTo","setPin"].forEach(id => {
+["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setInstagram","setAlias","setEnvSuc","setEnvDom","setEnvGratis","setZonas","setDireccion","setCpCercanos","setDescEf","setDescTr","setEnvLocal","setEnvLocalZonas","setCarteles","setCuponCodigo","setCuponPct","setMarkupEf","setMpFee","setRoundTo","setPin"].forEach(id => {
   document.getElementById(id).addEventListener("change", e => {
-    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setInstagram:"instagram",setAlias:"aliasTransferencia",setEnvSuc:"envioSucursal",setEnvDom:"envioDomicilio",setZonas:"zonasGratis",setDireccion:"direccion",setCpCercanos:"cpCercanos",setDescEf:"descEfPct",setCarteles:"cartelesInicio",setCuponCodigo:"cuponCodigo",setCuponPct:"cuponPct",setMarkupEf:"markupEfectivo",setMpFee:"mpFee",setRoundTo:"roundTo",setPin:"pin"};
+    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setInstagram:"instagram",setAlias:"aliasTransferencia",setEnvSuc:"envioSucursal",setEnvDom:"envioDomicilio",setEnvGratis:"envioGratisDesde",setZonas:"zonasGratis",setDireccion:"direccion",setCpCercanos:"cpCercanos",setDescEf:"descEfPct",setDescTr:"descTrPct",setEnvLocal:"envioLocal",setEnvLocalZonas:"envioLocalZonas",setCarteles:"cartelesInicio",setCuponCodigo:"cuponCodigo",setCuponPct:"cuponPct",setMarkupEf:"markupEfectivo",setMpFee:"mpFee",setRoundTo:"roundTo",setPin:"pin"};
     const key = map[id];
     let val = e.target.value;
-    if(key === "cuponPct" || key === "markupEfectivo" || key === "mpFee" || key === "roundTo" || key === "envioSucursal" || key === "envioDomicilio" || key === "descEfPct") val = Number(val)||0;
+    if(key === "cuponPct" || key === "markupEfectivo" || key === "mpFee" || key === "roundTo" || key === "envioSucursal" || key === "envioDomicilio" || key === "envioGratisDesde" || key === "descEfPct" || key === "descTrPct" || key === "envioLocal") val = Number(val)||0;
     state.settings[key] = val;
     render(); scheduleSave();
   });
@@ -4291,10 +4361,14 @@ async function loadState(){
     if(state.settings.aliasTransferencia === undefined) state.settings.aliasTransferencia = "";
     if(state.settings.envioSucursal === undefined) state.settings.envioSucursal = 6800;
     if(state.settings.envioDomicilio === undefined) state.settings.envioDomicilio = 9700;
+    if(state.settings.envioGratisDesde === undefined) state.settings.envioGratisDesde = 90000;
     if(state.settings.zonasGratis === undefined) state.settings.zonasGratis = "José C. Paz, San Miguel, Grand Bourg";
     if(state.settings.direccion === undefined) state.settings.direccion = "José C. Paz, Buenos Aires";
     if(state.settings.cpCercanos === undefined) state.settings.cpCercanos = "1665, 1663, 1615";
     if(state.settings.descEfPct === undefined) state.settings.descEfPct = 10;
+    if(state.settings.descTrPct === undefined) state.settings.descTrPct = 5;
+    if(state.settings.envioLocal === undefined) state.settings.envioLocal = 3900;
+    if(state.settings.envioLocalZonas === undefined) state.settings.envioLocalZonas = "José C. Paz / Zona Norte";
     if(state.settings.cartelesInicio === undefined) state.settings.cartelesInicio = DEFAULT_CARTELES;
     if(state.settings.accentColor === undefined) state.settings.accentColor = "#c6ff2e";
     state.products.forEach(p => {
