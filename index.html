@@ -581,7 +581,8 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
 .pts-cart label{display:flex;gap:8px;align-items:center;font-weight:800;margin-top:6px;}
 .pts-cart button{margin-top:6px;border:1px solid var(--ink);background:var(--ink);color:var(--gold);border-radius:8px;padding:8px 12px;font-weight:800;font-size:.74rem;}
 .pts-cart .ok{color:var(--green);font-weight:800;}
-body:not(.view-home) #rewardsHome{display:none !important;}
+#rewardsHome{display:none !important;}
+#contactBox{display:none !important;}
 
 /* ---------- VISTA DE COMPUTADORA (el celular queda igual) ---------- */
 @media(min-width:900px){
@@ -604,6 +605,22 @@ body:not(.view-home) #rewardsHome{display:none !important;}
   .sheet{max-width:600px;margin-left:auto;margin-right:auto;border-radius:20px;bottom:20px;}
   #detailSheet{max-width:980px;top:0;bottom:0;height:100%;border-radius:0;}
   .menu-drawer{max-width:380px;}
+  /* logos de marcas más grandes */
+  .brand-circles{gap:24px;padding:8px 4px 16px;}
+  .brand-circle{width:150px;height:150px;border-width:4px;}
+  .brand-circle img{padding:20px;}
+  .brand-circle span{font-size:1rem;}
+  .brand-pick .brand-circle{width:112px;height:112px;font-size:.8rem;}
+  /* frases de la portada acordes a la compu */
+  .motivo{width:calc(100% - 56px);max-width:1184px;margin-left:auto;margin-right:auto;height:360px;}
+  .mslide{padding:44px 64px 56px;}
+  .mslide.big{padding:90px 70px 110px;}
+  .mslide-q{font-size:calc(var(--mfs,1.75rem) * 1.9);max-width:28ch;}
+  .mslide.big .mslide-q{max-width:22ch;}
+  .mslide-a{font-size:1.1rem;}
+  .mslide-art{max-width:340px;}
+  .navbar{padding:0 max(28px,calc((100vw - 1240px)/2)) 8px;}
+  .navbar button,.navbar a{font-size:1rem;padding:10px 18px;}
 }
 @media(min-width:1280px){
   .grid{grid-template-columns:repeat(3,minmax(0,1fr));}
@@ -852,6 +869,17 @@ body:not(.view-home) #rewardsHome{display:none !important;}
   <div id="rsMsg" style="font-size:.78rem;margin-top:8px;text-align:center;"></div>
 </div>
 
+<div class="sheet" id="puntosInfoSheet">
+  <button class="sheet-close" data-close-sheet>✕</button>
+  <h3>🎁 Puntos y recompensas</h3>
+  <div id="puntosInfoBody"></div>
+</div>
+
+<div class="sheet" id="contactSheet">
+  <button class="sheet-close" data-close-sheet>✕</button>
+  <div id="contactSheetBody"></div>
+</div>
+
 <div class="sheet" id="cuentaSheet">
   <button class="sheet-close" data-close-sheet>✕</button>
   <div id="cuentaBody"></div>
@@ -951,6 +979,7 @@ async function cargarPrivado(){
   try{ ct = await db.collection("contador").doc("pedidos").get(); }catch(e){ console.warn("contador", e); ct = {exists:true}; }
   state.ventas = vs.docs.map(d => d.data()).sort((a,b) => a.id - b.id);
   state.pedidos = ps.docs.map(d => d.data()).sort((a,b) => a.id - b.id);
+  try{ const ms = await stockMovCol.get(); const pend = (state.stockMov || []).filter(m => m._new); state.stockMov = ms.docs.map(d => d.data()).concat(pend); }catch(e){ console.warn("movimientos de stock", e); state.stockMov = state.stockMov || []; }
   try{ await ptsCargarClientesAdmin(); }catch(e){ console.warn("clientes con cuenta", e); }
   const max = state.pedidos.reduce((m,p) => p.id < 1e12 ? Math.max(m,p.id) : m, 0);
   try{
@@ -996,6 +1025,17 @@ const bannersRef = db.collection("catalogo").doc("banners");
 const productsCol = db.collection("productos");
 const combosCol = db.collection("combos");
 const ventasCol = db.collection("ventas");
+const stockMovCol = db.collection("stockmov");
+/* Historial de movimientos de stock (cargas, correcciones, devoluciones). Las ventas ya quedan en "ventas". */
+function logStockMov(prod, antes, motivo){
+  if(!prod) return;
+  const despues = (prod.stock === null || prod.stock === undefined) ? null : Number(prod.stock);
+  const a = (antes === null || antes === undefined) ? null : Number(antes);
+  if(a === despues) return;
+  const ts = Date.now();
+  state.stockMov = state.stockMov || [];
+  state.stockMov.push({id: ts + "_" + prod.id + "_" + Math.random().toString(36).slice(2, 6), ts, productId: prod.id, marca: prod.brand || "", producto: prod.name || "", antes: a, despues, delta: (despues === null ? 0 : despues) - (a === null ? 0 : a), motivo, _new: true});
+}
 const pedidosCol = db.collection("pedidos");
 const resenasCol = db.collection("resenas");
 
@@ -1794,7 +1834,7 @@ function attachProductListeners(){
       if(!prod) return;
       let val = e.target.value;
       if(field === "costo"){ prod.costo = Number(val)||0; }
-      else if(field === "stock"){ prod.stock = val === "" ? null : Number(val); }
+      else if(field === "stock"){ const antesP = prod.stock; prod.stock = val === "" ? null : Number(val); logStockMov(prod, antesP === undefined ? null : antesP, "Corrección manual (ficha del producto)"); }
       else if(field === "descuentoPct"){ const n = Math.floor(Number(val)); prod.descuentoPct = (val === "" || !(n > 0)) ? null : Math.min(90, n); }
       else if(field === "cuotas"){ prod.cuotas = val === "" ? null : Math.max(0, Math.floor(Number(val))||0); }
       else if(field === "markupEf" || field === "markupTa"){ prod[field] = val === "" ? null : Number(val); }
@@ -3018,6 +3058,15 @@ document.getElementById("menuBtn").addEventListener("click", openMenu);
 document.getElementById("menuClose").addEventListener("click", closeMenu);
 document.getElementById("menuOverlay").addEventListener("click", closeMenu);
 document.getElementById("menuContact").addEventListener("click", closeMenu);
+function abrirContacto(e){
+  const box = document.getElementById("contactBox");
+  if(!box || box.style.display === "none" || !box.innerHTML.trim()) return; // sin datos: queda el enlace a WhatsApp de siempre
+  e.preventDefault(); closeMenu(); closeAllSheets();
+  document.getElementById("contactSheetBody").innerHTML = '<div class="contact-box" style="display:block;margin:0;">' + box.innerHTML + '</div>';
+  openSheet("contactSheet");
+}
+document.getElementById("menuContact").addEventListener("click", abrirContacto);
+document.getElementById("navContact").addEventListener("click", abrirContacto);
 document.getElementById("menuIg").addEventListener("click", closeMenu);
 document.addEventListener("click", e => {
   const g = e.target.closest("[data-go]");
@@ -3289,7 +3338,9 @@ function moverStockCombo(c, qty, sign){
   c.items.forEach(ci => {
     const prod = state.products.find(pp => pp.id === ci.productId);
     if(prod && prod.stock !== null && prod.stock !== undefined){
+      const antesC = prod.stock;
       prod.stock = Math.max(0, prod.stock - sign * ci.qty * qty);
+      if(sign < 0) logStockMov(prod, antesC, "Venta de combo deshecha (devolución)");
     }
   });
 }
@@ -3359,6 +3410,7 @@ function renderVentasBox(){
     ${admSec("v-stock","📦 Consulta de stock",`
     <div style="font-size:.66rem;color:var(--muted);margin-bottom:6px;">Tocá un número para corregirlo.</div>
     <div class="scroll-box"><table class="stock-table"><thead><tr><th>Producto</th><th>Cantidad</th><th>Estado</th></tr></thead><tbody>${stockRows}</tbody></table></div>
+    <button class="admin-photo-btn" id="stockExcelBtn" style="margin-top:8px;">📊 Descargar stock y movimientos (Excel)</button>
     <button class="admin-photo-btn" id="stockFileBtn" style="margin-top:8px;">📥 Cargar compra o stock (PDF, foto, Excel o CSV)</button>
     <input type="file" id="stockFileInput" accept=".csv,.xlsx,.xls,.pdf,image/*" style="display:none;">
     <button class="admin-photo-btn" id="stockManualBtn">✍️ Cargar a mano</button>
@@ -3411,10 +3463,13 @@ function renderVentasBox(){
     inp.onchange = e => {
       const prod = state.products.find(pp => pp.id === Number(e.target.dataset.stockEdit));
       if(!prod) return;
+      const antes = prod.stock;
       prod.stock = e.target.value === "" ? null : Math.max(0, Number(e.target.value)||0);
+      logStockMov(prod, antes, "Corrección manual (tabla de stock)");
       render(); scheduleSave();
     };
   });
+  document.getElementById("stockExcelBtn").onclick = () => exportStockExcel();
   document.getElementById("stockFileBtn").onclick = () => document.getElementById("stockFileInput").click();
   document.getElementById("stockFileInput").onchange = e => { if(e.target.files[0]) handleStockFile(e.target.files[0]); e.target.value=""; };
   const smPanel = document.getElementById("stockManualPanel");
@@ -3433,11 +3488,14 @@ function renderVentasBox(){
       if(!nombre){ showToast("Poné el nombre del suplemento"); return; }
       const np = Object.assign(blankProduct(state.nextProductId++), { name:nombre, brand:document.getElementById("smMarca").value.trim(), category:document.getElementById("smCat").value || null, costo:costo>0?costo:0, stock:cant });
       state.products.push(np);
+      logStockMov(np, 0, "Producto nuevo (carga a mano)");
       showToast("Producto creado con " + cant + " u. ✓");
     } else {
       const prod = state.products.find(pp => pp.id === Number(smProd.value));
       if(!prod) return;
+      const antesS = prod.stock;
       prod.stock = (Number(prod.stock) || 0) + cant;
+      logStockMov(prod, antesS === undefined ? null : antesS, "Carga de stock a mano");
       if(costo > 0) prod.costo = costo;
       showToast("Stock sumado: " + prod.stock + " u. ✓");
     }
@@ -3447,8 +3505,41 @@ function renderVentasBox(){
   document.getElementById("pdfVentasBtn").onclick = () => exportVentasPDF();
 }
 
+function fechaVentaTs(f){ const m = String(f || "").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if(!m) return 0; const y = Number(m[3]) < 100 ? 2000 + Number(m[3]) : Number(m[3]); return new Date(y, Number(m[2]) - 1, Number(m[1]), 12).getTime(); }
+async function exportStockExcel(){
+  if(!state.products.length){ showToast("No hay productos cargados"); return; }
+  if(!(await ensureXLSX())){ showToast("No se pudo cargar la librería de Excel — probá de nuevo en un momento.", 6000); return; }
+  const sinC = p => p.stock === null || p.stock === undefined;
+  const stock = state.products.map(p => ({
+    Marca: p.brand || "", Producto: p.name, Tipo: p.category || "",
+    Stock: sinC(p) ? "sin control" : p.stock,
+    Estado: sinC(p) ? "Sin control" : (p.stock <= 0 ? "Agotado" : (p.stock <= 2 ? "Poco stock" : "OK")),
+    "Costo unitario": p.costo || 0, "Valor invertido": sinC(p) ? 0 : (p.costo || 0) * p.stock
+  }));
+  const f2 = ts => { const d = new Date(ts); return { f: d.toLocaleDateString("es-AR"), h: d.toLocaleTimeString("es-AR", {hour: "2-digit", minute: "2-digit"}) }; };
+  const movs = [];
+  (state.stockMov || []).forEach(m => { const t = f2(m.ts); movs.push({ts: m.ts, Fecha: t.f, Hora: t.h, Tipo: m.motivo, Marca: m.marca, Producto: m.producto, Cantidad: m.delta, "Stock anterior": m.antes === null ? "sin control" : m.antes, "Stock resultante": m.despues === null ? "sin control" : m.despues, Detalle: ""}); });
+  state.ventas.forEach(v => { movs.push({ts: fechaVentaTs(v.fecha) + (Number(v.id) || 0) / 1000, Fecha: v.fecha, Hora: "", Tipo: v.comboId ? "Venta (combo)" : "Venta", Marca: ventaMarca(v), Producto: v.itemNombre, Cantidad: -Math.abs(Number(v.cantidad) || 0), "Stock anterior": "", "Stock resultante": "", Detalle: (v.cliente ? "Cliente: " + v.cliente + " · " : "") + (v.metodo === "efectivo" ? "Efectivo/Transferencia" : "Tarjeta") + " · " + money(v.total)}); });
+  movs.sort((a, b) => b.ts - a.ts);
+  const movOut = movs.map(({ts, ...r}) => r);
+  const ventas = state.ventas.map(v => ({
+    Fecha: v.fecha, Marca: ventaMarca(v), Producto: v.itemNombre, Cantidad: v.cantidad,
+    Metodo: v.metodo === "efectivo" ? "Efectivo/Transferencia" : "Tarjeta",
+    "Precio unitario": v.precioUnit, "Costo unitario": v.costoUnit, Total: v.total, Ganancia: v.ganancia, Cliente: v.cliente || ""
+  }));
+  const wb = XLSX.utils.book_new();
+  const w1 = XLSX.utils.json_to_sheet(stock); w1["!cols"] = [{wch:16},{wch:40},{wch:16},{wch:12},{wch:12},{wch:14},{wch:16}];
+  const w2 = XLSX.utils.json_to_sheet(movOut.length ? movOut : [{Aviso: "Todavía no hay movimientos"}]); w2["!cols"] = [{wch:12},{wch:7},{wch:34},{wch:16},{wch:40},{wch:10},{wch:14},{wch:16},{wch:44}];
+  const w3 = XLSX.utils.json_to_sheet(ventas.length ? ventas : [{Aviso: "Todavía no hay ventas"}]); w3["!cols"] = [{wch:12},{wch:16},{wch:40},{wch:9},{wch:22},{wch:14},{wch:14},{wch:12},{wch:12},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, w1, "Stock actual");
+  XLSX.utils.book_append_sheet(wb, w2, "Movimientos");
+  XLSX.utils.book_append_sheet(wb, w3, "Ventas");
+  XLSX.writeFile(wb, `stock_y_movimientos_${new Date().toISOString().slice(0,10)}.xlsx`);
+  showToast("Excel descargado ✓");
+}
+
 async function exportVentasExcel(){
-  if(!state.ventas.length){ showToast("Todavía no hay ventas registradas"); return; }
+  if(!state.ventas.length && !state.products.length){ showToast("Todavía no hay ventas registradas"); return; }
   if(!(await ensureXLSX())){ showToast("No se pudo cargar la librería de Excel — probá de nuevo en un momento.", 6000); return; }
   const ventas = state.ventas.map(v => ({
     Fecha: v.fecha, Marca: ventaMarca(v), Producto: v.itemNombre, Cantidad: v.cantidad,
@@ -3686,7 +3777,7 @@ function deshacerVenta(ventaId){
     if(c) moverStockCombo(c, v.cantidad, -1);
   } else {
     const p = state.products.find(pp => pp.id === v.productId);
-    if(p && p.stock !== null && p.stock !== undefined){ p.stock += v.cantidad; }
+    if(p && p.stock !== null && p.stock !== undefined){ const antesD = p.stock; p.stock += v.cantidad; logStockMov(p, antesD, "Venta deshecha (devolución)"); }
   }
   state.ventas.splice(idx,1);
   ventasCol.doc(String(v.id)).delete().catch(err => console.error(err));
@@ -4075,12 +4166,15 @@ document.getElementById("stockApplyBtn").addEventListener("click", () => {
       const id = state.nextProductId++;
       const np = Object.assign(blankProduct(id), { name:r.nombre || r.detectedName, brand:r.marca || "", costo:(r.costo && r.costo > 0) ? r.costo : 0, stock:r.cantidad });
       state.products.push(np);
+      logStockMov(np, 0, "Producto nuevo (carga de archivo)");
       r.productId = id; // si el mismo producto viene repetido, las siguientes filas se suman a este
       created++;
     } else if(typeof r.productId === "number"){
       const p = state.products.find(pp => pp.id === r.productId);
       if(p){
+        const antesF = p.stock;
         p.stock = stockMode === "sumar" ? (Number(p.stock) || 0) + r.cantidad : r.cantidad;
+        logStockMov(p, antesF === undefined ? null : antesF, stockMode === "sumar" ? "Carga de compra/stock (archivo)" : "Stock reemplazado (archivo)");
         if(r.costo && r.costo > 0) p.costo = r.costo;
         applied++;
       }
@@ -4151,7 +4245,7 @@ document.getElementById("logoRemoveBtn").addEventListener("click", () => {
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {
   try{ await auth.signOut(); }catch(e){}
-  editMode = false; state.pedidos = []; state.ventas = []; state.clientes = []; render(); showToast("Sesión cerrada");
+  editMode = false; state.pedidos = []; state.ventas = []; state.stockMov = []; state.clientes = []; render(); showToast("Sesión cerrada");
 });
 document.getElementById("editToggle").addEventListener("click", async () => {
   if(editMode){ editMode = false; render(); return; }
@@ -4375,12 +4469,23 @@ async function saveState(){
     ops.push(b => b.set(bannersRef, {banners: state.banners || {}}));
     state.ventas.forEach(v => ops.push(b => b.set(ventasCol.doc(String(v.id)), v)));
     state.pedidos.forEach(p => ops.push(b => b.set(pedidosCol.doc(String(p.id)), p)));
+    const movNuevos = (state.stockMov || []).filter(m => m._new);
     for(let i = 0; i < ops.length; i += 400){
       const batch = db.batch();
       ops.slice(i, i + 400).forEach(fn => fn(batch));
       await batch.commit();
     }
     bgDirty = false;
+    if(movNuevos.length){
+      try{
+        for(let i = 0; i < movNuevos.length; i += 400){
+          const b = db.batch();
+          movNuevos.slice(i, i + 400).forEach(m => { const { _new, ...limpio } = m; b.set(stockMovCol.doc(m.id), limpio); });
+          await b.commit();
+        }
+        movNuevos.forEach(m => { delete m._new; });
+      }catch(e){ console.warn("No se guardaron los movimientos de stock (¿falta la regla stockmov?)", e); showToast("Los movimientos de stock no se pudieron guardar en Firebase: agregá la regla 'stockmov'", 6000); }
+    }
     /* Productos y combos de a uno: si uno falla (ej: fotos muy pesadas) no se pierde el resto */
     const fallos = [];
     const items = [...state.products.map(p => ({n:p.name, ref:productsCol.doc(String(p.id)), d:p})), ...state.combos.map(c => ({n:c.name, ref:combosCol.doc(String(c.id)), d:c}))];
@@ -4654,6 +4759,7 @@ function renderCuenta(){
   if(!cuentaActual){
     let rc = ""; try{ rc = localStorage.getItem("oriRef") || ""; }catch(e){}
     body.innerHTML = `<h3>🎁 Mi cuenta de puntos</h3>
+      <button type="button" class="small-btn" id="rwInfoBtn" style="width:100%;margin-bottom:10px;">ℹ️ ¿Cómo gano puntos?</button>
       <div class="rw-tabs"><button type="button" data-t="crear" class="${cuentaTab === "crear" ? "on" : ""}">Crear cuenta</button><button type="button" data-t="entrar" class="${cuentaTab === "entrar" ? "on" : ""}">Ingresar</button></div>
       ${cuentaTab === "crear" ? `
         <div class="rw-note">${ptsTxtGanar()}${Number(st.amigoPct) > 0 ? ` Si te invitó un amigo, además tenés <b>${st.amigoPct}% OFF</b> en tu primera compra.` : ""}</div>
@@ -4670,6 +4776,7 @@ function renderCuenta(){
         <button type="button" class="primary-btn" id="rwEntrar">Ingresar</button>
         <div style="font-size:.72rem;color:var(--muted);margin-top:10px;text-align:center;">¿Olvidaste tu contraseña? <a href="${waLink(st.whatsapp, "Hola! Olvidé la contraseña de mi cuenta de puntos. ¿Me la pueden restablecer?")}" target="_blank" rel="noopener" style="color:var(--ink);font-weight:800;">Escribinos por WhatsApp</a>.</div>`}`;
     body.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { cuentaTab = b.dataset.t; renderCuenta(); });
+    if(q("rwInfoBtn")) q("rwInfoBtn").onclick = () => { closeAllSheets(); abrirPuntosInfo(); };
     if(q("rwCrear")) q("rwCrear").onclick = () => ptsRegistrar(q);
     if(q("rwEntrar")) q("rwEntrar").onclick = () => ptsLogin(q);
     return;
@@ -4876,8 +4983,9 @@ function ptsBindAdmin(box){
 }
 
 /* ---- sección de la portada + botones + ajustes del panel ---- */
+function abrirPuntosInfo(){ ptsRenderHome(); openSheet("puntosInfoSheet"); }
 function ptsRenderHome(){
-  const el = document.getElementById("rewardsHome"); if(!el) return;
+  const el = document.getElementById("puntosInfoBody"); if(!el) return;
   if(!ptsHabilitado()){ el.style.display = "none"; el.innerHTML = ""; return; }
   const st = state.settings, v = ptsValor(), reg = Number(st.ptsRegistro) || 0, cmp = Number(st.ptsCompra) || 0, res = Number(st.ptsResena) || 0, rp = Number(st.refPct) || 0, ap = Number(st.amigoPct) || 0, venc = Number(st.ptsVenceMeses) || 0, mx = Number(st.ptsMaxPct) || 100;
   let rc = ""; try{ rc = localStorage.getItem("oriRef") || ""; }catch(e){}
@@ -4913,7 +5021,7 @@ function ptsRenderHome(){
     <div class="rw-faq">${faq.map(f => `<details><summary>${escapeHtml(f[0])}</summary><p>${escapeHtml(f[1])}</p></details>`).join("")}</div>
     <button type="button" class="rw-cta" id="rwHomeCta">${cuentaActual ? "🎁 Ver mi cuenta y mis puntos" : "Crear mi cuenta y empezar a ganar →"}</button>
   </div>`;
-  document.getElementById("rwHomeCta").onclick = () => abrirCuenta("crear");
+  document.getElementById("rwHomeCta").onclick = () => { closeAllSheets(); abrirCuenta(cuentaActual ? undefined : "crear"); };
 }
 function ptsRender(){
   if(!state) return;
@@ -4934,8 +5042,8 @@ function ptsRender(){
     state.settings[F[id]] = val; render(); scheduleSave();
   }));
   document.getElementById("setPtsOn").addEventListener("change", e => { state.settings.ptsOn = e.target.value !== "no"; render(); scheduleSave(); });
-  document.getElementById("topCuentaBtn").addEventListener("click", () => abrirCuenta());
-  document.getElementById("menuPuntos").addEventListener("click", () => { closeMenu(); closeAllSheets(); setView("home"); setTimeout(() => { const r = document.getElementById("rewardsHome"); if(r) r.scrollIntoView({behavior: "smooth", block: "start"}); }, 450); });
+  document.getElementById("topCuentaBtn").addEventListener("click", () => { if(cuentaActual) abrirCuenta(); else abrirPuntosInfo(); });
+  document.getElementById("menuPuntos").addEventListener("click", () => { closeMenu(); closeAllSheets(); abrirPuntosInfo(); });
 })();
 
 /* Ocultar la pantalla de carga cuando termina de cargar todo (con tope de seguridad de 20 s) */
