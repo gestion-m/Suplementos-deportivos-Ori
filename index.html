@@ -539,6 +539,79 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
 .detail-prices .pb-efv{font-size:1.35rem;}
 .detail-prices .pb-sub{font-size:.7rem;}
 .detail-prices .pb-env{font-size:.76rem;}
+/* ---- Programa de puntos y recompensas ---- */
+.rw-wrap{background:var(--ink);color:var(--paper);border-radius:var(--radius);padding:22px 16px;margin:6px 0 10px;}
+.rw-wrap h2{margin:0 0 6px;font-size:1.6rem;color:var(--gold);line-height:1.05;}
+.rw-wrap h3{margin:16px 0 8px;font-size:1.05rem;color:var(--paper);}
+.rw-sub{font-size:.84rem;opacity:.88;margin:0 0 14px;line-height:1.4;}
+.rw-ref{background:var(--gold);color:var(--ink);border-radius:12px;padding:10px 12px;font-weight:800;font-size:.8rem;margin-bottom:12px;}
+.rw-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.rw-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px;}
+.rw-card .n{font-size:1.4rem;}
+.rw-card b{display:block;font-size:.8rem;margin:4px 0 3px;color:var(--gold);}
+.rw-card span{font-size:.74rem;opacity:.92;line-height:1.35;display:block;}
+.rw-table{width:100%;border-collapse:collapse;font-size:.74rem;margin-bottom:6px;}
+.rw-table th{text-align:left;color:var(--gold);padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.25);font-size:.68rem;}
+.rw-table td{padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.1);vertical-align:top;}
+.rw-faq details{border:1px solid rgba(255,255,255,.18);border-radius:10px;margin-bottom:6px;overflow:hidden;}
+.rw-faq summary{list-style:none;cursor:pointer;padding:11px 12px;font-weight:700;font-size:.8rem;display:flex;justify-content:space-between;gap:8px;}
+.rw-faq summary::-webkit-details-marker{display:none;}
+.rw-faq summary::after{content:"＋";color:var(--gold);}
+.rw-faq details[open] summary::after{content:"−";}
+.rw-faq details p{margin:0;padding:0 12px 12px;font-size:.78rem;line-height:1.45;opacity:.92;}
+.rw-cta{display:block;width:100%;margin-top:14px;background:var(--gold);color:var(--ink);border:0;border-radius:12px;padding:14px;font-weight:800;font-size:.92rem;}
+.rw-tabs{display:flex;gap:6px;margin-bottom:12px;}
+.rw-tabs button{flex:1;border:1.5px solid var(--ink);background:var(--card);border-radius:10px;padding:10px;font-weight:800;font-size:.8rem;}
+.rw-tabs button.on{background:var(--ink);color:var(--gold);}
+.rw-in{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:.88rem;margin-bottom:8px;font-family:inherit;background:var(--card);}
+.rw-note{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:.78rem;line-height:1.4;margin-bottom:10px;}
+.rw-err{color:var(--coral);font-size:.78rem;min-height:1.1em;margin:2px 0 6px;font-weight:700;}
+.rw-saldo{background:var(--ink);color:var(--paper);border-radius:16px;padding:16px;text-align:center;margin-bottom:10px;}
+.rw-saldo .big{font-family:var(--f-prices);font-size:2.2rem;color:var(--gold);line-height:1;}
+.rw-saldo small{display:block;opacity:.85;font-size:.75rem;margin-top:4px;}
+.rw-box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:10px;font-size:.78rem;line-height:1.4;}
+.rw-box b.t{display:block;font-size:.84rem;margin-bottom:4px;}
+.rw-link{display:flex;gap:6px;margin:8px 0;}
+.rw-link input{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:.72rem;background:var(--paper);}
+.rw-hist{font-size:.74rem;}
+.rw-hist div{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);}
+.rw-hist .p{font-weight:800;white-space:nowrap;} .rw-hist .p.pos{color:var(--green);} .rw-hist .p.neg{color:var(--coral);}
+.pts-cart{background:var(--card);border:1.5px dashed var(--ink);border-radius:12px;padding:10px 12px;margin:8px 0;font-size:.76rem;line-height:1.4;}
+.pts-cart b{display:block;font-size:.82rem;margin-bottom:2px;}
+.pts-cart label{display:flex;gap:8px;align-items:center;font-weight:800;margin-top:6px;}
+.pts-cart button{margin-top:6px;border:1px solid var(--ink);background:var(--ink);color:var(--gold);border-radius:8px;padding:8px 12px;font-weight:800;font-size:.74rem;}
+.pts-cart .ok{color:var(--green);font-weight:800;}
+body:not(.view-home) #rewardsHome{display:none !important;}
+
+/* ---------- VISTA DE COMPUTADORA (el celular queda igual) ---------- */
+@media(min-width:900px){
+  html{font-size:17px;}
+  .topbar{padding:14px max(28px,calc((100vw - 1240px)/2));}
+  .shipping-bar{font-size:.85rem;}
+  .hero{padding-left:max(28px,calc((100vw - 1240px)/2)) !important;padding-right:max(28px,calc((100vw - 1240px)/2)) !important;}
+  .hero h1{font-size:4rem;}
+  .section,.info-trio,.contact-box,.res-sec{max-width:1240px;margin-left:auto;margin-right:auto;}
+  .section{padding-left:28px;padding-right:28px;}
+  .info-trio{grid-template-columns:repeat(3,1fr);gap:18px;}
+  .contact-box{max-width:760px;}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;}
+  .p-card .p-photo{flex:0 0 42%;width:42%;}
+  .p-name{font-size:1rem;}
+  .p-desc{font-size:.85rem;}
+  .price-line{font-size:.9rem;}
+  .price-line .lbl{font-size:.75rem;}
+  .add-cart-btn{font-size:.9rem;padding:11px;}
+  .sheet{max-width:600px;margin-left:auto;margin-right:auto;border-radius:20px;bottom:20px;}
+  #detailSheet{max-width:980px;top:0;bottom:0;height:100%;border-radius:0;}
+  .menu-drawer{max-width:380px;}
+}
+@media(min-width:1280px){
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .p-card{flex-direction:column;flex-wrap:nowrap;}
+  .p-card .p-photo{flex:none;width:100%;}
+  .p-card .p-body{flex:1 1 auto;}
+  .p-card .admin-panel{flex:none;}
+}
 </style>
 </head>
 <body class="view-home">
@@ -553,6 +626,7 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
     <button class="icon-btn" id="logoRemoveBtn" style="display:none;font-size:0.62rem;padding:5px 7px;">Quitar logo</button>
   </div>
   <div class="actions">
+    <button class="icon-btn" id="topCuentaBtn" aria-label="Mi cuenta y puntos">🎁 Puntos</button>
     <button class="icon-btn topbar-cart" id="topCartBtn" aria-label="Ver pedido">🛒<span class="tc-badge" id="topCartCount">0</span></button>
     <a class="icon-btn" id="topWaBtn" href="#" target="_blank" style="display:none;">WhatsApp</a>
     <button class="icon-btn" id="editToggle">Editar</button>
@@ -611,9 +685,9 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
   <div style="font-size:0.66rem;color:var(--muted);margin:-4px 0 6px;">Compras de ese monto o más tienen envío por Correo gratis en Gran Buenos Aires (CABA y conurbano). Poné 0 para desactivarlo.</div>
   <div class="admin-row"><label>Código de descuento (ej: PWR10)</label><input id="setCuponCodigo" placeholder="vacío = sin código"></div>
   <div class="admin-row"><label>Descuento del código (%)</label><input id="setCuponPct" type="number" min="0" max="90" placeholder="10"></div>
-  <div class="admin-row"><label>Zonas con entrega gratis</label><input id="setZonas" placeholder="José C. Paz, San Miguel, Grand Bourg"></div>
+  <div class="admin-row"><label>Zonas con entrega gratis</label><input id="setZonas" placeholder="José C. Paz, San Miguel, Grand Bourg, Malvinas Argentinas, Los Polvorines"></div>
   <div class="admin-row"><label>Dirección</label><input id="setDireccion" placeholder="Ej: José C. Paz, Buenos Aires"></div>
-  <div class="admin-row"><label>CP zona cercana (envío gratis)</label><input id="setCpCercanos" placeholder="1665, 1663, 1615"></div>
+  <div class="admin-row"><label>CP zona cercana (envío gratis)</label><input id="setCpCercanos" placeholder="1665, 1663, 1615, 1613, 1614, 1667"></div>
   <div class="admin-row"><label>Desc. transferencia % (solo se muestra)</label><input id="setDescTr" type="number" min="0" max="50" placeholder="5" style="max-width:80px;"></div>
   <div class="admin-row"><label>Envío José C. Paz / Zona Norte $</label><input id="setEnvLocal" type="number" placeholder="3900" style="max-width:90px;"></div>
   <div class="admin-row"><label>Zonas de ese envío</label><input id="setEnvLocalZonas" placeholder="José C. Paz / Zona Norte"></div>
@@ -656,6 +730,22 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
   <div style="font-size:0.66rem;color:var(--muted);margin:-4px 0 6px;">El precio de tarjeta se calcula solo: precio efectivo ÷ (1 − comisión), para que te quede lo mismo que en efectivo. 8,57 = costo por cobro con IVA + SIRTAC (tarjeta de crédito, 1 cuota).</div>
   <div class="admin-row"><label>Redondeo $</label><input id="setRoundTo" type="number" placeholder="Ej: 100" style="max-width:90px;"></div>
   </div></details>
+  <details class="adm-sec" data-adm="s-puntos"><summary>🎁 Puntos y recompensas</summary><div class="adm-body">
+  <div class="admin-row"><label>Programa</label><select id="setPtsOn"><option value="si">Activado</option><option value="no">Desactivado (se oculta todo)</option></select></div>
+  <div class="admin-row"><label>Puntos que equivalen a $1</label><input id="setPtsValor" type="number" min="1" placeholder="100" style="max-width:90px;"></div>
+  <div style="font-size:0.66rem;color:var(--muted);margin:-4px 0 6px;">Ej: 100 = cada 100 puntos valen $1 de descuento.</div>
+  <div class="admin-row"><label>Puntos por crear la cuenta</label><input id="setPtsRegistro" type="number" min="0" placeholder="20000" style="max-width:100px;"></div>
+  <div class="admin-row"><label>Puntos por cada $1 de compra</label><input id="setPtsCompra" type="number" min="0" step="0.1" placeholder="3" style="max-width:90px;"></div>
+  <div class="admin-row"><label>Puntos por reseña verificada</label><input id="setPtsResena" type="number" min="0" placeholder="50000" style="max-width:100px;"></div>
+  <div class="admin-row"><label>Referidor gana (% de la 1ª compra del amigo)</label><input id="setRefPct" type="number" min="0" max="100" step="0.5" placeholder="10" style="max-width:80px;"></div>
+  <div class="admin-row"><label>Amigo referido tiene (% OFF en su 1ª compra)</label><input id="setAmigoPct" type="number" min="0" max="90" step="0.5" placeholder="5" style="max-width:80px;"></div>
+  <div class="admin-row"><label>Los puntos vencen a los (meses, 0 = nunca)</label><input id="setPtsVence" type="number" min="0" placeholder="12" style="max-width:80px;"></div>
+  <div class="admin-row"><label>Máximo del pedido pagable con puntos (%)</label><input id="setPtsMaxPct" type="number" min="1" max="100" placeholder="30" style="max-width:80px;"></div>
+  <div class="admin-row"><label>Ganancia mínima que te tiene que quedar sobre tu costo (%)</label><input id="setPtsMinGanPct" type="number" min="0" placeholder="10" style="max-width:80px;"></div>
+  <div class="admin-row"><label>Usar puntos solo en compras desde $</label><input id="setPtsMinCompra" type="number" min="0" placeholder="0" style="max-width:90px;"></div>
+  <div style="font-size:0.66rem;color:var(--muted);margin:-4px 0 6px;">Los puntos nunca bajan el precio de los productos por debajo de tu costo + esa ganancia. El envío siempre se cobra completo.</div>
+  <div style="font-size:0.66rem;color:var(--muted);margin:-4px 0 6px;">Los puntos de compra y de referidos se acreditan cuando confirmás el pedido; los de reseña, cuando la publicás. Las cuentas de tus clientes las ves en Control de ventas → 🎁 Clientes con cuenta.</div>
+  </div></details>
   <details class="adm-sec" data-adm="s-pin"><summary>🔐 Acceso</summary><div class="adm-body">
   <div style="font-size:.75rem;color:var(--muted);">El acceso ahora es con tu email y contraseña de Firebase.</div><input id="setPin" type="hidden"><button class="small-btn" id="logoutBtn" style="margin-top:8px;">Cerrar sesión</button>
   </div></details>
@@ -672,6 +762,8 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
 <div id="homeShowcase"></div>
 
 <div class="section" id="homeBanners" style="padding-top:18px;"><div id="banners"></div></div>
+
+<div class="section" id="rewardsHome" style="display:none;padding-top:10px;"></div>
 
 <div class="section" id="combos">
   <button type="button" class="back-btn" data-go="home">← Inicio</button>
@@ -713,7 +805,7 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
 </div>
 
 <div class="info-trio" id="infoTrio">
-  <div class="it"><div class="ic">📦</div><h3>Medios de envío</h3><p>Correo Argentino a todo Buenos Aires. En José C. Paz / Zona Norte, envío en el día por Uber o Didi Moto por $3.900.</p></div>
+  <div class="it"><div class="ic">📦</div><h3>Medios de envío</h3><p>Correo Argentino a todo Buenos Aires. En José C. Paz, San Miguel, Grand Bourg y Malvinas Argentinas (Los Polvorines, Tortuguitas y alrededores), envío en el día por Uber o Didi Moto por $3.900.</p></div>
   <div class="it"><div class="ic">💳</div><h3>Formas de pago</h3><p>Pagá con tarjeta, transferencia o efectivo. Elegís al confirmar tu pedido.</p></div>
   <div class="it"><div class="ic">🔒</div><h3>Entrega segura</h3><p>Productos originales con empaque sellado. Te avisamos por WhatsApp cuando tu pedido está listo.</p></div>
 </div>
@@ -742,6 +834,7 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
   <button type="button" class="menu-item" data-go="home">Inicio</button>
   <button type="button" class="menu-item" data-go="catalog">Productos</button>
   <button type="button" class="menu-item" data-go="combos">Combos</button>
+  <button type="button" class="menu-item" id="menuPuntos">🎁 Puntos y recompensas</button>
   <a class="menu-item" id="menuContact" href="#" target="_blank">Contacto</a>
   <a class="menu-item" id="menuIg" href="#" target="_blank" rel="noopener" style="display:none;align-items:center;gap:8px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg> Instagram</a>
 </nav>
@@ -759,6 +852,11 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
   <div id="rsMsg" style="font-size:.78rem;margin-top:8px;text-align:center;"></div>
 </div>
 
+<div class="sheet" id="cuentaSheet">
+  <button class="sheet-close" data-close-sheet>✕</button>
+  <div id="cuentaBody"></div>
+</div>
+
 <div class="sheet" id="offerSheet">
   <button class="sheet-close" data-close-sheet>✕</button>
   <h3 id="offerSheetTitle"></h3>
@@ -771,9 +869,10 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
   <div id="cartLines"></div>
   <div class="coupon-row" id="cartCouponRow" style="display:none;"><input id="cartCouponInput" placeholder="Código de descuento"><button id="cartCouponBtn" type="button">Aplicar</button></div>
   <div class="coupon-res" id="cartCouponRes"></div>
+  <div id="cartPtsBox"></div>
   <div class="cart-totals"><span id="cartTotalEfLbl">Total efectivo/transferencia</span><span id="cartTotalEf">$0</span></div>
   <div class="cart-totals" style="border-top:none;padding-top:0;"><span>Total tarjeta</span><span id="cartTotalTa">$0</span></div>
-  <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">🏠 Retiro y 🤝 punto de encuentro: <b>sin costo</b>. 🛵 José C. Paz / Zona Norte: <b>envío $3.900</b>, en el día por Uber o Didi Moto. 📦 Envío por Correo Argentino (solo Buenos Aires por ahora): el costo se suma en el siguiente paso.</div>
+  <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">🏠 Retiro y 🤝 punto de encuentro: <b>sin costo</b>. 🛵 José C. Paz, San Miguel, Grand Bourg y Malvinas Argentinas: <b>envío $3.900</b>, en el día por Uber o Didi Moto. 📦 Envío por Correo Argentino (solo Buenos Aires por ahora): el costo se suma en el siguiente paso.</div>
   <div id="aliasBox" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:10px;">
     <div style="font-size:0.68rem;color:var(--muted);font-weight:700;">¿PAGÁS POR TRANSFERENCIA? Copiá el alias:</div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
@@ -852,6 +951,7 @@ async function cargarPrivado(){
   try{ ct = await db.collection("contador").doc("pedidos").get(); }catch(e){ console.warn("contador", e); ct = {exists:true}; }
   state.ventas = vs.docs.map(d => d.data()).sort((a,b) => a.id - b.id);
   state.pedidos = ps.docs.map(d => d.data()).sort((a,b) => a.id - b.id);
+  try{ await ptsCargarClientesAdmin(); }catch(e){ console.warn("clientes con cuenta", e); }
   const max = state.pedidos.reduce((m,p) => p.id < 1e12 ? Math.max(m,p.id) : m, 0);
   try{
     const conf = state.pedidos.filter(p => p.status === "confirmado");
@@ -1008,7 +1108,7 @@ const DEFAULT_STATE = {
     brand:"PWR SUPLEMENTOS", heroTitle:"ENERGÍA|PARA RENDIR",
     heroTag:"Suplementos deportivos originales. Consultá stock y precios.",
     envioTexto:"🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas",
-    whatsapp:"", cuponCodigo:"", cuponPct:0, markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", envioSucursal:6800, envioDomicilio:9700, envioGratisDesde:90000, zonasGratis:"José C. Paz, San Miguel, Grand Bourg", direccion:"José C. Paz, Buenos Aires", cpCercanos:"1665, 1663, 1615", descEfPct:10, descTrPct:5, envioLocal:3900, envioLocalZonas:"José C. Paz / Zona Norte", cartelesInicio:DEFAULT_CARTELES, heroImage:null, accentColor:"#c6ff2e", logoImage:null,
+    whatsapp:"", cuponCodigo:"", cuponPct:0, markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", envioSucursal:6800, envioDomicilio:9700, envioGratisDesde:90000, zonasGratis:"José C. Paz, San Miguel, Grand Bourg, Malvinas Argentinas, Los Polvorines, Tortuguitas, Villa de Mayo, Pablo Nogués", direccion:"José C. Paz, Buenos Aires", cpCercanos:"1665, 1663, 1615, 1613, 1614, 1667", descEfPct:10, descTrPct:5, envioLocal:3900, envioLocalZonas:"José C. Paz / Zona Norte", cartelesInicio:DEFAULT_CARTELES, heroImage:null, accentColor:"#c6ff2e", logoImage:null,
     fonts:{brand:"anton",hero:"anton",sections:"anton",prices:"anton"}, textColors:{}, ofertas:[], bgMode:"default", bgFit:"cover", bgColor:"", bgImage:null
   },
   motivos:[{id:1,text:"La disciplina es hacer lo que tenés que hacer, aunque no tengas ganas.",author:"PWR · Entrená con constancia",image:null,ovl:55,bri:100,con:100,color:"#ffffff",bg:"dark"}],
@@ -1059,7 +1159,8 @@ let saveTimer = null;
 let storageOK = true;
 let cart = [];
 let cartCoupon = null; // código aplicado en el carrito
-function couponFactor(){ const st = state.settings; return (cartCoupon && st.cuponCodigo && st.cuponPct > 0) ? 1 - st.cuponPct/100 : 1; }
+let ptsFactorActual = 1, ptsUsar = false, ptsUsoActual = {pts:0, pesos:0}, cuentaActual = null; // programa de puntos
+function couponFactor(){ const st = state.settings; return ((cartCoupon && st.cuponCodigo && st.cuponPct > 0) ? 1 - st.cuponPct/100 : 1) * amigoFactor() * ptsFactorActual; }
 let detailActiveImgIdx = 0;
 let stockReviewRows = [];
 
@@ -1419,6 +1520,7 @@ function render(){
   renderVentasBox();
   renderContact();
   renderResenas();
+  ptsRender();
 }
 
 let searchQuery = "";
@@ -2203,6 +2305,7 @@ function cartLineInfo(item){
 function renderCart(){
   const lines = document.getElementById("cartLines");
   let totalEf=0, totalTa=0, count=0;
+  ptsPrepararCarrito();
   if(cart.length === 0){
     lines.innerHTML = `<div class="cart-empty">Todavía no agregaste nada</div>`;
   } else {
@@ -2229,6 +2332,7 @@ function renderCart(){
     if(v && v.toUpperCase() === String(stc.cuponCodigo).trim().toUpperCase()){ cartCoupon = v.toUpperCase(); renderCart(); showToast("Descuento aplicado ✓"); }
     else { cartCoupon = null; renderCart(); showToast("Código inválido"); }
   };
+  renderCartPts(totalEf);
   document.getElementById("cartTotalEf").textContent = money(totalEf);
   document.getElementById("cartTotalTa").textContent = money(totalTa);
   document.getElementById("cartCount").textContent = count;
@@ -2290,6 +2394,8 @@ function renderCart(){
     if(cashOn()) msg += `\n💸 Incluye ${state.settings.descEfPct}% OFF por pagar en efectivo o transferencia`;
     msg += `\nTotal efectivo: ${money(totalEf + envio)}` + (trOn() ? `\nTotal transferencia: ${money(totalTr + envio)}` : "") + `\nTotal tarjeta/Mercado Pago: ${money(totalTa + envioTa)}` + (envio ? "\n(incluye envío)" : "");
     msg += `\n\nMis datos: ${cliente.nombre} - ${cliente.telefono}`;
+    if(cliente.ptsUsados) msg += `\n🎁 Uso ${fmtN(cliente.ptsUsados)} puntos (−${money(cliente.ptsDescPesos || 0)})`;
+    if(cliente.amigoPct) msg += `\n👥 Descuento de amigo referido: ${cliente.amigoPct}% OFF en mi primera compra`;
     if(cliente.entrega === "correo") msg += `\n📦 Envío por Correo Argentino a ${cliente.servicio === "domicilio" ? "domicilio" : "sucursal"}: ${cliente.direccion}, ${cliente.provincia === "caba" ? "CABA" : "Buenos Aires"}, CP ${cliente.cp} (costo de envío ${money(cliente.envioCosto || 0)})`;
     else if(cliente.entrega === "moto") msg += `\n🛵 Envío en el día por Uber/Didi Moto (${cliente.zona}) a: ${cliente.direccion}` + (envio ? ` (costo de envío ${money(envio)})` : " (gratis)") + `. Coordinemos el horario.`;
     else if(cliente.entrega === "punto") msg += `\n🤝 Punto de encuentro en ${cliente.zona} (gratis). Coordinemos lugar, día y hora.`;
@@ -2297,6 +2403,7 @@ function renderCart(){
     if(state.settings.aliasTransferencia){ msg += `\n\nSi pagás por transferencia, el alias es: ${state.settings.aliasTransferencia}\nMandame el comprobante para confirmar el pedido.`; }
     const pidNuevo = await reservarIdPedido();
     await guardarPedidoNuevo({id: pidNuevo, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente", cliente});
+    await ptsPostPedido(cliente);
     /* Aviso por Telegram al dueño (pedido en efectivo/transferencia) */
     try{
       fetch(MP_BACKEND + "/aviso-pedido", {method:"POST", headers:{"Content-Type":"application/json"}, keepalive:true,
@@ -2380,7 +2487,7 @@ function pedirDatosCliente(){
       '<button id="cliOk" style="' + btnBase + 'background:var(--gold);color:var(--ink);">Continuar</button></div></div>';
     document.body.appendChild(o);
     const $ = id => o.querySelector("#" + id);
-    $("cliNombre").value = g.nombre || ""; $("cliTel").value = g.telefono || ""; $("cliMail").value = g.email || "";
+    $("cliNombre").value = (cuentaActual && cuentaActual.nombre) || g.nombre || ""; $("cliTel").value = (cuentaActual && cuentaActual.telefono) || g.telefono || ""; $("cliMail").value = (cuentaActual && cuentaActual.email) || g.email || "";
     $("cliDir").value = g.direccion || ""; $("cliCP").value = g.cp || "";
     if(g.zona) $("cliZona").value = g.zona;
     if(g.zona) $("cliZonaMoto").value = g.zona;
@@ -2432,6 +2539,7 @@ function pedirDatosCliente(){
       }
       const c = {nombre, telefono, email, entrega, zona, direccion, cp, provincia: entrega === "correo" ? $("cliProv").value : "", servicio: entrega === "correo" ? servicio : "", envioCosto: entrega === "correo" ? costoEnvio() : (entrega === "moto" ? envioLocalMonto() : 0)};
       try{ localStorage.setItem("oriCliente", JSON.stringify(c)); }catch(e){}
+      ptsAdjuntarACliente(c);
       o.remove(); resolve(c);
     };
   });
@@ -2762,6 +2870,7 @@ function bindResenasAdmin(box){
     r.aprobada = !r.aprobada;
     try{ await resenasCol.doc("p" + r.pedidoId).set(r); }catch(e){ r.aprobada = !r.aprobada; showToast("No se pudo guardar la reseña"); return; }
     renderResenas(); renderVentasBox(); showToast(r.aprobada ? "Reseña publicada ✓" : "Reseña oculta");
+    if(r.aprobada) ptsAlAprobarResena(r);
   });
   box.querySelectorAll("[data-res-del]").forEach(b => b.onclick = async () => {
     const r = byPedido(b.dataset.resDel); if(!r || !confirm("¿Borrar esta reseña?")) return;
@@ -2815,6 +2924,7 @@ async function pagarConMercadoPago(){
     const data = await r.json();
     if(!data.init_point) throw new Error(data.error || "Sin link de pago");
     await guardarPedidoNuevo({id: pedidoId, fecha: new Date().toLocaleDateString("es-AR"), items: pedidoItems, totalEf, totalTa, status:"pendiente", medio:"mercadopago", mpRef: data.id, cliente});
+    await ptsPostPedido(cliente);
     window.location.href = data.init_point;
   }catch(e){
     console.error(e);
@@ -3283,11 +3393,13 @@ function renderVentasBox(){
     <div id="pedidosList" style="margin-top:6px;"></div>
     `)}
     ${admSec("v-clientes","👥 Clientes ("+clientesData().length+")", clientesAdminHtml())}
+    ${admSec("v-puntos","🎁 Clientes con cuenta ("+(state.clientes||[]).length+")", ptsAdminHtml())}
     ${admSec("v-resenas","⭐ Reseñas"+(nResPend?" ("+nResPend+" nueva"+(nResPend>1?"s":"")+")":""),resenasAdminHtml())}
   `;
   renderPedidosList();
   bindResenasAdmin(box);
   bindClientes(box);
+  ptsBindAdmin(box);
   bindContactos();
   document.getElementById("ventaProducto").onchange = e => { ventaSelId = e.target.value; };
   document.getElementById("ventaMetodo").onchange = e => { ventaMetodoSel = e.target.value; };
@@ -3433,6 +3545,7 @@ function renderPedidosList(){
       <div><strong>${p.fecha}</strong> — ${p.items.map(it=>{ const pr = it.brand || ((state.products.find(x => it.type === "product" && x.id === it.id) || {}).brand) || ""; return `${it.qty}x ${pr ? "<b>" + escapeHtml(pr) + "</b> - " : ""}${escapeHtml(it.name)}`; }).join(", ")}</div>
       <div style="font-size:0.72rem;">${p.cliente ? `👤 ${escapeHtml(p.cliente.nombre)} · 📞 ${escapeHtml(p.cliente.telefono)}` + entregaAdmin(p.cliente) : ""} ${p.medio === "mercadopago" ? "· 💳 Mercado Pago (esperando pago)" : "· 💵 Efectivo/Transferencia (falta cobrar)"}</div>
       <div>Efvo/Transf: ${money(p.totalEf)} · Tarjeta: ${money(p.totalTa)}</div>
+      ${ptsPedidoInfoHtml(p)}
       <div class="admin-row" style="margin:0;"><label style="width:auto;">Cobrado con</label><select data-pedido-metodo="${p.id}"><option value="efectivo">Efectivo/Transferencia</option><option value="tarjeta" ${p.medio === "mercadopago" ? "selected" : ""}>Tarjeta</option></select></div>
       <div style="display:flex;gap:6px;">
         <button class="small-btn" data-confirm-pedido="${p.id}" style="flex:1;">✅ Confirmar (descuenta stock)</button>
@@ -3474,6 +3587,7 @@ function confirmarPedido(pedidoId, metodo){
     }
   });
   pedido.status = "confirmado";
+  ptsAlConfirmar(pedido, metodo);
   db.collection("compras").doc(String(pedidoId)).set({nombre: firstName(pedido.cliente && pedido.cliente.nombre), fecha: new Date().toLocaleDateString("es-AR")}).catch(e => console.error(e));
   render(); scheduleSave();
   showToast("Pedido confirmado y stock actualizado");
@@ -3483,6 +3597,7 @@ function rechazarPedido(pedidoId){
   const pedido = state.pedidos.find(p => p.id === pedidoId);
   if(!pedido) return;
   pedido.status = "rechazado";
+  ptsLiberarReserva(pedido);
   render(); scheduleSave();
   showToast("Pedido rechazado (no se tocó el stock)");
 }
@@ -4036,7 +4151,7 @@ document.getElementById("logoRemoveBtn").addEventListener("click", () => {
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {
   try{ await auth.signOut(); }catch(e){}
-  editMode = false; state.pedidos = []; state.ventas = []; render(); showToast("Sesión cerrada");
+  editMode = false; state.pedidos = []; state.ventas = []; state.clientes = []; render(); showToast("Sesión cerrada");
 });
 document.getElementById("editToggle").addEventListener("click", async () => {
   if(editMode){ editMode = false; render(); return; }
@@ -4362,15 +4477,30 @@ async function loadState(){
     if(state.settings.envioSucursal === undefined) state.settings.envioSucursal = 6800;
     if(state.settings.envioDomicilio === undefined) state.settings.envioDomicilio = 9700;
     if(state.settings.envioGratisDesde === undefined) state.settings.envioGratisDesde = 90000;
-    if(state.settings.zonasGratis === undefined) state.settings.zonasGratis = "José C. Paz, San Miguel, Grand Bourg";
+    if(state.settings.zonasGratis === undefined) state.settings.zonasGratis = "José C. Paz, San Miguel, Grand Bourg, Malvinas Argentinas, Los Polvorines, Tortuguitas, Villa de Mayo, Pablo Nogués";
     if(state.settings.direccion === undefined) state.settings.direccion = "José C. Paz, Buenos Aires";
-    if(state.settings.cpCercanos === undefined) state.settings.cpCercanos = "1665, 1663, 1615";
+    if(state.settings.cpCercanos === undefined) state.settings.cpCercanos = "1665, 1663, 1615, 1613, 1614, 1667";
     if(state.settings.descEfPct === undefined) state.settings.descEfPct = 10;
     if(state.settings.descTrPct === undefined) state.settings.descTrPct = 5;
     if(state.settings.envioLocal === undefined) state.settings.envioLocal = 3900;
     if(state.settings.envioLocalZonas === undefined) state.settings.envioLocalZonas = "José C. Paz / Zona Norte";
     if(state.settings.cartelesInicio === undefined) state.settings.cartelesInicio = DEFAULT_CARTELES;
     if(state.settings.accentColor === undefined) state.settings.accentColor = "#c6ff2e";
+
+    /* Migración única: sumar Malvinas Argentinas (Los Polvorines, Tortuguitas, etc.) a las zonas de envío ya guardadas */
+    if(!state.settings.zonasMalvinasV1){
+      const zs = String(state.settings.zonasGratis || "").split(",").map(x => x.trim()).filter(Boolean);
+      ["Malvinas Argentinas", "Los Polvorines", "Tortuguitas", "Villa de Mayo", "Pablo Nogués"].forEach(z => { if(!zs.some(x => normTxt(x) === normTxt(z))) zs.push(z); });
+      state.settings.zonasGratis = zs.join(", ");
+      const cps = String(state.settings.cpCercanos || "").split(",").map(x => x.trim()).filter(Boolean);
+      ["1613", "1614", "1667"].forEach(c => { if(!cps.includes(c)) cps.push(c); });
+      state.settings.cpCercanos = cps.join(", ");
+      if(state.settings.envioLocalZonas === "José C. Paz / Zona Norte") state.settings.envioLocalZonas = "José C. Paz / Malvinas Argentinas / Zona Norte";
+      state.settings.zonasMalvinasV1 = true;
+    }
+    /* Valores iniciales del programa de puntos (los cambiás desde el panel) */
+    const ptsDef = {ptsOn:true, ptsValor:100, ptsRegistro:20000, ptsCompra:3, ptsResena:50000, refPct:10, amigoPct:5, ptsVenceMeses:12, ptsMaxPct:30, ptsMinCompra:0, ptsMinGanPct:10};
+    Object.keys(ptsDef).forEach(k => { if(state.settings[k] === undefined) state.settings[k] = ptsDef[k]; });
     state.products.forEach(p => {
       if(!p.images){ p.images = p.image ? [p.image] : []; }
       if(!p.desc) p.desc = suggestDesc(p.name);
@@ -4390,6 +4520,424 @@ async function loadState(){
   }
   render();
 }
+/* ================= PROGRAMA DE PUNTOS Y RECOMPENSAS =================
+   - Cuentas de clientes en Firestore (colección "clientes"), sin usar el login de administrador.
+   - Los puntos de REGISTRO se calculan con lo que configurás en el panel (no se guardan en la cuenta).
+   - Los demás puntos (compras, reseñas, referidos, ajustes) los acredita SOLO el administrador
+     al confirmar un pedido o publicar una reseña. */
+const clientesCol = db.collection("clientes");
+const refcodesCol = db.collection("refcodes");
+const fmtN = n => Math.round(Number(n) || 0).toLocaleString("es-AR");
+let cuentaTab = "crear";
+function ptsHabilitado(){ return !!state && state.settings.ptsOn !== false; }
+function ptsValor(){ return Math.max(1, Number(state.settings.ptsValor) || 100); }
+function ptsAPesos(p){ return Math.floor((Number(p) || 0) / ptsValor()); }
+function ptsVenceTs(desde){ const m = Number(state.settings.ptsVenceMeses) || 0; if(m <= 0) return null; const d = new Date(desde || Date.now()); d.setMonth(d.getMonth() + m); return d.getTime(); }
+function ptsMov(pts, motivo, extra){ const ts = Date.now(), e = Object.assign({ts, pts: Math.round(pts), motivo}, extra || {}); const v = pts > 0 ? ptsVenceTs(ts) : null; if(v) e.vence = v; return e; }
+function ptsLotes(c){
+  const reg = Number(state.settings.ptsRegistro) || 0, ev = [];
+  if(c.bonus && reg > 0) ev.push({ts: c.creado || 0, pts: reg, vence: ptsVenceTs(c.creado) || null});
+  (c.mov || []).forEach(m => { if(Number(m.pts)) ev.push(m); });
+  ev.sort((a, b) => a.ts - b.ts);
+  const lots = [];
+  ev.forEach(m => {
+    if(m.pts > 0){ lots.push({rem: m.pts, vence: m.vence || Infinity, ts: m.ts}); return; }
+    let need = -m.pts;
+    for(const l of lots){ if(need <= 0) break; if(l.rem <= 0 || l.vence <= m.ts) continue; const t = Math.min(l.rem, need); l.rem -= t; need -= t; }
+  });
+  return lots;
+}
+function ptsSaldoDe(c){ const now = Date.now(); return ptsLotes(c).reduce((s, l) => s + (l.vence > now ? l.rem : 0), 0); }
+function ptsDisponible(c){ return Math.max(0, ptsSaldoDe(c) - (Number(c.reservados) || 0)); }
+function ptsDineroDe(c){ let pend = 0, pag = 0; (c.mov || []).forEach(m => { const d = Number(m.dinero) || 0; if(!d) return; if(m.estado === "pagado") pag += d; else pend += d; }); return {pend, pag}; }
+function ptsHistorial(c){ const h = (c.mov || []).slice(); if(c.bonus && Number(state.settings.ptsRegistro) > 0) h.push({ts: c.creado || 0, pts: Number(state.settings.ptsRegistro), motivo: "Regalo por crear tu cuenta"}); return h.sort((a, b) => b.ts - a.ts); }
+function amigoFactor(){
+  if(!ptsHabilitado() || !cuentaActual || !cuentaActual.referidoPor || cuentaActual.primeraCompra) return 1;
+  const p = Number(state.settings.amigoPct) || 0; return p > 0 && p < 90 ? 1 - p / 100 : 1;
+}
+
+/* ---- utilidades de seguridad ---- */
+async function sha256(t){
+  try{ const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
+  catch(e){ let h1 = 5381, h2 = 52711; for(let i = 0; i < t.length; i++){ const ch = t.charCodeAt(i); h1 = ((h1 * 33) ^ ch) >>> 0; h2 = ((h2 * 31) ^ ch) >>> 0; } return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0") + t.length.toString(16); }
+}
+async function hashPass(pass, salt){
+  try{
+    const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveBits"]);
+    const b = await crypto.subtle.deriveBits({name: "PBKDF2", hash: "SHA-256", salt: new TextEncoder().encode(salt), iterations: 120000}, k, 256);
+    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
+  }catch(e){ return sha256(salt + "|" + pass); }
+}
+function randStr(n){ const a = new Uint8Array(n); if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(a); else for(let i = 0; i < n; i++) a[i] = Math.floor(Math.random() * 256); return [...a].map(x => (x % 36).toString(36)).join(""); }
+const normMail = e => String(e || "").trim().toLowerCase();
+async function ptsIdDe(email){ return (await sha256("ori-cuenta-mail|" + normMail(email))).slice(0, 28); }
+async function ptsNuevoCodigo(nombre){
+  const base = normTxt(nombre).replace(/[^a-z]/g, "").toUpperCase().slice(0, 4).padEnd(4, "X");
+  for(let i = 0; i < 6; i++){ const code = base + String(Math.floor(Math.random() * 90) + 10) + (i > 2 ? String(Math.floor(Math.random() * 10)) : ""); const s = await refcodesCol.doc(code).get(); if(!s.exists) return code; }
+  return base + randStr(4).toUpperCase();
+}
+function ptsLinkRef(c){ return location.href.split(/[?#]/)[0] + "?ref=" + encodeURIComponent(c.refCode || ""); }
+
+/* ---- sesión del cliente ---- */
+async function ptsInit(){
+  try{ const q = new URLSearchParams(location.search).get("ref"); if(q){ const code = q.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12); if(code) localStorage.setItem("oriRef", code); } }catch(e){}
+  let s = null; try{ s = JSON.parse(localStorage.getItem("oriCuenta") || "null"); }catch(e){}
+  if(s && s.id){
+    try{ const d = await clientesCol.doc(s.id).get(); if(d.exists && d.data().passHash === s.h) cuentaActual = d.data(); else localStorage.removeItem("oriCuenta"); }catch(e){ console.warn("cuenta", e); }
+  }
+  ptsRender(); renderCart();
+  try{ const rc = localStorage.getItem("oriRef"); if(rc && !cuentaActual && ptsHabilitado() && Number(state.settings.amigoPct) > 0) showToast("👥 Un amigo te invitó: creá tu cuenta y tenés " + state.settings.amigoPct + "% OFF en tu primera compra", 5000); }catch(e){}
+}
+async function ptsRefrescarCuenta(){
+  if(!cuentaActual) return;
+  try{ const d = await clientesCol.doc(cuentaActual.id).get(); if(d.exists && d.data().passHash === cuentaActual.passHash) cuentaActual = d.data(); }catch(e){}
+  ptsRender(); renderCart();
+  if(document.getElementById("cuentaSheet").classList.contains("show")) renderCuenta();
+}
+function ptsEntrar(c){ cuentaActual = c; try{ localStorage.setItem("oriCuenta", JSON.stringify({id: c.id, h: c.passHash})); }catch(e){} ptsRender(); renderCart(); renderCuenta(); }
+function ptsSalir(){ cuentaActual = null; ptsUsar = false; try{ localStorage.removeItem("oriCuenta"); }catch(e){} ptsRender(); renderCart(); renderCuenta(); showToast("Cerraste sesión"); }
+
+async function ptsRegistrar(q){
+  const err = m => { q("rwErr").textContent = m; q("rwCrear").disabled = false; q("rwCrear").textContent = "Crear mi cuenta"; };
+  const nombre = q("rwNom").value.trim(), telRaw = q("rwTel").value.trim(), email = normMail(q("rwMail").value), pass = q("rwPass").value;
+  let codigo = q("rwCod").value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  q("rwErr").textContent = ""; q("rwCrear").disabled = true; q("rwCrear").textContent = "Creando…";
+  if(nombre.length < 2) return err("Escribí tu nombre.");
+  if(telRaw.replace(/\D/g, "").length < 8) return err("Escribí un teléfono válido (WhatsApp).");
+  if(!/^\S+@\S+\.\S+$/.test(email)) return err("Escribí un email válido: con él vas a ingresar.");
+  if(pass.length < 6) return err("La contraseña tiene que tener al menos 6 caracteres.");
+  try{
+    const id = await ptsIdDe(email), ref = clientesCol.doc(id);
+    if((await ref.get()).exists) return err("Ya hay una cuenta con ese email. Tocá \"Ingresar\".");
+    const selfH = await sha256("self|" + email);
+    let referidoPor = "";
+    if(codigo){
+      const rc = await refcodesCol.doc(codigo).get();
+      if(!rc.exists) return err("Ese código de amigo no existe. Revisalo o dejalo vacío.");
+      if(rc.data().h === selfH) return err("No podés usar tu propio código.");
+      referidoPor = codigo;
+    }
+    const salt = randStr(14), passHash = await hashPass(pass, salt), refCode = await ptsNuevoCodigo(nombre);
+    const doc = {id, nombre, telefono: telRaw, tel: normTel(telRaw), email, salt, passHash, refCode, referidoPor, creado: Date.now(), bonus: true, refPref: "puntos", mov: [], reservados: 0, primeraCompra: false};
+    await ref.set(doc);
+    refcodesCol.doc(refCode).set({n: firstName(nombre), h: selfH}).catch(e => console.warn("refcode", e));
+    try{ localStorage.removeItem("oriRef"); }catch(e){}
+    ptsEntrar(doc);
+    showToast("¡Cuenta creada! 🎁", 3000);
+  }catch(e){ console.error(e); err("No se pudo crear la cuenta. Probá de nuevo en un momento."); }
+}
+async function ptsLogin(q){
+  const err = m => { q("rwErr").textContent = m; q("rwEntrar").disabled = false; q("rwEntrar").textContent = "Ingresar"; };
+  const mailRaw = normMail(q("rwTel2").value), pass = q("rwPass2").value;
+  q("rwErr").textContent = ""; q("rwEntrar").disabled = true; q("rwEntrar").textContent = "Ingresando…";
+  if(!/^\S+@\S+\.\S+$/.test(mailRaw) || !pass) return err("Escribí tu email y tu contraseña.");
+  try{
+    const d = await clientesCol.doc(await ptsIdDe(mailRaw)).get();
+    if(!d.exists) return err("Email o contraseña incorrectos.");
+    const c = d.data();
+    if(await hashPass(pass, c.salt) !== c.passHash) return err("Email o contraseña incorrectos.");
+    ptsEntrar(c);
+  }catch(e){ console.error(e); err("No se pudo ingresar. Probá de nuevo."); }
+}
+
+/* ---- ventana "Mi cuenta" ---- */
+function abrirCuenta(tab){ if(tab) cuentaTab = tab; renderCuenta(); openSheet("cuentaSheet"); if(cuentaActual) ptsRefrescarCuenta(); }
+function ptsTxtGanar(){
+  const st = state.settings, reg = Number(st.ptsRegistro) || 0;
+  return reg > 0 ? `Registrate gratis y recibí <b>${fmtN(reg)} puntos (${money(ptsAPesos(reg))})</b> para usar en tus compras.` : `Registrate gratis y empezá a sumar puntos con cada compra.`;
+}
+function renderCuenta(){
+  const body = document.getElementById("cuentaBody"); if(!body || !state) return;
+  const st = state.settings;
+  if(!ptsHabilitado()){ body.innerHTML = `<h3>🎁 Puntos</h3><div class="rw-note">El programa de puntos no está activo por ahora.</div>`; return; }
+  const q = id => body.querySelector("#" + id);
+  if(!cuentaActual){
+    let rc = ""; try{ rc = localStorage.getItem("oriRef") || ""; }catch(e){}
+    body.innerHTML = `<h3>🎁 Mi cuenta de puntos</h3>
+      <div class="rw-tabs"><button type="button" data-t="crear" class="${cuentaTab === "crear" ? "on" : ""}">Crear cuenta</button><button type="button" data-t="entrar" class="${cuentaTab === "entrar" ? "on" : ""}">Ingresar</button></div>
+      ${cuentaTab === "crear" ? `
+        <div class="rw-note">${ptsTxtGanar()}${Number(st.amigoPct) > 0 ? ` Si te invitó un amigo, además tenés <b>${st.amigoPct}% OFF</b> en tu primera compra.` : ""}</div>
+        <input class="rw-in" id="rwNom" placeholder="Nombre y apellido" autocomplete="name">
+        <input class="rw-in" id="rwTel" type="tel" placeholder="Teléfono (WhatsApp)" autocomplete="tel">
+        <input class="rw-in" id="rwMail" type="email" placeholder="Email (con este ingresás)" autocomplete="email">
+        <input class="rw-in" id="rwPass" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="new-password">
+        <input class="rw-in" id="rwCod" placeholder="Código de un amigo (opcional)" value="${escapeHtml(rc)}" style="text-transform:uppercase;">
+        <div class="rw-err" id="rwErr"></div>
+        <button type="button" class="primary-btn" id="rwCrear">Crear mi cuenta</button>` : `
+        <input class="rw-in" id="rwTel2" type="email" placeholder="Email con el que te registraste" autocomplete="username">
+        <input class="rw-in" id="rwPass2" type="password" placeholder="Contraseña" autocomplete="current-password">
+        <div class="rw-err" id="rwErr"></div>
+        <button type="button" class="primary-btn" id="rwEntrar">Ingresar</button>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:10px;text-align:center;">¿Olvidaste tu contraseña? <a href="${waLink(st.whatsapp, "Hola! Olvidé la contraseña de mi cuenta de puntos. ¿Me la pueden restablecer?")}" target="_blank" rel="noopener" style="color:var(--ink);font-weight:800;">Escribinos por WhatsApp</a>.</div>`}`;
+    body.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { cuentaTab = b.dataset.t; renderCuenta(); });
+    if(q("rwCrear")) q("rwCrear").onclick = () => ptsRegistrar(q);
+    if(q("rwEntrar")) q("rwEntrar").onclick = () => ptsLogin(q);
+    return;
+  }
+  const c = cuentaActual, disp = ptsDisponible(c), din = ptsDineroDe(c), link = ptsLinkRef(c);
+  const nRef = (c.mov || []).filter(m => String(m.motivo || "").startsWith("Referido")).length;
+  const vence = Number(st.ptsVenceMeses) || 0;
+  const hist = ptsHistorial(c).slice(0, 15);
+  body.innerHTML = `<h3>🎁 Hola, ${escapeHtml(firstName(c.nombre))}</h3>
+    <div class="rw-saldo"><div class="big">${fmtN(disp)}</div>puntos disponibles<small>≈ ${money(ptsAPesos(disp))} en descuentos${c.reservados ? " · " + fmtN(c.reservados) + " reservados en pedidos pendientes" : ""}</small></div>
+    <div class="rw-box"><b class="t">💡 Cómo sumar más</b>
+      ${Number(st.ptsCompra) > 0 ? `• Comprando: <b>${fmtN(st.ptsCompra)} puntos por cada $1</b> gastado<br>` : ""}
+      ${Number(st.ptsResena) > 0 ? `• Dejando una reseña verificada: <b>+${fmtN(st.ptsResena)} puntos (${money(ptsAPesos(st.ptsResena))})</b><br>` : ""}
+      ${Number(st.refPct) > 0 ? `• Recomendando: <b>${st.refPct}% de la primera compra</b> de cada amigo` : ""}
+      ${vence > 0 ? `<div style="color:var(--muted);margin-top:4px;">Los puntos vencen a los ${vence} meses de ganarlos.</div>` : ""}</div>
+    ${Number(st.refPct) > 0 || Number(st.amigoPct) > 0 ? `<div class="rw-box"><b class="t">👥 Tu link para recomendar</b>
+      ${Number(st.refPct) > 0 ? `Ganás <b>${st.refPct}%</b> de la primera compra de cada amigo que entre con tu link.` : ""}${Number(st.amigoPct) > 0 ? ` Tu amigo recibe <b>${st.amigoPct}% OFF</b> en su primera compra.` : ""}
+      <div class="rw-link"><input id="rwLink" readonly value="${escapeHtml(link)}"><button type="button" class="small-btn" id="rwCopiar">Copiar</button></div>
+      <a class="small-btn" id="rwWa" target="_blank" rel="noopener" href="${waLink("", "")}" style="display:block;text-align:center;text-decoration:none;color:var(--ink);padding:9px;">📲 Compartir por WhatsApp</a>
+      <div style="margin-top:8px;">Tu código: <b>${escapeHtml(c.refCode || "")}</b> · Amigos que compraron: <b>${nRef}</b></div>
+      ${Number(st.refPct) > 0 ? `<div style="margin-top:8px;font-weight:800;">Cobrar mis comisiones en:</div>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:4px;"><input type="radio" name="rwPref" value="puntos" ${c.refPref !== "dinero" ? "checked" : ""}> Puntos (rinden para tus compras)</label>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:4px;"><input type="radio" name="rwPref" value="dinero" ${c.refPref === "dinero" ? "checked" : ""}> Dinero directo (lo coordinamos con vos)</label>
+      ${(din.pend || din.pag) ? `<div style="margin-top:8px;">💵 Dinero pendiente de cobro: <b>${money(din.pend)}</b> · ya cobrado: <b>${money(din.pag)}</b></div>` : ""}` : ""}</div>` : ""}
+    <div class="rw-box"><b class="t">📋 Mis movimientos</b><div class="rw-hist">${hist.length ? hist.map(m => `<div><span>${escapeHtml(m.motivo || "")}<br><small style="color:var(--muted);">${new Date(m.ts).toLocaleDateString("es-AR")}</small></span><span class="p ${m.pts > 0 ? "pos" : (m.pts < 0 ? "neg" : "")}">${m.pts ? (m.pts > 0 ? "+" : "") + fmtN(m.pts) + " pts" : (m.dinero ? "+" + money(m.dinero) + (m.estado === "pagado" ? " ✔" : " ⏳") : "")}</span></div>`).join("") : `<div style="color:var(--muted);">Todavía no hay movimientos.</div>`}</div></div>
+    <button type="button" class="small-btn" id="rwSalir" style="width:100%;">Cerrar sesión</button>`;
+  if(q("rwCopiar")) q("rwCopiar").onclick = () => navigator.clipboard.writeText(link).then(() => showToast("Link copiado ✓"), () => prompt("Copiá tu link:", link));
+  if(q("rwWa")) q("rwWa").href = "https://wa.me/?text=" + encodeURIComponent("Mirá esta tienda de suplementos 💪" + (Number(st.amigoPct) > 0 ? " Entrá con mi link y tenés " + st.amigoPct + "% OFF en tu primera compra: " : " ") + link);
+  body.querySelectorAll("[name=rwPref]").forEach(r => r.onchange = async () => {
+    try{ await clientesCol.doc(c.id).update({refPref: r.value}); c.refPref = r.value; showToast("Listo, cobrás tus comisiones en " + (r.value === "dinero" ? "dinero" : "puntos") + " ✓"); }catch(e){ showToast("No se pudo guardar tu preferencia"); }
+  });
+  q("rwSalir").onclick = ptsSalir;
+}
+
+/* ---- carrito: canje de puntos y descuento de amigo ---- */
+function ptsPrepararCarrito(){
+  ptsFactorActual = 1; ptsUsoActual = {pts: 0, pesos: 0, nota: ""};
+  if(!ptsHabilitado() || !cuentaActual || !ptsUsar || !cart.length) return;
+  const B = subtotalCarritoEf(); if(B <= 0) return;
+  const st = state.settings, minC = Number(st.ptsMinCompra) || 0;
+  if(minC > 0 && B < minC){ ptsUsoActual.nota = "Podés usar tus puntos en compras desde " + money(minC) + "."; return; }
+  let costo = 0;
+  cart.forEach(it => {
+    if(it.type === "product"){ const pr = state.products.find(x => x.id === it.id); if(pr) costo += (Number(pr.costo) || 0) * it.qty; }
+    else { const cb = state.combos.find(x => x.id === it.id); if(cb) costo += (Number(comboCosto(cb)) || 0) * it.qty; }
+  });
+  const piso = costo * (1 + (Number(st.ptsMinGanPct) || 0) / 100);
+  const tope = Math.min(Math.floor(B * Math.min(100, Math.max(1, Number(st.ptsMaxPct) || 100)) / 100), Math.floor(B - piso));
+  const pesos = Math.max(0, Math.min(ptsAPesos(ptsDisponible(cuentaActual)), tope));
+  if(pesos <= 0){ if(tope <= 0) ptsUsoActual.nota = "En este pedido no se pueden usar puntos."; return; }
+  ptsFactorActual = (B - pesos) / B; ptsUsoActual = {pts: pesos * ptsValor(), pesos};
+}
+function renderCartPts(totalEf){
+  const box = document.getElementById("cartPtsBox"); if(!box) return;
+  if(!ptsHabilitado() || !cart.length){ box.innerHTML = ""; return; }
+  const st = state.settings;
+  if(!cuentaActual){
+    const reg = Number(st.ptsRegistro) || 0; let rc = ""; try{ rc = localStorage.getItem("oriRef") || ""; }catch(e){}
+    box.innerHTML = `<div class="pts-cart"><b>🎁 Sumá puntos con este pedido</b>Creá tu cuenta gratis${reg > 0 ? " y recibí <span class='ok'>" + fmtN(reg) + " puntos (" + money(ptsAPesos(reg)) + ")</span>" : ""}${Number(st.ptsCompra) > 0 ? ". Cada compra suma " + fmtN(st.ptsCompra) + " puntos por cada $1" : ""}.${rc && Number(st.amigoPct) > 0 ? " <span class='ok'>Y tenés " + st.amigoPct + "% OFF por venir de parte de un amigo.</span>" : ""}<button type="button" id="cartPtsCrear">Crear cuenta / Ingresar</button></div>`;
+    document.getElementById("cartPtsCrear").onclick = () => { closeAllSheets(); abrirCuenta("crear"); };
+    return;
+  }
+  const disp = ptsDisponible(cuentaActual), pesosDisp = ptsAPesos(disp), gan = Math.round(totalEf * (Number(st.ptsCompra) || 0));
+  let h = `<div class="pts-cart"><b>🎁 Tus puntos: ${fmtN(disp)} (≈ ${money(pesosDisp)})</b>`;
+  if(amigoFactor() < 1) h += `<div class="ok">👥 Descuento de amigo aplicado: ${st.amigoPct}% OFF en tu primera compra</div>`;
+  if(pesosDisp > 0) h += `<label><input type="checkbox" id="cartPtsUsar" ${ptsUsar ? "checked" : ""}> Usar mis puntos${ptsUsoActual.pesos > 0 ? " (−" + money(ptsUsoActual.pesos) + ")" : ""}</label>` + (Number(st.ptsMaxPct) > 0 && Number(st.ptsMaxPct) < 100 ? `<div style="color:var(--muted);">Podés pagar hasta el ${st.ptsMaxPct}% del pedido con puntos.</div>` : "");
+  if(ptsUsar && ptsUsoActual.nota) h += `<div style="color:var(--coral);font-weight:700;">${escapeHtml(ptsUsoActual.nota)}</div>`;
+  if(gan > 0) h += `<div style="margin-top:4px;">Con este pedido sumás ≈ <b>${fmtN(gan)} puntos</b> (cuando confirmemos tu compra).</div>`;
+  box.innerHTML = h + `</div>`;
+  const chk = document.getElementById("cartPtsUsar"); if(chk) chk.onchange = () => { ptsUsar = chk.checked; renderCart(); };
+}
+function ptsAdjuntarACliente(c){
+  if(!ptsHabilitado() || !cuentaActual) return;
+  c.cuenta = cuentaActual.id;
+  if(ptsUsoActual.pts > 0){ c.ptsUsados = ptsUsoActual.pts; c.ptsDescPesos = ptsUsoActual.pesos; }
+  if(amigoFactor() < 1) c.amigoPct = Number(state.settings.amigoPct);
+}
+async function ptsPostPedido(cl){
+  const usados = cl && Number(cl.ptsUsados) || 0; ptsUsar = false;
+  if(cuentaActual && usados > 0){
+    try{ await clientesCol.doc(cuentaActual.id).update({reservados: firebase.firestore.FieldValue.increment(usados)}); cuentaActual.reservados = (Number(cuentaActual.reservados) || 0) + usados; }catch(e){ console.warn("reserva", e); }
+  }
+  ptsRender();
+}
+
+/* ---- administrador: acreditar / descontar puntos ---- */
+function ptsCacheCliente(c){ state.clientes = state.clientes || []; const i = state.clientes.findIndex(x => x.id === c.id); if(i >= 0) state.clientes[i] = c; else state.clientes.push(c); }
+async function ptsAplicar(id, fn){
+  const ref = clientesCol.doc(id);
+  const c = await db.runTransaction(async t => {
+    const s = await t.get(ref); if(!s.exists) throw new Error("La cuenta no existe");
+    const c = s.data(); c.mov = (c.mov || []).slice(); fn(c);
+    if(c.mov.length > 400) c.mov = c.mov.slice(-400);
+    t.set(ref, c); return c;
+  });
+  ptsCacheCliente(c); return c;
+}
+async function ptsBuscarPorCodigo(code){
+  let r = (state.clientes || []).find(c => c.refCode === code); if(r) return r;
+  try{ const q = await clientesCol.where("refCode", "==", code).limit(1).get(); if(!q.empty) return q.docs[0].data(); }catch(e){ console.warn(e); }
+  return null;
+}
+async function ptsCargarClientesAdmin(){ const s = await clientesCol.get(); state.clientes = s.docs.map(d => d.data()); }
+async function ptsAlConfirmar(pedido, metodo){
+  const cli = pedido.cliente || {};
+  if(!cli.cuenta || !ptsHabilitado() || pedido.ptsProcesado) return;
+  pedido.ptsProcesado = true;
+  const st = state.settings, base = Number(metodo === "efectivo" ? pedido.totalEf : pedido.totalTa) || 0;
+  let info = {};
+  try{
+    await ptsAplicar(cli.cuenta, c => {
+      info = {gan: 0, debito: 0, primera: false, refCode: c.referidoPor || "", nombre: c.nombre};
+      const usados = Number(cli.ptsUsados) || 0;
+      if(usados > 0){ info.debito = Math.min(usados, ptsSaldoDe(c)); if(info.debito > 0) c.mov.push(ptsMov(-info.debito, "Canje en pedido #" + pedido.id, {ref: pedido.id})); c.reservados = Math.max(0, (Number(c.reservados) || 0) - usados); }
+      const gan = Math.round(base * (Number(st.ptsCompra) || 0));
+      if(gan > 0){ c.mov.push(ptsMov(gan, "Compra #" + pedido.id, {ref: pedido.id})); info.gan = gan; }
+      if(!c.primeraCompra){ info.primera = true; c.primeraCompra = true; }
+    });
+    let extra = "";
+    if(info.primera && info.refCode && Number(st.refPct) > 0){
+      const refC = await ptsBuscarPorCodigo(info.refCode), com = Math.round(base * Number(st.refPct) / 100);
+      if(refC && com > 0){
+        await ptsAplicar(refC.id, r => {
+          const mot = "Referido: " + firstName(cli.nombre) + " (pedido #" + pedido.id + ")";
+          if(r.refPref === "dinero") r.mov.push({ts: Date.now(), pts: 0, dinero: com, estado: "pendiente", motivo: mot, ref: pedido.id});
+          else r.mov.push(ptsMov(com * ptsValor(), mot, {ref: pedido.id}));
+        });
+        extra = " · " + firstName(refC.nombre) + " ganó " + (refC.refPref === "dinero" ? money(com) + " (dinero a pagarle)" : fmtN(com * ptsValor()) + " pts") + " por referirlo";
+      }
+    }
+    scheduleSave(); renderVentasBox();
+    showToast("🎁 " + firstName(info.nombre) + " sumó " + fmtN(info.gan) + " pts" + (info.debito ? " · se descontaron " + fmtN(info.debito) + " pts" : "") + extra, 6000);
+    if(Number(cli.ptsUsados) > info.debito) setTimeout(() => showToast("⚠️ El cliente usó más puntos de los que tenía: revisá ese pedido", 7000), 6200);
+  }catch(e){ console.error(e); pedido.ptsProcesado = false; showToast("⚠️ No se pudieron acreditar los puntos: " + (e.code || e.message), 7000); }
+}
+async function ptsLiberarReserva(pedido){
+  const cli = pedido.cliente || {}, usados = Number(cli.ptsUsados) || 0;
+  if(!cli.cuenta || !usados || pedido.ptsProcesado) return;
+  pedido.ptsProcesado = true;
+  try{ await ptsAplicar(cli.cuenta, c => { c.reservados = Math.max(0, (Number(c.reservados) || 0) - usados); }); scheduleSave(); }catch(e){ pedido.ptsProcesado = false; console.warn(e); }
+}
+async function ptsAlAprobarResena(r){
+  const pts = Number(state.settings.ptsResena) || 0;
+  if(!ptsHabilitado() || r.ptsDados || pts <= 0) return;
+  const ped = state.pedidos.find(p => p.id === r.pedidoId), cuenta = ped && ped.cliente && ped.cliente.cuenta;
+  if(!cuenta) return;
+  r.ptsDados = true;
+  try{
+    await ptsAplicar(cuenta, c => c.mov.push(ptsMov(pts, "Reseña verificada (pedido #" + r.pedidoId + ")", {ref: r.pedidoId})));
+    resenasCol.doc("p" + r.pedidoId).set(r).catch(() => {});
+    renderVentasBox(); showToast("🎁 Se acreditaron " + fmtN(pts) + " puntos por la reseña", 4000);
+  }catch(e){ r.ptsDados = false; console.error(e); showToast("⚠️ No se pudieron acreditar los puntos de la reseña", 5000); }
+}
+function ptsPedidoInfoHtml(p){
+  const cl = p.cliente || {}; if(!cl.cuenta) return "";
+  const c = (state.clientes || []).find(x => x.id === cl.cuenta);
+  let h = `<div style="font-size:.7rem;color:var(--green);font-weight:700;">🎁 Cliente con cuenta${c ? " · saldo " + fmtN(ptsSaldoDe(c)) + " pts" : ""}`;
+  if(cl.ptsUsados) h += ` · usó ${fmtN(cl.ptsUsados)} pts (−${money(cl.ptsDescPesos || 0)})${c && ptsSaldoDe(c) < cl.ptsUsados ? " ⚠️ no le alcanzan" : ""}`;
+  if(cl.amigoPct) h += ` · 👥 ${cl.amigoPct}% OFF por amigo`;
+  return h + `</div>`;
+}
+function ptsAdminHtml(){
+  const cl = (state.clientes || []).slice().sort((a, b) => (b.creado || 0) - (a.creado || 0));
+  let pend = 0; cl.forEach(c => pend += ptsDineroDe(c).pend);
+  let h = `<div style="font-size:.7rem;color:var(--muted);margin-bottom:6px;">Cuentas que crearon tus clientes. Los puntos se acreditan solos al confirmar un pedido o publicar una reseña.</div>
+    <button type="button" class="small-btn" id="ptsRefrescar" style="width:100%;margin-bottom:8px;">🔄 Actualizar lista</button>`;
+  if(pend > 0) h += `<div style="background:var(--gold);border-radius:8px;padding:8px 10px;font-size:.74rem;font-weight:800;margin-bottom:8px;">💵 Comisiones en dinero que les debés: ${money(pend)}</div>`;
+  h += cl.length ? cl.map(c => { const d = ptsDineroDe(c), s = ptsSaldoDe(c); return `
+    <div class="venta-line" style="flex-direction:column;align-items:stretch;gap:5px;">
+      <div><b>${escapeHtml(c.nombre || "")}</b> · 📞 ${escapeHtml(c.telefono || "")}${c.email ? " · " + escapeHtml(c.email) : ""}</div>
+      <div style="font-size:.72rem;">🎁 ${fmtN(s)} pts (≈ ${money(ptsAPesos(s))})${c.reservados ? " · reservados " + fmtN(c.reservados) : ""} · código <b>${escapeHtml(c.refCode || "")}</b>${c.referidoPor ? " · vino por " + escapeHtml(c.referidoPor) : ""}${c.primeraCompra ? " · ya compró" : ""}</div>
+      ${(d.pend || d.pag) ? `<div style="font-size:.72rem;">💵 Pendiente ${money(d.pend)} · cobrado ${money(d.pag)} · prefiere ${c.refPref === "dinero" ? "dinero" : "puntos"}</div>` : ""}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button type="button" class="small-btn" data-pts-adj="${c.id}">± Ajustar puntos</button>
+        <button type="button" class="small-btn" data-pts-pass="${c.id}">🔑 Nueva contraseña</button>
+        <a class="small-btn" target="_blank" rel="noopener" href="${waLink(c.tel || c.telefono, "Hola " + firstName(c.nombre) + "!")}" style="text-decoration:none;color:var(--ink);">WhatsApp</a>
+        ${d.pend ? `<button type="button" class="small-btn" data-pts-pago="${c.id}">✅ Pagué ${money(d.pend)}</button>` : ""}
+      </div>
+    </div>`; }).join("") : `<div style="font-size:.7rem;color:var(--muted);">Todavía no hay cuentas (tocá "Actualizar lista").</div>`;
+  return h;
+}
+function ptsBindAdmin(box){
+  const find = id => (state.clientes || []).find(c => c.id === id);
+  const r = box.querySelector("#ptsRefrescar");
+  if(r) r.onclick = async () => { try{ await ptsCargarClientesAdmin(); renderVentasBox(); showToast("Lista actualizada ✓"); }catch(e){ showToast("No se pudo cargar: " + (e.code || e.message), 5000); } };
+  box.querySelectorAll("[data-pts-adj]").forEach(b => b.onclick = async () => {
+    const c = find(b.dataset.ptsAdj); if(!c) return;
+    const v = prompt("Puntos a sumar (o restar con -). Ej: 50000 o -20000\nSaldo actual de " + c.nombre + ": " + fmtN(ptsSaldoDe(c)));
+    const n = Math.round(Number(String(v || "").replace(/\./g, "").replace(",", ".")));
+    if(!n) return;
+    const mot = prompt("Motivo (lo ve el cliente):", "Ajuste manual") || "Ajuste manual";
+    try{ await ptsAplicar(c.id, x => x.mov.push(ptsMov(n, mot))); renderVentasBox(); showToast("Puntos actualizados ✓"); }catch(e){ showToast("No se pudo: " + (e.code || e.message), 5000); }
+  });
+  box.querySelectorAll("[data-pts-pass]").forEach(b => b.onclick = async () => {
+    const c = find(b.dataset.ptsPass); if(!c) return;
+    const np = prompt("Nueva contraseña para " + c.nombre + " (mínimo 6 caracteres). Pasásela por WhatsApp:");
+    if(!np || np.length < 6){ if(np) showToast("Mínimo 6 caracteres"); return; }
+    try{ const salt = randStr(14), h = await hashPass(np, salt); await ptsAplicar(c.id, x => { x.salt = salt; x.passHash = h; }); showToast("Contraseña cambiada ✓"); }catch(e){ showToast("No se pudo: " + (e.code || e.message), 5000); }
+  });
+  box.querySelectorAll("[data-pts-pago]").forEach(b => b.onclick = async () => {
+    const c = find(b.dataset.ptsPago); if(!c || !confirm("¿Confirmás que le pagaste " + money(ptsDineroDe(c).pend) + " a " + c.nombre + "?")) return;
+    try{ await ptsAplicar(c.id, x => x.mov.forEach(m => { if(m.dinero && m.estado !== "pagado"){ m.estado = "pagado"; m.pagadoTs = Date.now(); } })); renderVentasBox(); showToast("Marcado como pagado ✓"); }catch(e){ showToast("No se pudo: " + (e.code || e.message), 5000); }
+  });
+}
+
+/* ---- sección de la portada + botones + ajustes del panel ---- */
+function ptsRenderHome(){
+  const el = document.getElementById("rewardsHome"); if(!el) return;
+  if(!ptsHabilitado()){ el.style.display = "none"; el.innerHTML = ""; return; }
+  const st = state.settings, v = ptsValor(), reg = Number(st.ptsRegistro) || 0, cmp = Number(st.ptsCompra) || 0, res = Number(st.ptsResena) || 0, rp = Number(st.refPct) || 0, ap = Number(st.amigoPct) || 0, venc = Number(st.ptsVenceMeses) || 0, mx = Number(st.ptsMaxPct) || 100;
+  let rc = ""; try{ rc = localStorage.getItem("oriRef") || ""; }catch(e){}
+  const cards = [
+    reg > 0 ? `<div class="rw-card"><div class="n">🆓</div><b>1. Creá tu cuenta</b><span>Te regalamos <b>${fmtN(reg)} puntos</b> (${money(ptsAPesos(reg))}) al registrarte.</span></div>` : "",
+    cmp > 0 ? `<div class="rw-card"><div class="n">🛒</div><b>2. Comprá</b><span>Ganás <b>${fmtN(cmp)} puntos por cada $1</b> gastado (${(cmp / v * 100).toLocaleString("es-AR", {maximumFractionDigits: 1})}% de vuelta).</span></div>` : "",
+    res > 0 ? `<div class="rw-card"><div class="n">⭐</div><b>3. Opiná</b><span>Reseña verificada = <b>+${fmtN(res)} puntos</b> (${money(ptsAPesos(res))}).</span></div>` : "",
+    rp > 0 ? `<div class="rw-card"><div class="n">👥</div><b>4. Recomendá</b><span>Ganás el <b>${rp}%</b> de la primera compra de tu amigo${ap > 0 ? " y él tiene <b>" + ap + "% OFF</b>" : ""}.</span></div>` : ""
+  ].join("");
+  const rows = [
+    reg > 0 ? `<tr><td>Crear tu cuenta</td><td><b>${fmtN(reg)} pts</b></td><td>${money(ptsAPesos(reg))}</td></tr>` : "",
+    res > 0 ? `<tr><td>Escribir una reseña verificada</td><td><b>${fmtN(res)} pts</b></td><td>${money(ptsAPesos(res))}</td></tr>` : "",
+    cmp > 0 ? `<tr><td>Comprar productos</td><td><b>${fmtN(cmp)} pts</b> por cada $1</td><td>${(cmp / v * 100).toLocaleString("es-AR", {maximumFractionDigits: 1})}% de retorno</td></tr>` : "",
+    rp > 0 ? `<tr><td>Referir un amigo (tu recompensa)</td><td><b>${rp}%</b> de la primera compra de tu referido</td><td>¡Puntos o dinero!</td></tr>` : "",
+    ap > 0 ? `<tr><td>Beneficio para tu amigo</td><td><b>${ap}%</b> de descuento en su primera compra</td><td>—</td></tr>` : ""
+  ].join("");
+  const faq = [
+    ["¿Cuánto cuesta unirse al programa?", `Nada. Es gratis.${reg > 0 ? " Registrarte ya te regala " + fmtN(reg) + " puntos (" + money(ptsAPesos(reg)) + ")." : ""}`],
+    ["¿Cómo gano puntos?", "Con compras, reseñas verificadas y referidos. Mientras más participás, más ganás. Los puntos de una compra se acreditan cuando confirmamos tu pedido."],
+    ["¿Puedo canjear puntos por dinero?", `Los puntos se canjean por descuentos en tus compras (hasta el ${mx}% del pedido). ${rp > 0 ? "Pero las comisiones por referidos sí pueden cobrarse en dinero directo si así lo preferís." : ""}`],
+    ["¿Hay límite de puntos?", venc > 0 ? `No. Podés acumular todo lo que quieras; cada punto dura ${venc} meses desde que lo ganás.` : "No. Podés acumular todo lo que quieras y no vencen."],
+    ap > 0 ? ["¿Mis amigos también ganan algo?", `Sí. Tu amigo recibe ${ap}% OFF en su primera compra si entra con tu link o tu código.`] : null,
+    rp > 0 ? ["¿Cuándo recibo mi recompensa por referido?", "Cuando confirmamos la primera compra de tu amigo: te acreditamos los puntos (o el dinero, que coordinamos con vos) a partir de ese momento."] : null
+  ].filter(Boolean);
+  el.style.display = "";
+  el.innerHTML = `<div class="rw-wrap">
+    ${rc && ap > 0 && !cuentaActual ? `<div class="rw-ref">👥 ¡Te invitó un amigo! Creá tu cuenta y tenés ${ap}% OFF en tu primera compra.</div>` : ""}
+    <h2>🎁 GANÁ PUNTOS CON CADA COMPRA</h2>
+    <p class="rw-sub">Ganás puntos mientras cuidás tu salud: comprás, opinás y recomendás. <b>${fmtN(v)} puntos = $1</b> de descuento.</p>
+    <div class="rw-grid">${cards}</div>
+    <table class="rw-table"><thead><tr><th>Acción</th><th>Puntos que ganás</th><th>Equivalente</th></tr></thead><tbody>${rows}</tbody></table>
+    <h3>✨ Preguntas frecuentes</h3>
+    <div class="rw-faq">${faq.map(f => `<details><summary>${escapeHtml(f[0])}</summary><p>${escapeHtml(f[1])}</p></details>`).join("")}</div>
+    <button type="button" class="rw-cta" id="rwHomeCta">${cuentaActual ? "🎁 Ver mi cuenta y mis puntos" : "Crear mi cuenta y empezar a ganar →"}</button>
+  </div>`;
+  document.getElementById("rwHomeCta").onclick = () => abrirCuenta("crear");
+}
+function ptsRender(){
+  if(!state) return;
+  const on = ptsHabilitado();
+  const tb = document.getElementById("topCuentaBtn"); if(tb){ tb.style.display = on ? "" : "none"; tb.textContent = "🎁 " + (cuentaActual ? fmtN(ptsDisponible(cuentaActual)) : "Puntos"); }
+  const mp = document.getElementById("menuPuntos"); if(mp) mp.style.display = on ? "" : "none";
+  ptsRenderHome();
+  const st = state.settings, set = (id, v) => { const e = document.getElementById(id); if(e && document.activeElement !== e) e.value = (v === undefined || v === null) ? "" : v; };
+  set("setPtsOn", on ? "si" : "no"); set("setPtsValor", st.ptsValor); set("setPtsRegistro", st.ptsRegistro); set("setPtsCompra", st.ptsCompra); set("setPtsResena", st.ptsResena);
+  set("setRefPct", st.refPct); set("setAmigoPct", st.amigoPct); set("setPtsVence", st.ptsVenceMeses); set("setPtsMaxPct", st.ptsMaxPct); set("setPtsMinGanPct", st.ptsMinGanPct); set("setPtsMinCompra", st.ptsMinCompra);
+}
+(function(){
+  const F = {setPtsValor: "ptsValor", setPtsRegistro: "ptsRegistro", setPtsCompra: "ptsCompra", setPtsResena: "ptsResena", setRefPct: "refPct", setAmigoPct: "amigoPct", setPtsVence: "ptsVenceMeses", setPtsMaxPct: "ptsMaxPct", setPtsMinGanPct: "ptsMinGanPct", setPtsMinCompra: "ptsMinCompra"};
+  Object.keys(F).forEach(id => document.getElementById(id).addEventListener("change", e => {
+    const n = Number(String(e.target.value).replace(",", ".")); let val = isFinite(n) && n >= 0 ? n : 0;
+    if(F[id] === "ptsValor" && val < 1) val = 100;
+    if((F[id] === "ptsMaxPct" || F[id] === "refPct" || F[id] === "amigoPct") && val > 100) val = 100;
+    state.settings[F[id]] = val; render(); scheduleSave();
+  }));
+  document.getElementById("setPtsOn").addEventListener("change", e => { state.settings.ptsOn = e.target.value !== "no"; render(); scheduleSave(); });
+  document.getElementById("topCuentaBtn").addEventListener("click", () => abrirCuenta());
+  document.getElementById("menuPuntos").addEventListener("click", () => { closeMenu(); closeAllSheets(); setView("home"); setTimeout(() => { const r = document.getElementById("rewardsHome"); if(r) r.scrollIntoView({behavior: "smooth", block: "start"}); }, 450); });
+})();
+
 /* Ocultar la pantalla de carga cuando termina de cargar todo (con tope de seguridad de 20 s) */
 (function(){
   const loader = document.getElementById("pageLoader");
@@ -4402,7 +4950,7 @@ async function loadState(){
   setTimeout(hideLoader, 20000);
   /* Despertar el servidor de pagos (Render gratis se duerme) para que "Pagar" responda rápido */
   try{ fetch(MP_BACKEND + "/", {mode:"no-cors", cache:"no-store"}).catch(() => {}); }catch(e){}
-  loadState().then(() => { try{ const pid = Number(new URLSearchParams(location.search).get("p")); if(pid && visibleProducts().some(x => x.id === pid)) openDetail("product", pid); }catch(e){} loadResenas(); return (document.fonts && document.fonts.ready) || null; }).catch(() => {}).then(hideLoader);
+  loadState().then(() => { try{ const pid = Number(new URLSearchParams(location.search).get("p")); if(pid && visibleProducts().some(x => x.id === pid)) openDetail("product", pid); }catch(e){} loadResenas(); ptsInit(); return (document.fonts && document.fonts.ready) || null; }).catch(() => {}).then(hideLoader);
 })();
 </script>
 <div class="ie-ov" id="imgEditor"></div>
