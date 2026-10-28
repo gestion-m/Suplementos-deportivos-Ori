@@ -822,7 +822,7 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
 </div>
 
 <div class="info-trio" id="infoTrio">
-  <div class="it"><div class="ic">📦</div><h3>Medios de envío</h3><p>Correo Argentino a todo Buenos Aires. En José C. Paz, San Miguel, Grand Bourg y Malvinas Argentinas (Los Polvorines, Tortuguitas y alrededores), envío en el día por Uber o Didi Moto por $3.900.</p></div>
+  <div class="it"><div class="ic">📦</div><h3>Medios de envío</h3><p>Correo Argentino a todo Buenos Aires. En José C. Paz, San Miguel, Grand Bourg y Malvinas Argentinas (Los Polvorines, Tortuguitas y alrededores), envío en el día por Uber o Didi Moto por <span class="envMotoMonto">$3.900</span><span class="envMotoGratis"></span>. Retiro con el vendedor: sin costo.</p></div>
   <div class="it"><div class="ic">💳</div><h3>Formas de pago</h3><p>Pagá con tarjeta, transferencia o efectivo. Elegís al confirmar tu pedido.</p></div>
   <div class="it"><div class="ic">🔒</div><h3>Entrega segura</h3><p>Productos originales con empaque sellado. Te avisamos por WhatsApp cuando tu pedido está listo.</p></div>
 </div>
@@ -900,7 +900,7 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
   <div id="cartPtsBox"></div>
   <div class="cart-totals"><span id="cartTotalEfLbl">Total efectivo/transferencia</span><span id="cartTotalEf">$0</span></div>
   <div class="cart-totals" style="border-top:none;padding-top:0;"><span>Total tarjeta</span><span id="cartTotalTa">$0</span></div>
-  <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">🏠 Retiro y 🤝 punto de encuentro: <b>sin costo</b>. 🛵 José C. Paz, San Miguel, Grand Bourg y Malvinas Argentinas: <b>envío $3.900</b>, en el día por Uber o Didi Moto. 📦 Envío por Correo Argentino (solo Buenos Aires por ahora): el costo se suma en el siguiente paso.</div>
+  <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">🏠 Retiro y 🤝 punto de encuentro: <b>sin costo</b>. 🛵 José C. Paz, San Miguel, Grand Bourg y Malvinas Argentinas: <b>envío <span class="envMotoMonto">$3.900</span></b><span class="envMotoGratis"></span>, en el día por Uber o Didi Moto. 📦 Envío por Correo Argentino (solo Buenos Aires por ahora): el costo se suma en el siguiente paso.</div>
   <div id="aliasBox" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:10px;">
     <div style="font-size:0.68rem;color:var(--muted);font-weight:700;">¿PAGÁS POR TRANSFERENCIA? Copiá el alias:</div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
@@ -979,6 +979,7 @@ async function cargarPrivado(){
   try{ ct = await db.collection("contador").doc("pedidos").get(); }catch(e){ console.warn("contador", e); ct = {exists:true}; }
   state.ventas = vs.docs.map(d => d.data()).sort((a,b) => a.id - b.id);
   state.pedidos = ps.docs.map(d => d.data()).sort((a,b) => a.id - b.id);
+  try{ const mv = calcMasVendidos(); if(mv.length && JSON.stringify(mv) !== JSON.stringify(state.settings.masVendidosIds || [])){ state.settings.masVendidosIds = mv; scheduleSave(); } }catch(e){ console.warn(e); }
   try{ const ms = await stockMovCol.get(); const pend = (state.stockMov || []).filter(m => m._new); state.stockMov = ms.docs.map(d => d.data()).concat(pend); }catch(e){ console.warn("movimientos de stock", e); state.stockMov = state.stockMov || []; }
   try{ await ptsCargarClientesAdmin(); }catch(e){ console.warn("clientes con cuenta", e); }
   const max = state.pedidos.reduce((m,p) => p.id < 1e12 ? Math.max(m,p.id) : m, 0);
@@ -1072,7 +1073,15 @@ function cashFromCard(ta){ return cashOn() ? roundPrice(ta * (1 - Number(state.s
 function trOn(){ const d = Number(state.settings.descTrPct); return isFinite(d) && d > 0 && d < 90; }
 function transFromCard(ta){ return trOn() ? roundPrice(ta * (1 - Number(state.settings.descTrPct)/100)) : ta; }
 function envioLocalMonto(){ return Number(state.settings.envioLocal) || 0; }
-function envioLocalTxt(){ const v = Number(state.settings.envioLocal); return v > 0 ? `🛵 Envío a ${escapeHtml(state.settings.envioLocalZonas || 'José C. Paz / Zona Norte')}: <b>${money(v)}</b>` : ""; }
+/* Envío en el día (Uber/Didi): gratis si el pedido llega al mínimo de envío gratis */
+function envioMotoGratis(extraEf){ const min = Number(state.settings.envioGratisDesde) || 0; return min > 0 && (subtotalCarritoEf() + (extraEf || 0)) >= min; }
+function envioMotoCosto(extraEf){ return envioMotoGratis(extraEf) ? 0 : envioLocalMonto(); }
+function pintarTextosEnvio(){
+  const min = Number(state.settings.envioGratisDesde) || 0, mo = envioLocalMonto();
+  document.querySelectorAll(".envMotoMonto").forEach(e => { e.textContent = mo > 0 ? money(mo) : "GRATIS"; });
+  document.querySelectorAll(".envMotoGratis").forEach(e => { e.textContent = (mo > 0 && min > 0) ? " (GRATIS en compras desde " + money(min) + ")" : ""; });
+}
+function envioLocalTxt(){ const v = Number(state.settings.envioLocal), min = Number(state.settings.envioGratisDesde) || 0; return v > 0 ? `🛵 Envío a ${escapeHtml(state.settings.envioLocalZonas || 'José C. Paz / Zona Norte')}: <b>${money(v)}</b>${min > 0 ? ` · <b>GRATIS desde ${money(min)}</b>` : ""} · 🤝 Retiro: sin costo` : ""; }
 function priceBlock(precioTa, precioEf, anteriorTa, big){
   const tr = trOn() ? transFromCard(precioTa) : 0;
   return `<div class="pb-card">${anteriorTa ? `<s class="old-price">${money(anteriorTa)}</s>` : ""}<span class="pb-main">${money(precioTa)}</span><span class="pb-sub">💳 Tarjeta o Mercado Pago</span></div>`
@@ -1307,13 +1316,24 @@ function scCard(p){
   const {precioEf, precioTa, anteriorTa, pct} = calcProductPrices(p), img = (p.images || [])[0];
   return `<div class="sc-card">${pct > 0 ? `<div class="off-circle"><b>${pct}%</b><span>OFF</span></div>` : ""}<div data-sc-open="${p.id}" style="cursor:pointer;">${img ? `<img src="${img}" alt="">` : `<div style="height:150px;display:flex;align-items:center;justify-content:center;color:#a9ab9c;font-size:.7rem;">Sin foto</div>`}<div class="sc-name">${escapeHtml(conMarca(p.brand, p.name))}</div></div><div class="sc-price">${anteriorTa ? `<s class="old-price">${money(anteriorTa)}</s> ` : ""}${money(precioTa)}</div>${trOn() ? `<div class="sc-cash" style="color:var(--ink)">${money(transFromCard(precioTa))} transferencia</div>` : ""}${cashOn() ? `<div class="sc-cash">${money(precioEf)} efectivo</div>` : ""}<button type="button" class="add-cart-btn" data-sc-add="${p.id}">Comprar</button></div>`;
 }
+function calcMasVendidos(){
+  const cnt = {};
+  (state.ventas || []).forEach(v => {
+    const q = Number(v.cantidad) || 0;
+    if(v.productId) cnt[v.productId] = (cnt[v.productId] || 0) + q;
+    else if(v.comboId){ const c = (state.combos || []).find(x => x.id === v.comboId); if(c) c.items.forEach(ci => { cnt[ci.productId] = (cnt[ci.productId] || 0) + ci.qty * q; }); }
+  });
+  return Object.entries(cnt).filter(([id, n]) => n > 0 && state.products.some(p => p.id === Number(id))).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([id]) => Number(id));
+}
 function renderShowcase(){
   const box = document.getElementById("homeShowcase");
   const vis = visibleProducts().filter(p => stockOf(p) > 0);
   const ofertas = vis.filter(p => calcProductPrices(p).pct > 0);
-  const dest = vis.filter(p => (p.images || []).length).slice(0, 10);
+  const top = (state.settings.masVendidosIds || []).map(id => vis.find(p => p.id === id)).filter(Boolean);
+  const useTop = top.length >= 3;
+  const dest = useTop ? top : vis.filter(p => (p.images || []).length).slice(0, 10);
   const sec = (id, title, list) => list.length ? `<div class="sc"><h2>${title}</h2><div class="sc-row" id="${id}">${list.map(scCard).join("")}</div><div class="sc-nav"><button type="button" data-sc-prev="${id}" aria-label="Anterior">←</button><span id="${id}Cnt">1 / ${list.length}</span><button type="button" data-sc-next="${id}" aria-label="Siguiente">→</button></div></div>` : "";
-  const html = sec("scOf", "Ofertas", ofertas) + sec("scDest", "Destacados", dest);
+  const html = sec("scOf", "Ofertas", ofertas) + sec("scDest", useTop ? "Más vendidos" : "Destacados", dest);
   if(html === showcaseSig) return;
   showcaseSig = html; box.innerHTML = html;
 }
@@ -2217,12 +2237,14 @@ function renderDetail(type, id){
         try{ localStorage.setItem("oriCP", cp); }catch(e){}
         const st = state.settings, near = String(st.cpCercanos || "").split(",").map(x => x.trim()).filter(Boolean).includes(cp);
         const rows = [];
-        if(near){ rows.push(["🛵 Envío en el día por Uber o Didi Moto", "GRATIS"]); rows.push(["🤝 Punto de encuentro / retiro", "GRATIS"]); }
+        const motoGratis = envioMotoCosto(precioEf) === 0;
+        if(near){ rows.push(["🛵 Envío en el día por Uber o Didi Moto", motoGratis ? "GRATIS" : money(envioLocalMonto())]); rows.push(["🤝 Retiro con el vendedor / punto de encuentro", "GRATIS"]); }
         const gratisGBA = envioGratisAplica(cp, precioEf), minG = Number(st.envioGratisDesde) || 0;
         if(Number(st.envioSucursal) > 0) rows.push(["📦 Correo Argentino a sucursal", gratisGBA ? "GRATIS" : money(st.envioSucursal)]);
         if(Number(st.envioDomicilio) > 0) rows.push(["📦 Correo Argentino a domicilio", gratisGBA ? "GRATIS" : money(st.envioDomicilio)]);
+        const notaMoto = (near && !motoGratis && minG > 0) ? "El envío en el día es gratis en compras desde " + money(minG) + ". " : "";
         const notaGBA = (minG > 0 && esGBA(cp)) ? (gratisGBA ? "🎉 Envío gratis a Gran Buenos Aires por superar " + money(minG) + ". " : "Envío gratis a Gran Buenos Aires en compras desde " + money(minG) + ". ") : "";
-        cpRes.innerHTML = rows.map(r => `<div class="cp-opt"><span>${r[0]}</span><b class="${r[1] === "GRATIS" ? "free" : ""}">${r[1]}</b></div>`).join("") + `<div class="cp-note">${notaGBA}${near ? "Coordinamos horario por WhatsApp. " : ""}El costo del Correo es estimado y se confirma al hacer el pedido.</div>`;
+        cpRes.innerHTML = rows.map(r => `<div class="cp-opt"><span>${r[0]}</span><b class="${r[1] === "GRATIS" ? "free" : ""}">${r[1]}</b></div>`).join("") + `<div class="cp-note">${notaMoto}${notaGBA}${near ? "Coordinamos horario por WhatsApp. " : ""}El costo del Correo es estimado y se confirma al hacer el pedido.</div>`;
       };
       document.getElementById("cpBtn").onclick = calcCP;
       cpIn.addEventListener("keydown", e => { if(e.key === "Enter") calcCP(); });
@@ -2506,9 +2528,9 @@ function pedirDatosCliente(){
       '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">' +
         '<button type="button" data-ent="casa" style="' + optBase + '">🏠 Retiro en casa del vendedor · GRATIS</button>' +
         '<button type="button" data-ent="punto" style="' + optBase + '">🤝 Punto de encuentro · GRATIS</button>' +
-        '<button type="button" data-ent="moto" style="' + optBase + '">🛵 ' + escapeHtml(state.settings.envioLocalZonas || "José C. Paz / Zona Norte") + (envioLocalMonto() > 0 ? " · envío " + money(envioLocalMonto()) : " · envío GRATIS") + '</button>' +
+        '<button type="button" data-ent="moto" style="' + optBase + '">🛵 ' + escapeHtml(state.settings.envioLocalZonas || "José C. Paz / Zona Norte") + (envioMotoCosto() > 0 ? " · envío " + money(envioMotoCosto()) + (Number(state.settings.envioGratisDesde) > 0 ? " (gratis desde " + money(Number(state.settings.envioGratisDesde)) + ")" : "") : " · envío GRATIS") + '</button>' +
         '<button type="button" data-ent="correo" style="' + optBase + '">📦 Envío por Correo Argentino</button></div>' +
-      '<div id="cliBoxMoto" style="display:none;"><select id="cliZonaMoto" style="' + inp + '">' + (state.settings.zonasGratis || "").split(",").map(z => z.trim()).filter(Boolean).map(z => '<option value="' + escapeHtml(z) + '">' + escapeHtml(z) + '</option>').join("") + '</select><input id="cliDirMoto" placeholder="Dirección y zona (calle, número, localidad)" autocomplete="street-address" style="' + inp + '"><div style="font-size:.72rem;opacity:.8;margin:-4px 0 10px;">' + (envioLocalMonto() > 0 ? '🛵 Envío ' + money(envioLocalMonto()) + ' (se suma a tu total). ' : '🎉 ¡Envío gratis! ') + 'Se hace en el día por Uber o Didi Moto. Coordinamos el horario por WhatsApp.</div></div>' +
+      '<div id="cliBoxMoto" style="display:none;"><select id="cliZonaMoto" style="' + inp + '">' + (state.settings.zonasGratis || "").split(",").map(z => z.trim()).filter(Boolean).map(z => '<option value="' + escapeHtml(z) + '">' + escapeHtml(z) + '</option>').join("") + '</select><input id="cliDirMoto" placeholder="Dirección y zona (calle, número, localidad)" autocomplete="street-address" style="' + inp + '"><div style="font-size:.72rem;opacity:.8;margin:-4px 0 10px;">' + (envioMotoCosto() > 0 ? '🛵 Envío ' + money(envioMotoCosto()) + ' (se suma a tu total). ' + (Number(state.settings.envioGratisDesde) > 0 ? 'Es gratis en compras desde ' + money(Number(state.settings.envioGratisDesde)) + (subtotalCarritoEf() < Number(state.settings.envioGratisDesde) ? ' (te faltan ' + money(Number(state.settings.envioGratisDesde) - subtotalCarritoEf()) + ')' : '') + '. ' : '') : '🎉 ¡Envío gratis! ') + 'Se hace en el día por Uber o Didi Moto. Coordinamos el horario por WhatsApp.</div></div>' +
       '<div id="cliNotaCasa" style="font-size:.72rem;opacity:.8;margin:-2px 0 10px;">Coordinamos día y hora por WhatsApp.</div>' +
       '<div id="cliBoxPunto" style="display:none;">' +
         '<select id="cliZona" style="' + inp + '">' + (state.settings.zonasGratis || "").split(",").map(z => z.trim()).filter(Boolean).map(z => '<option value="' + escapeHtml(z) + '">' + escapeHtml(z) + '</option>').join("") + '</select>' +
@@ -2577,7 +2599,7 @@ function pedirDatosCliente(){
         if(direccion.length < 5){ $("cliErr").textContent = "Escribí la dirección de entrega."; return; }
         if(cp.length < 4){ $("cliErr").textContent = "Escribí tu código postal."; return; }
       }
-      const c = {nombre, telefono, email, entrega, zona, direccion, cp, provincia: entrega === "correo" ? $("cliProv").value : "", servicio: entrega === "correo" ? servicio : "", envioCosto: entrega === "correo" ? costoEnvio() : (entrega === "moto" ? envioLocalMonto() : 0)};
+      const c = {nombre, telefono, email, entrega, zona, direccion, cp, provincia: entrega === "correo" ? $("cliProv").value : "", servicio: entrega === "correo" ? servicio : "", envioCosto: entrega === "correo" ? costoEnvio() : (entrega === "moto" ? envioMotoCosto() : 0)};
       try{ localStorage.setItem("oriCliente", JSON.stringify(c)); }catch(e){}
       ptsAdjuntarACliente(c);
       o.remove(); resolve(c);
@@ -2680,6 +2702,7 @@ function renderContact(){
   $("menuIg").style.display = igUrl ? "flex" : "none"; if(igUrl) $("menuIg").href = igUrl;
   const dirTxt = (state.settings.direccion || "").trim();
   $("cbAddr").style.display = dirTxt ? "block" : "none"; $("cbAddr").textContent = "📍 " + dirTxt;
+  pintarTextosEnvio();
   $("contactBox").style.display = (wa || igUrl || dirTxt) ? "block" : "none";
 }
 
@@ -2840,6 +2863,7 @@ function clientesListaHtml(){
       ${k.direccion ? `<div style="font-size:.74rem;">📍 ${escapeHtml(k.direccion)}</div>` : ""}
       <div style="font-size:.72rem;color:var(--muted);">Compró por: ${escapeHtml([...k.canales].join(", "))} · Último pedido: ${escapeHtml(k.ultimo.fecha || "")} (#${k.ultimo.id})</div>
       ${k.res.length ? k.res.map(r => `<div style="font-size:.74rem;"><span style="color:#f5a623;">${starsTxt(r.puntaje)}</span> ${r.aprobada ? "✅ publicada" : "⏳ pendiente"}${r.comentario ? " · " + escapeHtml(r.comentario) : ""}</div>${fotoSegura(r) ? `<img src="${fotoSegura(r)}" alt="" style="max-width:100%;max-height:120px;border-radius:8px;">` : ""}`).join("") : `<div style="font-size:.72rem;color:var(--muted);">Sin reseña</div>`}
+      ${k.conf ? `<details style="font-size:.72rem;"><summary style="cursor:pointer;font-weight:800;">🧾 Historial de compras (${k.conf})</summary>${k.pedidos.filter(p => p.status === "confirmado").slice().reverse().map(p => `<div style="padding:3px 0;border-top:1px solid var(--line);">#${p.id} · ${escapeHtml(p.fecha || "")} · <b>${money(p.medio === "mercadopago" ? (Number(p.totalTa) || 0) : (Number(p.totalEf) || 0))}</b><br>${escapeHtml(compraItemsTxt(p.items))}</div>`).join("")}</details>` : ""}
       <button class="small-btn" data-cli-del="${escapeHtml(k.key)}" style="align-self:flex-start;color:var(--coral);">🗑 Borrar cliente</button>
     </div>`).join("");
 }
@@ -4454,6 +4478,7 @@ async function saveState(){
   if(!esAdmin()) return;
   try{
     state.settings.motivoIds = (state.motivos || []).map(m => m.id);
+    if((state.ventas || []).length) state.settings.masVendidosIds = calcMasVendidos();
     const { heroImage, logoImage, bgImage, pin, ...settingsRest } = state.settings;
     const ops = [];
     ops.push(b => b.set(configRef, {
@@ -4801,6 +4826,7 @@ function renderCuenta(){
       <label style="display:flex;gap:8px;align-items:center;margin-top:4px;"><input type="radio" name="rwPref" value="puntos" ${c.refPref !== "dinero" ? "checked" : ""}> Puntos (rinden para tus compras)</label>
       <label style="display:flex;gap:8px;align-items:center;margin-top:4px;"><input type="radio" name="rwPref" value="dinero" ${c.refPref === "dinero" ? "checked" : ""}> Dinero directo (lo coordinamos con vos)</label>
       ${(din.pend || din.pag) ? `<div style="margin-top:8px;">💵 Dinero pendiente de cobro: <b>${money(din.pend)}</b> · ya cobrado: <b>${money(din.pag)}</b></div>` : ""}` : ""}</div>` : ""}
+    <div class="rw-box"><b class="t">🧾 Mis compras</b><div class="rw-hist">${(c.compras || []).length ? (c.compras || []).slice().reverse().slice(0, 20).map(x => `<div><span>Pedido #${escapeHtml(String(x.id))} · ${escapeHtml(x.fecha || "")}<br><small style="color:var(--muted);">${escapeHtml(compraItemsTxt(x.items))}</small></span><span class="p">${money((Number(x.total) || 0) + (Number(x.envio) || 0))}</span></div>`).join("") : `<div style="color:var(--muted);">Todavía no hay compras confirmadas en tu cuenta.</div>`}</div></div>
     <div class="rw-box"><b class="t">📋 Mis movimientos</b><div class="rw-hist">${hist.length ? hist.map(m => `<div><span>${escapeHtml(m.motivo || "")}<br><small style="color:var(--muted);">${new Date(m.ts).toLocaleDateString("es-AR")}</small></span><span class="p ${m.pts > 0 ? "pos" : (m.pts < 0 ? "neg" : "")}">${m.pts ? (m.pts > 0 ? "+" : "") + fmtN(m.pts) + " pts" : (m.dinero ? "+" + money(m.dinero) + (m.estado === "pagado" ? " ✔" : " ⏳") : "")}</span></div>`).join("") : `<div style="color:var(--muted);">Todavía no hay movimientos.</div>`}</div></div>
     <button type="button" class="small-btn" id="rwSalir" style="width:100%;">Cerrar sesión</button>`;
   if(q("rwCopiar")) q("rwCopiar").onclick = () => navigator.clipboard.writeText(link).then(() => showToast("Link copiado ✓"), () => prompt("Copiá tu link:", link));
@@ -4863,6 +4889,7 @@ async function ptsPostPedido(cl){
 }
 
 /* ---- administrador: acreditar / descontar puntos ---- */
+function compraItemsTxt(items){ return (items || []).map(i => (i.q || i.qty || 1) + "× " + (i.n || ((i.brand ? i.brand + " - " : "") + (i.name || "")))).join(", "); }
 function ptsCacheCliente(c){ state.clientes = state.clientes || []; const i = state.clientes.findIndex(x => x.id === c.id); if(i >= 0) state.clientes[i] = c; else state.clientes.push(c); }
 async function ptsAplicar(id, fn){
   const ref = clientesCol.doc(id);
@@ -4894,6 +4921,7 @@ async function ptsAlConfirmar(pedido, metodo){
       const gan = Math.round(base * (Number(st.ptsCompra) || 0));
       if(gan > 0){ c.mov.push(ptsMov(gan, "Compra #" + pedido.id, {ref: pedido.id})); info.gan = gan; }
       if(!c.primeraCompra){ info.primera = true; c.primeraCompra = true; }
+      c.compras = (c.compras || []).filter(x => x.id !== pedido.id).concat([{id: pedido.id, ts: Date.now(), fecha: new Date().toLocaleDateString("es-AR"), total: base, envio: Number(cli.envioCosto) || 0, medio: metodo, entrega: cli.entrega || "", items: (pedido.items || []).map(i => ({n: (i.brand ? i.brand + " - " : "") + (i.name || ""), q: i.qty})).slice(0, 30)}]).slice(-100);
     });
     let extra = "";
     if(info.primera && info.refCode && Number(st.refPct) > 0){
@@ -4948,6 +4976,7 @@ function ptsAdminHtml(){
     <div class="venta-line" style="flex-direction:column;align-items:stretch;gap:5px;">
       <div><b>${escapeHtml(c.nombre || "")}</b> · 📞 ${escapeHtml(c.telefono || "")}${c.email ? " · " + escapeHtml(c.email) : ""}</div>
       <div style="font-size:.72rem;">🎁 ${fmtN(s)} pts (≈ ${money(ptsAPesos(s))})${c.reservados ? " · reservados " + fmtN(c.reservados) : ""} · código <b>${escapeHtml(c.refCode || "")}</b>${c.referidoPor ? " · vino por " + escapeHtml(c.referidoPor) : ""}${c.primeraCompra ? " · ya compró" : ""}</div>
+      ${(c.compras || []).length ? `<details style="font-size:.72rem;"><summary style="cursor:pointer;font-weight:800;">🧾 Historial de compras (${c.compras.length})</summary>${c.compras.slice().reverse().map(x => `<div style="padding:3px 0;border-top:1px solid var(--line);">#${escapeHtml(String(x.id))} · ${escapeHtml(x.fecha || "")} · <b>${money((Number(x.total) || 0) + (Number(x.envio) || 0))}</b><br>${escapeHtml(compraItemsTxt(x.items))}</div>`).join("")}</details>` : ""}
       ${(d.pend || d.pag) ? `<div style="font-size:.72rem;">💵 Pendiente ${money(d.pend)} · cobrado ${money(d.pag)} · prefiere ${c.refPref === "dinero" ? "dinero" : "puntos"}</div>` : ""}
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button type="button" class="small-btn" data-pts-adj="${c.id}">± Ajustar puntos</button>
