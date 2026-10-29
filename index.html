@@ -698,8 +698,14 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
   <div class="admin-row"><label>Alias transf.</label><input id="setAlias" placeholder="Ej: mi.alias.mp"></div>
   <div class="admin-row"><label>Envío Correo a sucursal $</label><input id="setEnvSuc" type="number" placeholder="Ej: 6800" style="max-width:90px;"></div>
   <div class="admin-row"><label>Envío Correo a domicilio $</label><input id="setEnvDom" type="number" placeholder="Ej: 9700" style="max-width:90px;"></div>
-  <div class="admin-row"><label>Envío gratis a GBA desde $</label><input id="setEnvGratis" type="number" placeholder="Ej: 90000" style="max-width:90px;"></div>
-  <div style="font-size:0.66rem;color:var(--muted);margin:-4px 0 6px;">Compras de ese monto o más tienen envío por Correo gratis en Gran Buenos Aires (CABA y conurbano). Poné 0 para desactivarlo.</div>
+  <div class="admin-row"><label>Peso por defecto si un producto no tiene (g)</label><input id="setPesoDef" type="number" min="0" placeholder="300" style="max-width:90px;"></div>
+  <div class="admin-row"><label>Tarifas Correo por peso: Buenos Aires</label><input id="setTablaBA" placeholder="500:6800/9700, 1000:7500/10500, 3000:9000/13000"></div>
+  <div class="admin-row"><label>Tarifas Correo por peso: CABA</label><input id="setTablaCABA" placeholder="500:6800/9700, 1000:7500/10500"></div>
+  <div class="admin-row"><label>Tarifas Correo por peso: resto del país</label><input id="setTablaOtra" placeholder="500:9000/12000, 1000:10500/14000"></div>
+  <div style="font-size:0.66rem;color:var(--muted);margin:-4px 0 6px;">Formato: <b>hasta cuántos gramos : precio a sucursal / precio a domicilio</b>, separados por coma. Si pasa el último tramo se cobra otro paquete. Si dejás una zona vacía se usan los precios fijos de arriba (y "resto del país" sigue sin habilitarse).</div>
+  <div class="admin-row"><label>Envío gratis a GBA desde $</label><input id="setEnvGratis" type="number" placeholder="Ej: 100000" style="max-width:90px;"></div>
+  <div class="admin-row"><label>Envío gratis a provincias (resto) desde $</label><input id="setEnvGratisProv" type="number" placeholder="Ej: 150000" style="max-width:90px;"></div>
+  <div style="font-size:0.66rem;color:var(--muted);margin:-4px 0 6px;">Compras de ese monto o más tienen envío por Correo gratis en Gran Buenos Aires (CABA y conurbano). Para el resto del país rige el monto de la línea de abajo. Poné 0 para desactivarlo.</div>
   <div class="admin-row"><label>Código de descuento (ej: PWR10)</label><input id="setCuponCodigo" placeholder="vacío = sin código"></div>
   <div class="admin-row"><label>Descuento del código (%)</label><input id="setCuponPct" type="number" min="0" max="90" placeholder="10"></div>
   <div class="admin-row"><label>Zonas con entrega gratis</label><input id="setZonas" placeholder="José C. Paz, San Miguel, Grand Bourg, Malvinas Argentinas, Los Polvorines"></div>
@@ -1159,7 +1165,7 @@ const DEFAULT_STATE = {
     brand:"PWR SUPLEMENTOS", heroTitle:"ENERGÍA|PARA RENDIR",
     heroTag:"Suplementos deportivos originales. Consultá stock y precios.",
     envioTexto:"🚚 Envíos a José C. Paz, San Miguel y Grand Bourg — consultá por otras zonas",
-    whatsapp:"", cuponCodigo:"", cuponPct:0, markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", envioSucursal:6800, envioDomicilio:9700, envioGratisDesde:90000, zonasGratis:"José C. Paz, San Miguel, Grand Bourg, Malvinas Argentinas, Los Polvorines, Tortuguitas, Villa de Mayo, Pablo Nogués", direccion:"José C. Paz, Buenos Aires", cpCercanos:"1665, 1663, 1615, 1613, 1614, 1667", descEfPct:10, descTrPct:5, envioLocal:3900, envioLocalZonas:"José C. Paz / Zona Norte", cartelesInicio:DEFAULT_CARTELES, heroImage:null, accentColor:"#c6ff2e", logoImage:null,
+    whatsapp:"", cuponCodigo:"", cuponPct:0, markupEfectivo:40, markupTarjeta:48, mpFee:8.57, roundTo:100, aliasTransferencia:"", envioSucursal:6800, envioDomicilio:9700, envioGratisDesde:100000, envioGratisProvDesde:150000, zonasGratis:"José C. Paz, San Miguel, Grand Bourg, Malvinas Argentinas, Los Polvorines, Tortuguitas, Villa de Mayo, Pablo Nogués", direccion:"José C. Paz, Buenos Aires", cpCercanos:"1665, 1663, 1615, 1613, 1614, 1667", descEfPct:10, descTrPct:5, envioLocal:3900, envioLocalZonas:"José C. Paz / Zona Norte", cartelesInicio:DEFAULT_CARTELES, heroImage:null, accentColor:"#c6ff2e", logoImage:null,
     fonts:{brand:"anton",hero:"anton",sections:"anton",prices:"anton"}, textColors:{}, ofertas:[], bgMode:"default", bgFit:"cover", bgColor:"", bgImage:null
   },
   motivos:[{id:1,text:"La disciplina es hacer lo que tenés que hacer, aunque no tengas ganas.",author:"PWR · Entrená con constancia",image:null,ovl:55,bri:100,con:100,color:"#ffffff",bg:"dark"}],
@@ -1557,6 +1563,11 @@ function render(){
   document.getElementById("setEnvSuc").value = state.settings.envioSucursal ?? "";
   document.getElementById("setEnvDom").value = state.settings.envioDomicilio ?? "";
   document.getElementById("setEnvGratis").value = state.settings.envioGratisDesde ?? "";
+  document.getElementById("setEnvGratisProv").value = state.settings.envioGratisProvDesde ?? "";
+  document.getElementById("setPesoDef").value = state.settings.pesoDefaultG ?? "";
+  document.getElementById("setTablaBA").value = state.settings.envioTablaBA || "";
+  document.getElementById("setTablaCABA").value = state.settings.envioTablaCABA || "";
+  document.getElementById("setTablaOtra").value = state.settings.envioTablaOtra || "";
   document.getElementById("setZonas").value = state.settings.zonasGratis || "";
   document.getElementById("setDireccion").value = state.settings.direccion || "";
   document.getElementById("setCpCercanos").value = state.settings.cpCercanos || "";
@@ -1755,6 +1766,7 @@ function renderProducts(){
           <div class="admin-row"><label>Marca</label><select data-brand-sel="${p.id}">${pickOptions(allBrands(), p.brand, "— elegir marca —", "➕ Otra marca…")}</select></div>
           <div class="admin-row"><label>Nombre</label><input data-field="name" data-id="${p.id}" value="${escapeHtml(p.name)}"></div>
           <div class="admin-row"><label>Cuotas (vacío = no mostrar)</label><input type="number" min="0" data-field="cuotas" data-id="${p.id}" value="${p.cuotas||''}" placeholder="ej: 3"></div>
+          <div class="admin-row"><label>Peso en gramos (para el envío)</label><input type="number" min="0" data-field="pesoG" data-id="${p.id}" value="${p.pesoG||''}" placeholder="ej: 300"></div>
           <div class="admin-row"><label>Costo</label><input type="number" data-field="costo" data-id="${p.id}" value="${p.costo}"></div>
           <div class="admin-row"><label>Stock</label><input type="number" data-field="stock" data-id="${p.id}" value="${p.stock===null?'':p.stock}" placeholder="sin control"></div>
           <div class="admin-row"><label>Descuento % (vacío = sin)</label><input type="number" min="0" max="90" data-field="descuentoPct" data-id="${p.id}" value="${p.descuentoPct||''}" placeholder="ej: 15"></div>
@@ -1882,6 +1894,7 @@ function attachProductListeners(){
       if(field === "costo"){ prod.costo = Number(val)||0; }
       else if(field === "stock"){ const antesP = prod.stock; prod.stock = val === "" ? null : Number(val); logStockMov(prod, antesP === undefined ? null : antesP, "Corrección manual (ficha del producto)"); }
       else if(field === "descuentoPct"){ const n = Math.floor(Number(val)); prod.descuentoPct = (val === "" || !(n > 0)) ? null : Math.min(90, n); }
+      else if(field === "pesoG"){ prod.pesoG = val === "" ? null : Math.max(0, Math.round(Number(val)) || 0); }
       else if(field === "cuotas"){ prod.cuotas = val === "" ? null : Math.max(0, Math.floor(Number(val))||0); }
       else if(field === "markupEf" || field === "markupTa"){ prod[field] = val === "" ? null : Number(val); }
       else if(field === "precioEfManual" || field === "precioTaManual"){ prod[field] = val === "" ? null : Number(val); }
@@ -2266,10 +2279,12 @@ function renderDetail(type, id){
         const motoGratis = envioMotoCosto(precioEf) === 0;
         if(near){ rows.push(["🛵 Envío en el día por Uber o Didi Moto", motoGratis ? "GRATIS" : money(envioLocalMonto())]); rows.push(["🤝 Retiro con el vendedor / punto de encuentro", "GRATIS"]); }
         const gratisGBA = envioGratisAplica(cp, precioEf), minG = Number(st.envioGratisDesde) || 0;
-        if(Number(st.envioSucursal) > 0) rows.push(["📦 Correo Argentino a sucursal", gratisGBA ? "GRATIS" : money(st.envioSucursal)]);
-        if(Number(st.envioDomicilio) > 0) rows.push(["📦 Correo Argentino a domicilio", gratisGBA ? "GRATIS" : money(st.envioDomicilio)]);
+        const zC = provDeCP(cp), pesoP = pesoProductoG(p), eS = envioCorreoMonto(zC, "sucursal", pesoP), eD = envioCorreoMonto(zC, "domicilio", pesoP);
+        if(eS > 0) rows.push(["📦 Correo Argentino a sucursal", gratisGBA ? "GRATIS" : money(eS)]);
+        if(eD > 0) rows.push(["📦 Correo Argentino a domicilio", gratisGBA ? "GRATIS" : money(eD)]);
         const notaMoto = (near && !motoGratis && minG > 0) ? "El envío en el día es gratis en compras desde " + money(minG) + ". " : "";
-        const notaGBA = (minG > 0 && esGBA(cp)) ? (gratisGBA ? "🎉 Envío gratis a Gran Buenos Aires por superar " + money(minG) + ". " : "Envío gratis a Gran Buenos Aires en compras desde " + money(minG) + ". ") : "";
+        const minZ = envioGratisMinPara(cp), zonaTxt = esGBA(cp) ? "a Gran Buenos Aires" : "a tu zona";
+        const notaGBA = minZ > 0 ? (gratisGBA ? "🎉 Envío gratis " + zonaTxt + " por superar " + money(minZ) + ". " : "Envío gratis " + zonaTxt + " en compras desde " + money(minZ) + ". ") : "";
         cpRes.innerHTML = rows.map(r => `<div class="cp-opt"><span>${r[0]}</span><b class="${r[1] === "GRATIS" ? "free" : ""}">${r[1]}</b></div>`).join("") + `<div class="cp-note">${notaMoto}${notaGBA}${near ? "Coordinamos horario por WhatsApp. " : ""}El costo del Correo es estimado y se confirma al hacer el pedido.</div>`;
       };
       document.getElementById("cpBtn").onclick = calcCP;
@@ -2485,7 +2500,7 @@ function renderCart(){
     msg += `\n\nMis datos: ${cliente.nombre} - ${cliente.telefono}`;
     if(cliente.ptsUsados) msg += `\n🎁 Uso ${fmtN(cliente.ptsUsados)} puntos (−${money(cliente.ptsDescPesos || 0)})`;
     if(cliente.amigoPct) msg += `\n👥 Descuento de amigo referido: ${cliente.amigoPct}% OFF en mi primera compra`;
-    if(cliente.entrega === "correo") msg += `\n📦 Envío por Correo Argentino a ${cliente.servicio === "domicilio" ? "domicilio" : "sucursal"}: ${cliente.direccion}, ${cliente.provincia === "caba" ? "CABA" : "Buenos Aires"}, CP ${cliente.cp} (costo de envío ${money(cliente.envioCosto || 0)})`;
+    if(cliente.entrega === "correo") msg += `\n📦 Envío por Correo Argentino a ${cliente.servicio === "domicilio" ? "domicilio" : "sucursal"}: ${cliente.direccion}, ${cliente.provincia === "caba" ? "CABA" : cliente.provincia === "otra" ? "otra provincia" : "Buenos Aires"}, CP ${cliente.cp} (costo de envío ${money(cliente.envioCosto || 0)}${cliente.pesoG ? ", peso aprox. " + cliente.pesoG + " g" : ""})`;
     else if(cliente.entrega === "moto") msg += `\n🛵 Envío en el día por Uber/Didi Moto (${cliente.zona}) a: ${cliente.direccion}` + (envio ? ` (costo de envío ${money(envio)})` : " (gratis)") + `. Coordinemos el horario.`;
     else if(cliente.entrega === "punto") msg += `\n🤝 Punto de encuentro en ${cliente.zona} (gratis). Coordinemos lugar, día y hora.`;
     else msg += `\n🏠 Retiro en tu casa (gratis). Coordinemos día y hora.`;
@@ -2532,9 +2547,44 @@ function subtotalCarritoEf(){
   cart.forEach(item => { const info = cartLineInfo(item); if(info) t += info.unitEf * item.qty; });
   return t;
 }
-function envioGratisAplica(cp, extraEf){
-  const min = Number(state.settings.envioGratisDesde) || 0;
-  return min > 0 && esGBA(cp) && (subtotalCarritoEf() + (extraEf || 0)) >= min;
+/* ---- peso del carrito y tarifa de Correo por tramos de peso ---- */
+function pesoProductoG(p){ const w = Number(p && p.pesoG); return w > 0 ? w : (Number(state.settings.pesoDefaultG) || 0); }
+function pesoCarritoG(){
+  let t = 0;
+  cart.forEach(it => {
+    if(it.type === "product"){ const pr = state.products.find(x => x.id === it.id); if(pr) t += pesoProductoG(pr) * it.qty; }
+    else { const cb = state.combos.find(x => x.id === it.id); if(cb) t += (cb.items || []).reduce((a, i) => { const pr = state.products.find(x => x.id === i.productId); return a + (pr ? pesoProductoG(pr) : 0) * (Number(i.qty) || 1); }, 0) * it.qty; }
+  });
+  return Math.round(t);
+}
+function parseTablaEnvio(txt){
+  return String(txt || "").split(",").map(x => x.trim()).filter(Boolean).map(x => {
+    const m = x.match(/^(\d+)\s*:\s*(\d+)\s*\/\s*(\d+)$/); return m ? {g: +m[1], suc: +m[2], dom: +m[3]} : null;
+  }).filter(Boolean).sort((a, b) => a.g - b.g);
+}
+function tablaDeZona(prov){ const st = state.settings; return parseTablaEnvio(prov === "caba" ? st.envioTablaCABA : prov === "otra" ? st.envioTablaOtra : st.envioTablaBA); }
+function zonaConTarifa(prov){ return tablaDeZona(prov).length > 0; }
+/* costo de Correo para un peso: primer tramo que alcanza; si pasa el último, se cobran varios paquetes */
+function envioCorreoMonto(prov, servicio, pesoG){
+  const st = state.settings, tabla = tablaDeZona(prov), key = servicio === "domicilio" ? "dom" : "suc";
+  if(!tabla.length) return Number(servicio === "domicilio" ? st.envioDomicilio : st.envioSucursal) || 0;
+  const w = Math.max(1, Number(pesoG) || 0), tramo = tabla.find(t => w <= t.g);
+  if(tramo) return tramo[key];
+  const ult = tabla[tabla.length - 1], paquetes = Math.ceil(w / ult.g);
+  return ult[key] * paquetes;
+}
+function provDeCP(cp){ const n = Number(String(cp || "").replace(/\D/g, "").slice(0, 4)); return n >= 1000 && n <= 1499 ? "caba" : "ba"; }
+/* Envío gratis por Correo: mínimo distinto para Gran Buenos Aires y para el resto (provincias) */
+function envioGratisMinPara(cp, prov){
+  const g = Number(state.settings.envioGratisDesde) || 0, pv = Number(state.settings.envioGratisProvDesde) || 0;
+  if(String(cp || "").replace(/\D/g, "").length >= 4) return esGBA(cp) ? g : pv;
+  if(prov === "caba") return g;
+  if(prov === "otra") return pv;
+  return 0;
+}
+function envioGratisAplica(cp, extraEf, prov){
+  const min = envioGratisMinPara(cp, prov);
+  return min > 0 && (subtotalCarritoEf() + (extraEf || 0)) >= min;
 }
 function pedirDatosCliente(){
   return new Promise(resolve => {
@@ -2583,7 +2633,8 @@ function pedirDatosCliente(){
     if(g.provincia === "caba" || g.provincia === "ba") $("cliProv").value = g.provincia;
     let entrega = ["casa","punto","moto","correo"].includes(g.entrega) ? g.entrega : "casa";
     let servicio = g.servicio === "domicilio" ? "domicilio" : "sucursal";
-    const costoEnvio = () => envioGratisAplica($("cliCP").value) ? 0 : (Number(servicio === "sucursal" ? state.settings.envioSucursal : state.settings.envioDomicilio) || 0);
+    const pesoTot = pesoCarritoG();
+    const costoEnvio = () => envioGratisAplica($("cliCP").value, 0, $("cliProv").value) ? 0 : envioCorreoMonto($("cliProv").value, servicio, pesoTot);
     const on = "background:var(--gold);color:var(--ink);", off = "background:rgba(255,255,255,.12);color:var(--paper);";
     const pintarEntrega = () => {
       o.querySelectorAll("[data-ent]").forEach(b => { b.style.cssText = optBase + (b.dataset.ent === entrega ? on : off); });
@@ -2593,14 +2644,16 @@ function pedirDatosCliente(){
       $("cliBoxCorreo").style.display = entrega === "correo" ? "block" : "none";
       $("cliBoxMoto").style.display = entrega === "moto" ? "block" : "none";
       $("cliNotaCasa").style.display = entrega === "casa" ? "block" : "none";
-      const fuera = $("cliProv").value === "otra";
+      const fuera = $("cliProv").value === "otra" && !zonaConTarifa("otra");
       $("cliOtra").style.display = fuera ? "block" : "none";
       $("cliDatosEnvio").style.display = fuera ? "none" : "block";
-      const minG = Number(state.settings.envioGratisDesde) || 0, cpv = $("cliCP").value;
-      if(envioGratisAplica(cpv)) $("cliCosto").textContent = "🎉 ¡Envío GRATIS a Gran Buenos Aires!";
+      const cpv = $("cliCP").value, provSel = $("cliProv").value;
+      if(envioGratisAplica(cpv, 0, provSel)) $("cliCosto").textContent = "🎉 ¡Envío GRATIS!";
       else {
-        let t = "Costo del envío: " + money(costoEnvio()) + " (se suma a tu total)";
-        if(minG > 0 && (esGBA(cpv) || !cpv)) t += "\nEnvío gratis a Gran Buenos Aires en compras desde " + money(minG) + (subtotalCarritoEf() < minG ? " (te faltan " + money(minG - subtotalCarritoEf()) + ")" : "");
+        let t = "Costo del envío: " + money(costoEnvio()) + " (se suma a tu total)" + (pesoTot > 0 ? "\nPeso aproximado del pedido: " + (pesoTot >= 1000 ? (pesoTot / 1000).toFixed(2).replace(".", ",") + " kg" : pesoTot + " g") : "");
+        const minC = envioGratisMinPara(cpv, provSel), gM = Number(state.settings.envioGratisDesde) || 0, pM = Number(state.settings.envioGratisProvDesde) || 0, sub = subtotalCarritoEf();
+        if(minC > 0) t += "\nEnvío gratis en compras desde " + money(minC) + (sub < minC ? " (te faltan " + money(minC - sub) + ")" : "");
+        else { if(gM > 0) t += "\nEnvío gratis a Gran Buenos Aires desde " + money(gM); if(pM > 0) t += "\nEnvío gratis al resto del país desde " + money(pM); }
         $("cliCosto").textContent = t;
       }
       $("cliCosto").style.whiteSpace = "pre-line";
@@ -2621,12 +2674,12 @@ function pedirDatosCliente(){
       if(entrega === "punto") zona = $("cliZona").value;
       if(entrega === "moto"){ zona = $("cliZonaMoto").value; direccion = $("cliDirMoto").value.trim(); if(direccion.length < 5){ $("cliErr").textContent = "Escribí tu dirección para el envío."; return; } }
       if(entrega === "correo"){
-        if($("cliProv").value === "otra"){ $("cliErr").textContent = "Por ahora solo enviamos por Correo dentro de Buenos Aires. Elegí retiro o punto de encuentro."; return; }
+        if($("cliProv").value === "otra" && !zonaConTarifa("otra")){ $("cliErr").textContent = "Por ahora solo enviamos por Correo dentro de Buenos Aires. Elegí retiro o punto de encuentro."; return; }
         direccion = $("cliDir").value.trim(); cp = $("cliCP").value.replace(/\D/g,"");
         if(direccion.length < 5){ $("cliErr").textContent = "Escribí la dirección de entrega."; return; }
         if(cp.length < 4){ $("cliErr").textContent = "Escribí tu código postal."; return; }
       }
-      const c = {nombre, telefono, email, entrega, zona, direccion, cp, provincia: entrega === "correo" ? $("cliProv").value : "", servicio: entrega === "correo" ? servicio : "", envioCosto: entrega === "correo" ? costoEnvio() : (entrega === "moto" ? envioMotoCosto() : 0)};
+      const c = {nombre, telefono, email, entrega, zona, direccion, cp, pesoG: pesoTot, provincia: entrega === "correo" ? $("cliProv").value : "", servicio: entrega === "correo" ? servicio : "", envioCosto: entrega === "correo" ? costoEnvio() : (entrega === "moto" ? envioMotoCosto() : 0)};
       try{ localStorage.setItem("oriCliente", JSON.stringify(c)); }catch(e){}
       ptsAdjuntarACliente(c);
       o.remove(); resolve(c);
@@ -4335,12 +4388,12 @@ if(window.location.hash === "#admin"){
   document.getElementById("editToggle").classList.add("unlocked");
 }
 
-["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setInstagram","setAlias","setEnvSuc","setEnvDom","setEnvGratis","setZonas","setDireccion","setCpCercanos","setDescEf","setDescTr","setEnvLocal","setEnvLocalZonas","setCarteles","setCuponCodigo","setCuponPct","setMarkupEf","setMpFee","setRoundTo","setPin"].forEach(id => {
+["setBrand","setHeroTitle","setHeroTag","setWhatsapp","setInstagram","setAlias","setEnvSuc","setEnvDom","setEnvGratis","setEnvGratisProv","setPesoDef","setTablaBA","setTablaCABA","setTablaOtra","setZonas","setDireccion","setCpCercanos","setDescEf","setDescTr","setEnvLocal","setEnvLocalZonas","setCarteles","setCuponCodigo","setCuponPct","setMarkupEf","setMpFee","setRoundTo","setPin"].forEach(id => {
   document.getElementById(id).addEventListener("change", e => {
-    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setInstagram:"instagram",setAlias:"aliasTransferencia",setEnvSuc:"envioSucursal",setEnvDom:"envioDomicilio",setEnvGratis:"envioGratisDesde",setZonas:"zonasGratis",setDireccion:"direccion",setCpCercanos:"cpCercanos",setDescEf:"descEfPct",setDescTr:"descTrPct",setEnvLocal:"envioLocal",setEnvLocalZonas:"envioLocalZonas",setCarteles:"cartelesInicio",setCuponCodigo:"cuponCodigo",setCuponPct:"cuponPct",setMarkupEf:"markupEfectivo",setMpFee:"mpFee",setRoundTo:"roundTo",setPin:"pin"};
+    const map = {setBrand:"brand",setHeroTitle:"heroTitle",setHeroTag:"heroTag",setWhatsapp:"whatsapp",setInstagram:"instagram",setAlias:"aliasTransferencia",setEnvSuc:"envioSucursal",setEnvDom:"envioDomicilio",setEnvGratis:"envioGratisDesde",setEnvGratisProv:"envioGratisProvDesde",setPesoDef:"pesoDefaultG",setTablaBA:"envioTablaBA",setTablaCABA:"envioTablaCABA",setTablaOtra:"envioTablaOtra",setZonas:"zonasGratis",setDireccion:"direccion",setCpCercanos:"cpCercanos",setDescEf:"descEfPct",setDescTr:"descTrPct",setEnvLocal:"envioLocal",setEnvLocalZonas:"envioLocalZonas",setCarteles:"cartelesInicio",setCuponCodigo:"cuponCodigo",setCuponPct:"cuponPct",setMarkupEf:"markupEfectivo",setMpFee:"mpFee",setRoundTo:"roundTo",setPin:"pin"};
     const key = map[id];
     let val = e.target.value;
-    if(key === "cuponPct" || key === "markupEfectivo" || key === "mpFee" || key === "roundTo" || key === "envioSucursal" || key === "envioDomicilio" || key === "envioGratisDesde" || key === "descEfPct" || key === "descTrPct" || key === "envioLocal") val = Number(val)||0;
+    if(key === "cuponPct" || key === "markupEfectivo" || key === "mpFee" || key === "roundTo" || key === "envioSucursal" || key === "envioDomicilio" || key === "pesoDefaultG" || key === "envioGratisDesde" || key === "envioGratisProvDesde" || key === "descEfPct" || key === "descTrPct" || key === "envioLocal") val = Number(val)||0;
     state.settings[key] = val;
     render(); scheduleSave();
   });
@@ -4633,8 +4686,10 @@ async function loadState(){
     if(state.settings.mpFee === undefined) state.settings.mpFee = 8.57;
     if(state.settings.aliasTransferencia === undefined) state.settings.aliasTransferencia = "";
     if(state.settings.envioSucursal === undefined) state.settings.envioSucursal = 6800;
+    if(state.settings.pesoDefaultG === undefined) state.settings.pesoDefaultG = 300;
     if(state.settings.envioDomicilio === undefined) state.settings.envioDomicilio = 9700;
-    if(state.settings.envioGratisDesde === undefined) state.settings.envioGratisDesde = 90000;
+    if(state.settings.envioGratisDesde === undefined) state.settings.envioGratisDesde = 100000;
+    if(state.settings.envioGratisProvDesde === undefined) state.settings.envioGratisProvDesde = 150000;
     if(state.settings.zonasGratis === undefined) state.settings.zonasGratis = "José C. Paz, San Miguel, Grand Bourg, Malvinas Argentinas, Los Polvorines, Tortuguitas, Villa de Mayo, Pablo Nogués";
     if(state.settings.direccion === undefined) state.settings.direccion = "José C. Paz, Buenos Aires";
     if(state.settings.cpCercanos === undefined) state.settings.cpCercanos = "1665, 1663, 1615, 1613, 1614, 1667";
