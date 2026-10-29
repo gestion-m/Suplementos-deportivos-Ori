@@ -757,6 +757,8 @@ body:not(.view-home) #homeShowcase,body:not(.view-home) .info-trio{display:none;
   <div class="admin-row"><label>Referidor gana (% de la 1ª compra del amigo)</label><input id="setRefPct" type="number" min="0" max="100" step="0.5" placeholder="10" style="max-width:80px;"></div>
   <div class="admin-row"><label>Amigo referido tiene (% OFF en su 1ª compra)</label><input id="setAmigoPct" type="number" min="0" max="90" step="0.5" placeholder="5" style="max-width:80px;"></div>
   <div class="admin-row"><label>Los puntos vencen a los (meses, 0 = nunca)</label><input id="setPtsVence" type="number" min="0" placeholder="12" style="max-width:80px;"></div>
+  <div class="admin-row"><label>Tope de descuento total (%) — efectivo + amigo + puntos</label><input id="setDescTope" type="number" min="1" max="100" placeholder="20" style="max-width:80px;"></div>
+  <div style="font-size:0.66rem;color:var(--muted);margin:-4px 0 6px;">Ningún pedido baja más de este % sobre el precio de lista. El efectivo/transf. y el amigo se suman; los puntos usan lo que falte hasta el tope.</div>
   <div class="admin-row"><label>Máximo del pedido pagable con puntos (%)</label><input id="setPtsMaxPct" type="number" min="1" max="100" placeholder="30" style="max-width:80px;"></div>
   <div class="admin-row"><label>Ganancia mínima que te tiene que quedar sobre tu costo (%)</label><input id="setPtsMinGanPct" type="number" min="0" placeholder="10" style="max-width:80px;"></div>
   <div class="admin-row"><label>Usar puntos solo en compras desde $</label><input id="setPtsMinCompra" type="number" min="0" placeholder="0" style="max-width:90px;"></div>
@@ -1209,7 +1211,31 @@ let storageOK = true;
 let cart = [];
 let cartCoupon = null; // código aplicado en el carrito
 let ptsFactorActual = 1, ptsUsar = false, ptsUsoActual = {pts:0, pesos:0}, cuentaActual = null; // programa de puntos
-function couponFactor(){ const st = state.settings; return ((cartCoupon && st.cuponCodigo && st.cuponPct > 0) ? 1 - st.cuponPct/100 : 1) * amigoFactor() * ptsFactorActual; }
+/* Descuentos en %: el de efectivo/transferencia se SUMA al mejor entre código y amigo referido
+   (entre código y amigo NO se acumulan: rige el mayor). Todo junto tiene un TOPE (descTopePct, ej 20%) sobre el precio de lista.
+   Los puntos se aplican después y tampoco pueden pasar ese tope. */
+function pctExtraMejor(){
+  const st = state.settings;
+  const cod = (cartCoupon && st.cuponCodigo && st.cuponPct > 0) ? Number(st.cuponPct) : 0;
+  const ami = amigoFactor() < 1 ? Number(st.amigoPct) || 0 : 0;
+  return Math.max(cod, ami);
+}
+function descTope(){ const t = Number(state.settings.descTopePct); return t > 0 && t < 100 ? t : 100; }
+function couponFactors(){
+  const st = state.settings, e = pctExtraMejor(), cash = cashOn() ? (Number(st.descEfPct) || 0) : 0, cap = descTope();
+  const tEf = Math.min(cash + e, Math.max(cap, cash)), tTa = Math.min(e, cap);
+  /* el precio de efectivo ya trae su % adentro: se corrige solo por la diferencia */
+  return {ef: (1 - tEf/100) / (1 - cash/100) * ptsFactorActual, ta: (1 - tTa/100) * ptsFactorActual};
+}
+/* precio de lista (tarjeta, sin descuentos) del carrito: base del tope */
+function listaCarritoTa(){
+  let t = 0;
+  cart.forEach(it => {
+    if(it.type === "product"){ const pr = state.products.find(x => x.id === it.id); if(pr) t += calcProductPrices(pr).precioTa * it.qty; }
+    else { const cb = state.combos.find(x => x.id === it.id); if(cb) t += cardFromCash(cb.precio) * it.qty; }
+  });
+  return t;
+}
 let detailActiveImgIdx = 0;
 let stockReviewRows = [];
 
@@ -2261,9 +2287,10 @@ function renderDetail(type, id){
     if(cb) cb.onclick = () => {
       const st = state.settings, res = document.getElementById("cuponRes");
       if(document.getElementById("cuponInput").value.trim().toUpperCase() === String(st.cuponCodigo).trim().toUpperCase()){
-        const f = 1 - st.cuponPct/100, cu = p.cuotas > 0 ? p.cuotas : 0;
+        const cu = p.cuotas > 0 ? p.cuotas : 0, cashP = cashOn() ? Number(st.descEfPct) || 0 : 0, cap = descTope();
+        const fEf = (1 - Math.min(cashP + st.cuponPct, Math.max(cap, cashP))/100) / (1 - cashP/100), fTa = 1 - Math.min(st.cuponPct, cap)/100;
         res.style.color = "var(--green)";
-        res.textContent = `✅ ${st.cuponPct}% OFF: ${money(precioEf*f)} efectivo` + (cu ? ` · ${cu} cuotas de ${money(precioTa*f/cu)}` : "");
+        res.textContent = `✅ ${st.cuponPct}% OFF: ${money(precioEf*fEf)} efectivo` + (cu ? ` · ${cu} cuotas de ${money(precioTa*fTa/cu)}` : "");
       } else { res.style.color = "var(--coral)"; res.textContent = "Código inválido"; }
     };
     const cat = catOf(p);
@@ -2354,13 +2381,13 @@ function cartLineInfo(item){
     const p = state.products.find(pp => pp.id === item.id);
     if(!p) return null;
     const {precioEf, precioTa} = calcProductPrices(p);
-    const f = couponFactor();
-    return {name:p.name, brand:p.brand||"", unitEf:Math.round(precioEf*f), unitTa:Math.round(precioTa*f), image:(p.images&&p.images[0])||""};
+    const f = couponFactors();
+    return {name:p.name, brand:p.brand||"", unitEf:Math.round(precioEf*f.ef), unitTa:Math.round(precioTa*f.ta), image:(p.images&&p.images[0])||""};
   } else {
     const c = state.combos.find(cc => cc.id === item.id);
     if(!c) return null;
-    const f2 = couponFactor();
-    return {name:c.name, brand:"", unitEf:Math.round((cashOn() ? cashFromCard(cardFromCash(c.precio)) : c.precio)*f2), unitTa:Math.round(cardFromCash(c.precio)*f2), image:(c.images&&c.images[0])||""};
+    const f2 = couponFactors();
+    return {name:c.name, brand:"", unitEf:Math.round((cashOn() ? cashFromCard(cardFromCash(c.precio)) : c.precio)*f2.ef), unitTa:Math.round(cardFromCash(c.precio)*f2.ta), image:(c.images&&c.images[0])||""};
   }
 }
 
@@ -2388,7 +2415,7 @@ function renderCart(){
   const stc = state.settings, hasCoupon = !!(stc.cuponCodigo && stc.cuponPct > 0);
   document.getElementById("cartCouponRow").style.display = hasCoupon && cart.length ? "flex" : "none";
   if(!hasCoupon) cartCoupon = null;
-  document.getElementById("cartCouponRes").textContent = cartCoupon ? `✅ Código ${cartCoupon} aplicado: ${stc.cuponPct}% OFF` : "";
+  document.getElementById("cartCouponRes").textContent = cartCoupon ? `✅ Código ${cartCoupon} aplicado: ${stc.cuponPct}% OFF`  : "";
   document.getElementById("cartCouponBtn").onclick = () => {
     const v = document.getElementById("cartCouponInput").value.trim();
     if(v && v.toUpperCase() === String(stc.cuponCodigo).trim().toUpperCase()){ cartCoupon = v.toUpperCase(); renderCart(); showToast("Descuento aplicado ✓"); }
@@ -3661,6 +3688,7 @@ function renderPedidosList(){
       <div style="font-size:0.72rem;">${p.cliente ? `👤 ${escapeHtml(p.cliente.nombre)} · 📞 ${escapeHtml(p.cliente.telefono)}` + entregaAdmin(p.cliente) : ""} ${p.medio === "mercadopago" ? "· 💳 Mercado Pago (esperando pago)" : "· 💵 Efectivo/Transferencia (falta cobrar)"}</div>
       <div>Efvo/Transf: ${money(p.totalEf)} · Tarjeta: ${money(p.totalTa)}</div>
       ${ptsPedidoInfoHtml(p)}
+      ${ptsAlertasPedidoHtml(p)}
       <div class="admin-row" style="margin:0;"><label style="width:auto;">Cobrado con</label><select data-pedido-metodo="${p.id}"><option value="efectivo">Efectivo/Transferencia</option><option value="tarjeta" ${p.medio === "mercadopago" ? "selected" : ""}>Tarjeta</option></select></div>
       <div style="display:flex;gap:6px;">
         <button class="small-btn" data-confirm-pedido="${p.id}" style="flex:1;">✅ Confirmar (descuenta stock)</button>
@@ -4629,7 +4657,7 @@ async function loadState(){
       state.settings.zonasMalvinasV1 = true;
     }
     /* Valores iniciales del programa de puntos (los cambiás desde el panel) */
-    const ptsDef = {ptsOn:true, ptsValor:100, ptsRegistro:20000, ptsCompra:3, ptsResena:50000, refPct:10, amigoPct:5, ptsVenceMeses:12, ptsMaxPct:30, ptsMinCompra:0, ptsMinGanPct:10};
+    const ptsDef = {ptsOn:true, ptsValor:100, ptsRegistro:20000, ptsCompra:3, ptsResena:50000, refPct:10, amigoPct:10, ptsVenceMeses:12, ptsMaxPct:30, ptsMinCompra:0, ptsMinGanPct:10, descTopePct:20};
     Object.keys(ptsDef).forEach(k => { if(state.settings[k] === undefined) state.settings[k] = ptsDef[k]; });
     state.products.forEach(p => {
       if(!p.images){ p.images = p.image ? [p.image] : []; }
@@ -4671,7 +4699,7 @@ function ptsLotes(c){
   ev.sort((a, b) => a.ts - b.ts);
   const lots = [];
   ev.forEach(m => {
-    if(m.pts > 0){ lots.push({rem: m.pts, vence: m.vence || Infinity, ts: m.ts}); return; }
+    if(m.pts > 0){ lots.push({rem: m.pts, vence: m.vence || Infinity, ts: m.ts, ref: /^Referido/.test(String(m.motivo || ""))}); return; }
     let need = -m.pts;
     for(const l of lots){ if(need <= 0) break; if(l.rem <= 0 || l.vence <= m.ts) continue; const t = Math.min(l.rem, need); l.rem -= t; need -= t; }
   });
@@ -4679,6 +4707,12 @@ function ptsLotes(c){
 }
 function ptsSaldoDe(c){ const now = Date.now(); return ptsLotes(c).reduce((s, l) => s + (l.vence > now ? l.rem : 0), 0); }
 function ptsDisponible(c){ return Math.max(0, ptsSaldoDe(c) - (Number(c.reservados) || 0)); }
+/* Para pagar un pedido: de los puntos ganados por recomendar amigos solo se puede usar UN premio (el mayor) por compra */
+function ptsExcedenteRef(c){
+  const now = Date.now(), r = ptsLotes(c).filter(l => l.ref && l.vence > now && l.rem > 0).map(l => l.rem);
+  return r.length > 1 ? r.reduce((a, b) => a + b, 0) - Math.max(...r) : 0;
+}
+function ptsDisponibleCompra(c){ return Math.max(0, ptsSaldoDe(c) - ptsExcedenteRef(c) - (Number(c.reservados) || 0)); }
 function ptsDineroDe(c){ let pend = 0, pag = 0; (c.mov || []).forEach(m => { const d = Number(m.dinero) || 0; if(!d) return; if(m.estado === "pagado") pag += d; else pend += d; }); return {pend, pag}; }
 function ptsHistorial(c){ const h = (c.mov || []).slice(); if(c.bonus && Number(state.settings.ptsRegistro) > 0) h.push({ts: c.creado || 0, pts: Number(state.settings.ptsRegistro), motivo: "Regalo por crear tu cuenta"}); return h.sort((a, b) => b.ts - a.ts); }
 function amigoFactor(){
@@ -4729,11 +4763,12 @@ function ptsSalir(){ cuentaActual = null; ptsUsar = false; try{ localStorage.rem
 
 async function ptsRegistrar(q){
   const err = m => { q("rwErr").textContent = m; q("rwCrear").disabled = false; q("rwCrear").textContent = "Crear mi cuenta"; };
-  const nombre = q("rwNom").value.trim(), telRaw = q("rwTel").value.trim(), email = normMail(q("rwMail").value), pass = q("rwPass").value;
+  const nombre = q("rwNom").value.trim(), telRaw = q("rwTel").value.trim(), email = normMail(q("rwMail").value), pass = q("rwPass").value, dni = String(q("rwDni").value || "").replace(/\D/g, "");
   let codigo = q("rwCod").value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   q("rwErr").textContent = ""; q("rwCrear").disabled = true; q("rwCrear").textContent = "Creando…";
   if(nombre.length < 2) return err("Escribí tu nombre.");
   if(telRaw.replace(/\D/g, "").length < 8) return err("Escribí un teléfono válido (WhatsApp).");
+  if(!/^\d{7,8}$/.test(dni)) return err("Escribí tu DNI (7 u 8 números, sin puntos).");
   if(!/^\S+@\S+\.\S+$/.test(email)) return err("Escribí un email válido: con él vas a ingresar.");
   if(pass.length < 6) return err("La contraseña tiene que tener al menos 6 caracteres.");
   try{
@@ -4749,7 +4784,14 @@ async function ptsRegistrar(q){
     }
     const salt = randStr(14), passHash = await hashPass(pass, salt), refCode = await ptsNuevoCodigo(nombre);
     const doc = {id, nombre, telefono: telRaw, tel: normTel(telRaw), email, salt, passHash, refCode, referidoPor, creado: Date.now(), bonus: true, refPref: "puntos", mov: [], reservados: 0, primeraCompra: false};
-    await ref.set(doc);
+    /* el DNI no se guarda: solo su huella, en una colección que nadie puede leer. Si ya existe, Firestore rechaza el alta. */
+    const dniH = await sha256("ori-dni|" + dni), batch = db.batch();
+    const telH = await sha256("ori-tel|" + normTel(telRaw));
+    batch.set(db.collection("dnis").doc(dniH), {c: id, t: Date.now()});
+    batch.set(db.collection("tels").doc(telH), {c: id, t: Date.now()});
+    batch.set(ref, doc);
+    try{ await batch.commit(); }
+    catch(e2){ console.error(e2); return err(e2 && e2.code === "permission-denied" ? "Ese DNI o ese teléfono ya tienen una cuenta. Ingresá con tu email y contraseña, o escribinos por WhatsApp si es un error." : "No se pudo crear la cuenta. Probá de nuevo en un momento."); }
     refcodesCol.doc(refCode).set({n: firstName(nombre), h: selfH}).catch(e => console.warn("refcode", e));
     try{ localStorage.removeItem("oriRef"); }catch(e){}
     ptsEntrar(doc);
@@ -4790,6 +4832,7 @@ function renderCuenta(){
         <div class="rw-note">${ptsTxtGanar()}${Number(st.amigoPct) > 0 ? ` Si te invitó un amigo, además tenés <b>${st.amigoPct}% OFF</b> en tu primera compra.` : ""}</div>
         <input class="rw-in" id="rwNom" placeholder="Nombre y apellido" autocomplete="name">
         <input class="rw-in" id="rwTel" type="tel" placeholder="Teléfono (WhatsApp)" autocomplete="tel">
+        <input class="rw-in" id="rwDni" type="text" inputmode="numeric" maxlength="8" placeholder="DNI (solo números, una cuenta por persona)" autocomplete="off">
         <input class="rw-in" id="rwMail" type="email" placeholder="Email (con este ingresás)" autocomplete="email">
         <input class="rw-in" id="rwPass" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="new-password">
         <input class="rw-in" id="rwCod" placeholder="Código de un amigo (opcional)" value="${escapeHtml(rc)}" style="text-transform:uppercase;">
@@ -4850,8 +4893,9 @@ function ptsPrepararCarrito(){
     else { const cb = state.combos.find(x => x.id === it.id); if(cb) costo += (Number(comboCosto(cb)) || 0) * it.qty; }
   });
   const piso = costo * (1 + (Number(st.ptsMinGanPct) || 0) / 100);
-  const tope = Math.min(Math.floor(B * Math.min(100, Math.max(1, Number(st.ptsMaxPct) || 100)) / 100), Math.floor(B - piso));
-  const pesos = Math.max(0, Math.min(ptsAPesos(ptsDisponible(cuentaActual)), tope));
+  const topeLista = Math.floor(B - listaCarritoTa() * (1 - descTope()/100));
+  const tope = Math.min(Math.floor(B * Math.min(100, Math.max(1, Number(st.ptsMaxPct) || 100)) / 100), Math.floor(B - piso), topeLista);
+  const pesos = Math.max(0, Math.min(ptsAPesos(ptsDisponibleCompra(cuentaActual)), tope));
   if(pesos <= 0){ if(tope <= 0) ptsUsoActual.nota = "En este pedido no se pueden usar puntos."; return; }
   ptsFactorActual = (B - pesos) / B; ptsUsoActual = {pts: pesos * ptsValor(), pesos};
 }
@@ -4865,10 +4909,11 @@ function renderCartPts(totalEf){
     document.getElementById("cartPtsCrear").onclick = () => { closeAllSheets(); abrirCuenta("crear"); };
     return;
   }
-  const disp = ptsDisponible(cuentaActual), pesosDisp = ptsAPesos(disp), gan = Math.round(totalEf * (Number(st.ptsCompra) || 0));
+  const disp = ptsDisponible(cuentaActual), pesosDisp = ptsAPesos(ptsDisponibleCompra(cuentaActual)), gan = Math.round(totalEf * (Number(st.ptsCompra) || 0));
   let h = `<div class="pts-cart"><b>🎁 Tus puntos: ${fmtN(disp)} (≈ ${money(pesosDisp)})</b>`;
   if(amigoFactor() < 1) h += `<div class="ok">👥 Descuento de amigo aplicado: ${st.amigoPct}% OFF en tu primera compra</div>`;
   if(pesosDisp > 0) h += `<label><input type="checkbox" id="cartPtsUsar" ${ptsUsar ? "checked" : ""}> Usar mis puntos${ptsUsoActual.pesos > 0 ? " (−" + money(ptsUsoActual.pesos) + ")" : ""}</label>` + (Number(st.ptsMaxPct) > 0 && Number(st.ptsMaxPct) < 100 ? `<div style="color:var(--muted);">Podés pagar hasta el ${st.ptsMaxPct}% del pedido con puntos.</div>` : "");
+  if(ptsExcedenteRef(cuentaActual) > 0) h += `<div style="color:var(--muted);">De tus premios por recomendar solo se usa uno por compra; el resto queda guardado para tus próximas compras.</div>`;
   if(ptsUsar && ptsUsoActual.nota) h += `<div style="color:var(--coral);font-weight:700;">${escapeHtml(ptsUsoActual.nota)}</div>`;
   if(gan > 0) h += `<div style="margin-top:4px;">Con este pedido sumás ≈ <b>${fmtN(gan)} puntos</b> (cuando confirmemos tu compra).</div>`;
   box.innerHTML = h + `</div>`;
@@ -4906,6 +4951,32 @@ async function ptsBuscarPorCodigo(code){
   try{ const q = await clientesCol.where("refCode", "==", code).limit(1).get(); if(!q.empty) return q.docs[0].data(); }catch(e){ console.warn(e); }
   return null;
 }
+/* ---- control de cuentas duplicadas y auto-recomendación (para el administrador) ---- */
+function ptsDirKey(c){ const d = normTxt((c && c.direccion) || "").replace(/[^a-z0-9]/g, ""); return d.length >= 8 ? d : ""; }
+function ptsVinculos(p){
+  const cl = p.cliente || {}, mi = cl.cuenta, out = [];
+  if(!mi) return out;
+  const t = normTel(cl.telefono), d = ptsDirKey(cl);
+  (state.clientes || []).forEach(c => {
+    if(c.id === mi) return;
+    const iTel = !!t && c.tel === t, iDir = !!d && (c.compras || []).some(x => x.dir === d);
+    if(iTel || iDir) out.push({tipo: iTel ? "teléfono" : "dirección", nombre: c.nombre || "?", id: c.id});
+  });
+  (state.pedidos || []).forEach(o => {
+    const oc = o.cliente || {}; if(o.id === p.id || !oc.cuenta || oc.cuenta === mi) return;
+    const iTel = !!t && normTel(oc.telefono) === t, iDir = !!d && ptsDirKey(oc) === d;
+    if(iTel || iDir) out.push({tipo: iTel ? "teléfono" : "dirección", nombre: oc.nombre || "?", id: oc.cuenta});
+  });
+  return out;
+}
+function ptsEsAutoRef(p, refC){ return !!refC && ptsVinculos(p).some(v => v.id === refC.id); }
+function ptsAlertasPedidoHtml(p){
+  if(!ptsHabilitado() || !p.cliente || !p.cliente.cuenta) return "";
+  const v = ptsVinculos(p); if(!v.length) return "";
+  const lista = [...new Set(v.map(x => x.nombre + " (mismo " + x.tipo + ")"))].slice(0, 4).join(", ");
+  const usa = Number(p.cliente.ptsUsados) > 0 || p.cliente.amigoPct;
+  return `<div style="font-size:.72rem;color:var(--coral);font-weight:700;">⚠️ Otra cuenta comparte datos con este pedido: ${escapeHtml(lista)}.${usa ? " Usa puntos o descuento de amigo: revisalo antes de confirmar." : ""}</div>`;
+}
 async function ptsCargarClientesAdmin(){ const s = await clientesCol.get(); state.clientes = s.docs.map(d => d.data()); }
 async function ptsAlConfirmar(pedido, metodo){
   const cli = pedido.cliente || {};
@@ -4921,12 +4992,13 @@ async function ptsAlConfirmar(pedido, metodo){
       const gan = Math.round(base * (Number(st.ptsCompra) || 0));
       if(gan > 0){ c.mov.push(ptsMov(gan, "Compra #" + pedido.id, {ref: pedido.id})); info.gan = gan; }
       if(!c.primeraCompra){ info.primera = true; c.primeraCompra = true; }
-      c.compras = (c.compras || []).filter(x => x.id !== pedido.id).concat([{id: pedido.id, ts: Date.now(), fecha: new Date().toLocaleDateString("es-AR"), total: base, envio: Number(cli.envioCosto) || 0, medio: metodo, entrega: cli.entrega || "", items: (pedido.items || []).map(i => ({n: (i.brand ? i.brand + " - " : "") + (i.name || ""), q: i.qty})).slice(0, 30)}]).slice(-100);
+      c.compras = (c.compras || []).filter(x => x.id !== pedido.id).concat([{id: pedido.id, ts: Date.now(), fecha: new Date().toLocaleDateString("es-AR"), total: base, envio: Number(cli.envioCosto) || 0, medio: metodo, entrega: cli.entrega || "", dir: ptsDirKey(cli), items: (pedido.items || []).map(i => ({n: (i.brand ? i.brand + " - " : "") + (i.name || ""), q: i.qty})).slice(0, 30)}]).slice(-100);
     });
     let extra = "";
     if(info.primera && info.refCode && Number(st.refPct) > 0){
       const refC = await ptsBuscarPorCodigo(info.refCode), com = Math.round(base * Number(st.refPct) / 100);
-      if(refC && com > 0){
+      if(refC && com > 0 && ptsEsAutoRef(pedido, refC)){ extra = " · ⚠️ NO se acreditó el premio de recomendación: el amigo y quien lo recomendó comparten teléfono o dirección"; }
+      else if(refC && com > 0){
         await ptsAplicar(refC.id, r => {
           const mot = "Referido: " + firstName(cli.nombre) + " (pedido #" + pedido.id + ")";
           if(r.refPref === "dinero") r.mov.push({ts: Date.now(), pts: 0, dinero: com, estado: "pendiente", motivo: mot, ref: pedido.id});
@@ -5060,14 +5132,14 @@ function ptsRender(){
   ptsRenderHome();
   const st = state.settings, set = (id, v) => { const e = document.getElementById(id); if(e && document.activeElement !== e) e.value = (v === undefined || v === null) ? "" : v; };
   set("setPtsOn", on ? "si" : "no"); set("setPtsValor", st.ptsValor); set("setPtsRegistro", st.ptsRegistro); set("setPtsCompra", st.ptsCompra); set("setPtsResena", st.ptsResena);
-  set("setRefPct", st.refPct); set("setAmigoPct", st.amigoPct); set("setPtsVence", st.ptsVenceMeses); set("setPtsMaxPct", st.ptsMaxPct); set("setPtsMinGanPct", st.ptsMinGanPct); set("setPtsMinCompra", st.ptsMinCompra);
+  set("setRefPct", st.refPct); set("setAmigoPct", st.amigoPct); set("setPtsVence", st.ptsVenceMeses); set("setPtsMaxPct", st.ptsMaxPct); set("setDescTope", st.descTopePct); set("setPtsMinGanPct", st.ptsMinGanPct); set("setPtsMinCompra", st.ptsMinCompra);
 }
 (function(){
-  const F = {setPtsValor: "ptsValor", setPtsRegistro: "ptsRegistro", setPtsCompra: "ptsCompra", setPtsResena: "ptsResena", setRefPct: "refPct", setAmigoPct: "amigoPct", setPtsVence: "ptsVenceMeses", setPtsMaxPct: "ptsMaxPct", setPtsMinGanPct: "ptsMinGanPct", setPtsMinCompra: "ptsMinCompra"};
+  const F = {setPtsValor: "ptsValor", setPtsRegistro: "ptsRegistro", setPtsCompra: "ptsCompra", setPtsResena: "ptsResena", setRefPct: "refPct", setAmigoPct: "amigoPct", setPtsVence: "ptsVenceMeses", setPtsMaxPct: "ptsMaxPct", setDescTope: "descTopePct", setPtsMinGanPct: "ptsMinGanPct", setPtsMinCompra: "ptsMinCompra"};
   Object.keys(F).forEach(id => document.getElementById(id).addEventListener("change", e => {
     const n = Number(String(e.target.value).replace(",", ".")); let val = isFinite(n) && n >= 0 ? n : 0;
     if(F[id] === "ptsValor" && val < 1) val = 100;
-    if((F[id] === "ptsMaxPct" || F[id] === "refPct" || F[id] === "amigoPct") && val > 100) val = 100;
+    if((F[id] === "ptsMaxPct" || F[id] === "descTopePct" || F[id] === "refPct" || F[id] === "amigoPct") && val > 100) val = 100;
     state.settings[F[id]] = val; render(); scheduleSave();
   }));
   document.getElementById("setPtsOn").addEventListener("change", e => { state.settings.ptsOn = e.target.value !== "no"; render(); scheduleSave(); });
