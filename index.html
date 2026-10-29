@@ -4865,18 +4865,13 @@ function renderCuenta(){
       <div class="rw-link"><input id="rwLink" readonly value="${escapeHtml(link)}"><button type="button" class="small-btn" id="rwCopiar">Copiar</button></div>
       <a class="small-btn" id="rwWa" target="_blank" rel="noopener" href="${waLink("", "")}" style="display:block;text-align:center;text-decoration:none;color:var(--ink);padding:9px;">📲 Compartir por WhatsApp</a>
       <div style="margin-top:8px;">Tu código: <b>${escapeHtml(c.refCode || "")}</b> · Amigos que compraron: <b>${nRef}</b></div>
-      ${Number(st.refPct) > 0 ? `<div style="margin-top:8px;font-weight:800;">Cobrar mis comisiones en:</div>
-      <label style="display:flex;gap:8px;align-items:center;margin-top:4px;"><input type="radio" name="rwPref" value="puntos" ${c.refPref !== "dinero" ? "checked" : ""}> Puntos (rinden para tus compras)</label>
-      <label style="display:flex;gap:8px;align-items:center;margin-top:4px;"><input type="radio" name="rwPref" value="dinero" ${c.refPref === "dinero" ? "checked" : ""}> Dinero directo (lo coordinamos con vos)</label>
-      ${(din.pend || din.pag) ? `<div style="margin-top:8px;">💵 Dinero pendiente de cobro: <b>${money(din.pend)}</b> · ya cobrado: <b>${money(din.pag)}</b></div>` : ""}` : ""}</div>` : ""}
+      ${Number(st.refPct) > 0 ? `<div style="margin-top:8px;">Tu recompensa se acredita en <b>puntos</b>, que usás como descuento en tus compras.</div>` : ""}
+      ${(din.pend || din.pag) ? `<div style="margin-top:8px;">💵 Dinero pendiente de cobro: <b>${money(din.pend)}</b> · ya cobrado: <b>${money(din.pag)}</b></div>` : ""}</div>` : ""}
     <div class="rw-box"><b class="t">🧾 Mis compras</b><div class="rw-hist">${(c.compras || []).length ? (c.compras || []).slice().reverse().slice(0, 20).map(x => `<div><span>Pedido #${escapeHtml(String(x.id))} · ${escapeHtml(x.fecha || "")}<br><small style="color:var(--muted);">${escapeHtml(compraItemsTxt(x.items))}</small></span><span class="p">${money((Number(x.total) || 0) + (Number(x.envio) || 0))}</span></div>`).join("") : `<div style="color:var(--muted);">Todavía no hay compras confirmadas en tu cuenta.</div>`}</div></div>
     <div class="rw-box"><b class="t">📋 Mis movimientos</b><div class="rw-hist">${hist.length ? hist.map(m => `<div><span>${escapeHtml(m.motivo || "")}<br><small style="color:var(--muted);">${new Date(m.ts).toLocaleDateString("es-AR")}</small></span><span class="p ${m.pts > 0 ? "pos" : (m.pts < 0 ? "neg" : "")}">${m.pts ? (m.pts > 0 ? "+" : "") + fmtN(m.pts) + " pts" : (m.dinero ? "+" + money(m.dinero) + (m.estado === "pagado" ? " ✔" : " ⏳") : "")}</span></div>`).join("") : `<div style="color:var(--muted);">Todavía no hay movimientos.</div>`}</div></div>
     <button type="button" class="small-btn" id="rwSalir" style="width:100%;">Cerrar sesión</button>`;
   if(q("rwCopiar")) q("rwCopiar").onclick = () => navigator.clipboard.writeText(link).then(() => showToast("Link copiado ✓"), () => prompt("Copiá tu link:", link));
   if(q("rwWa")) q("rwWa").href = "https://wa.me/?text=" + encodeURIComponent("Mirá esta tienda de suplementos 💪" + (Number(st.amigoPct) > 0 ? " Entrá con mi link y tenés " + st.amigoPct + "% OFF en tu primera compra: " : " ") + link);
-  body.querySelectorAll("[name=rwPref]").forEach(r => r.onchange = async () => {
-    try{ await clientesCol.doc(c.id).update({refPref: r.value}); c.refPref = r.value; showToast("Listo, cobrás tus comisiones en " + (r.value === "dinero" ? "dinero" : "puntos") + " ✓"); }catch(e){ showToast("No se pudo guardar tu preferencia"); }
-  });
   q("rwSalir").onclick = ptsSalir;
 }
 
@@ -5001,10 +4996,9 @@ async function ptsAlConfirmar(pedido, metodo){
       else if(refC && com > 0){
         await ptsAplicar(refC.id, r => {
           const mot = "Referido: " + firstName(cli.nombre) + " (pedido #" + pedido.id + ")";
-          if(r.refPref === "dinero") r.mov.push({ts: Date.now(), pts: 0, dinero: com, estado: "pendiente", motivo: mot, ref: pedido.id});
-          else r.mov.push(ptsMov(com * ptsValor(), mot, {ref: pedido.id}));
+          r.mov.push(ptsMov(com * ptsValor(), mot, {ref: pedido.id}));
         });
-        extra = " · " + firstName(refC.nombre) + " ganó " + (refC.refPref === "dinero" ? money(com) + " (dinero a pagarle)" : fmtN(com * ptsValor()) + " pts") + " por referirlo";
+        extra = " · " + firstName(refC.nombre) + " ganó " + fmtN(com * ptsValor()) + " pts" + " por referirlo";
       }
     }
     scheduleSave(); renderVentasBox();
@@ -5100,16 +5094,16 @@ function ptsRenderHome(){
     reg > 0 ? `<tr><td>Crear tu cuenta</td><td><b>${fmtN(reg)} pts</b></td><td>${money(ptsAPesos(reg))}</td></tr>` : "",
     res > 0 ? `<tr><td>Escribir una reseña verificada</td><td><b>${fmtN(res)} pts</b></td><td>${money(ptsAPesos(res))}</td></tr>` : "",
     cmp > 0 ? `<tr><td>Comprar productos</td><td><b>${fmtN(cmp)} pts</b> por cada $1</td><td>${(cmp / v * 100).toLocaleString("es-AR", {maximumFractionDigits: 1})}% de retorno</td></tr>` : "",
-    rp > 0 ? `<tr><td>Referir un amigo (tu recompensa)</td><td><b>${rp}%</b> de la primera compra de tu referido</td><td>¡Puntos o dinero!</td></tr>` : "",
+    rp > 0 ? `<tr><td>Referir un amigo (tu recompensa)</td><td><b>${rp}%</b> de la primera compra de tu referido</td><td>¡En puntos!</td></tr>` : "",
     ap > 0 ? `<tr><td>Beneficio para tu amigo</td><td><b>${ap}%</b> de descuento en su primera compra</td><td>—</td></tr>` : ""
   ].join("");
   const faq = [
     ["¿Cuánto cuesta unirse al programa?", `Nada. Es gratis.${reg > 0 ? " Registrarte ya te regala " + fmtN(reg) + " puntos (" + money(ptsAPesos(reg)) + ")." : ""}`],
     ["¿Cómo gano puntos?", "Con compras, reseñas verificadas y referidos. Mientras más participás, más ganás. Los puntos de una compra se acreditan cuando confirmamos tu pedido."],
-    ["¿Puedo canjear puntos por dinero?", `Los puntos se canjean por descuentos en tus compras (hasta el ${mx}% del pedido). ${rp > 0 ? "Pero las comisiones por referidos sí pueden cobrarse en dinero directo si así lo preferís." : ""}`],
+    ["¿Puedo canjear puntos por dinero?", `Los puntos se canjean por descuentos en tus compras (hasta el ${mx}% del pedido). Lo mismo vale para la recompensa por referidos: se acredita siempre en puntos.`],
     ["¿Hay límite de puntos?", venc > 0 ? `No. Podés acumular todo lo que quieras; cada punto dura ${venc} meses desde que lo ganás.` : "No. Podés acumular todo lo que quieras y no vencen."],
     ap > 0 ? ["¿Mis amigos también ganan algo?", `Sí. Tu amigo recibe ${ap}% OFF en su primera compra si entra con tu link o tu código.`] : null,
-    rp > 0 ? ["¿Cuándo recibo mi recompensa por referido?", "Cuando confirmamos la primera compra de tu amigo: te acreditamos los puntos (o el dinero, que coordinamos con vos) a partir de ese momento."] : null
+    rp > 0 ? ["¿Cuándo recibo mi recompensa por referido?", "Cuando confirmamos la primera compra de tu amigo: te acreditamos los puntos a partir de ese momento."] : null
   ].filter(Boolean);
   el.style.display = "";
   el.innerHTML = `<div class="rw-wrap">
