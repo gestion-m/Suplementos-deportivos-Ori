@@ -242,13 +242,21 @@ body.edit-mode .ventas-box{display:block;}
 .sheet h3{margin:0 0 12px;font-size:1.1rem;padding-right:30px;}
 .sheet-close{position:absolute;top:14px;right:16px;border:none;background:none;font-size:1.1rem;color:var(--muted);}
 
-.cart-line{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 10px;margin-bottom:8px;}
+.cart-line{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 10px;margin-bottom:8px;}
 .cl-img{width:40px;height:40px;border-radius:8px;object-fit:cover;background:#e6e4d8;flex-shrink:0;}
 .cl-img-empty{width:40px;height:40px;border-radius:8px;background:#e6e4d8;flex-shrink:0;}
 .cart-line .cl-name{flex:1;font-size:0.78rem;font-weight:600;}
 .cart-line .cl-qty{display:flex;align-items:center;gap:6px;}
 .cart-line .cl-qty button{width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:var(--paper);font-weight:700;line-height:1;}
 .cart-line .cl-price{font-size:0.78rem;font-weight:700;min-width:70px;text-align:right;}
+.cart-line .cl-note{flex-basis:100%;font-size:.62rem;line-height:1.3;color:#7a5a00;background:#fff6d6;border-radius:7px;padding:4px 7px;}
+.sab-wrap{margin:6px 0 8px;} .sab-title{font-size:.62rem;font-weight:800;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;}
+.sab-chips{display:flex;flex-wrap:wrap;gap:5px;}
+.sab-chip{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:5px 10px;font-size:.7rem;font-weight:700;cursor:pointer;}
+.sab-chip.on{background:var(--green);border-color:var(--green);color:#fff;}
+.sab-chip.out{opacity:.45;text-decoration:line-through;cursor:not-allowed;}
+.sab-edit{flex:1;min-width:0;} .sab-row{display:flex;gap:6px;margin-bottom:6px;align-items:center;}
+.sab-row input[type=text],.sab-row input:not([type]){flex:1;min-width:0;} .sab-row input[type=number]{flex:none;width:68px;} .sab-row button{border:none;background:none;color:var(--coral);font-size:1rem;}
 .cart-line .cl-remove{border:none;background:none;color:var(--coral);font-size:0.9rem;padding:2px 4px;}
 .cart-empty{color:var(--muted);font-size:0.8rem;text-align:center;padding:20px 0;}
 .cart-totals{display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;padding:10px 2px;border-top:1px dashed var(--line);margin-top:6px;}
@@ -1227,11 +1235,23 @@ function pctExtraMejor(){
   return Math.max(cod, ami);
 }
 function descTope(){ const t = Number(state.settings.descTopePct); return t > 0 && t < 100 ? t : 100; }
-function couponFactors(){
-  const st = state.settings, e = pctExtraMejor(), cash = cashOn() ? (Number(st.descEfPct) || 0) : 0, cap = descTope();
+/* d = % de descuento propio del producto. En un producto que YA tiene descuento, el de amigo/código NO se suma:
+   rige el mayor de los dos. El de efectivo/transferencia sí se mantiene siempre. */
+function couponFactors(d){
+  d = Number(d) || 0;
+  const st = state.settings, e0 = pctExtraMejor(), cash = cashOn() ? (Number(st.descEfPct) || 0) : 0, cap = descTope();
+  let e = e0;
+  if(d > 0 && e0 > 0) e = e0 > d ? (1 - (1 - e0/100) / (1 - d/100)) * 100 : 0;
   const tEf = Math.min(cash + e, Math.max(cap, cash)), tTa = Math.min(e, cap);
   /* el precio de efectivo ya trae su % adentro: se corrige solo por la diferencia */
   return {ef: (1 - tEf/100) / (1 - cash/100) * ptsFactorActual, ta: (1 - tTa/100) * ptsFactorActual};
+}
+/* Aviso para el cliente cuando el producto ya tiene descuento y hay descuento de amigo/código */
+function descNota(d){
+  d = Number(d) || 0; const e0 = pctExtraMejor();
+  if(!(d > 0) || !(e0 > 0)) return "";
+  const base = e0 > d ? `Este producto ya tiene ${d}% OFF y tu descuento es ${e0}%: no se suman, rige el ${e0}%.` : `Este producto ya tiene ${d}% OFF: el descuento de amigo/código no se suma, rige el ${d}%.`;
+  return base + (cashOn() ? " El descuento por efectivo/transferencia se mantiene." : "");
 }
 /* precio de lista (tarjeta, sin descuentos) del carrito: base del tope */
 function listaCarritoTa(){
@@ -1295,7 +1315,40 @@ function escapeHtml(str){ return String(str).replace(/[&<>"']/g, c => ({"&":"&am
 function conMarca(brand, name){ const b=(brand||"").trim(), n=String(name||""); if(!b) return n; return n.toLowerCase().startsWith(b.toLowerCase()) ? n : b + " - " + n; }
 function ventaMarca(v){ if(v.marca) return v.marca; if(v.productId){ const p=state.products.find(x=>x.id===v.productId); if(p && p.brand) return p.brand; } return v.comboId ? "COMBO" : ""; }
 function stockOf(p){ return (p.stock===null||p.stock===undefined) ? Infinity : p.stock; }
-function inCartQty(type,id){ const it=cart.find(c=>c.type===type&&c.id===id); return it?it.qty:0; }
+/* inCartQty(type,id) = total en carrito; inCartQty(type,id,sabor) = solo ese sabor */
+function inCartQty(type,id,sabor){ return cart.filter(c => c.type===type && c.id===id && (sabor===undefined || (c.sabor||"")===sabor)).reduce((a,c) => a + c.qty, 0); }
+/* ---- SABORES: un solo producto con varios sabores, cada uno con su stock ---- */
+let saborSel = {};
+function tieneSabores(p){ return !!(p && Array.isArray(p.sabores) && p.sabores.some(x => x && x.n)); }
+function stockSabor(p, sabor){ const f = (p.sabores||[]).find(x => x.n === sabor); return f ? (Number(f.s)||0) : 0; }
+function syncStockSabores(p){ if(p && Array.isArray(p.sabores) && p.sabores.length) p.stock = p.sabores.reduce((a,x) => a + (Number(x.s)||0), 0); }
+function descontarStock(p, qty, sabor){
+  if(p.sabores && p.sabores.length){
+    const f = sabor ? p.sabores.find(x => x.n === sabor) : null;
+    if(f){ f.s = Math.max(0, (Number(f.s)||0) - qty); }
+    else { let r = qty; p.sabores.forEach(x => { if(r > 0){ const t = Math.min(r, Number(x.s)||0); x.s = (Number(x.s)||0) - t; r -= t; } }); }
+    syncStockSabores(p); return;
+  }
+  if(p.stock !== null && p.stock !== undefined) p.stock = Math.max(0, p.stock - qty);
+}
+function devolverStock(p, qty, sabor){
+  if(p.sabores && p.sabores.length){
+    const f = (sabor && p.sabores.find(x => x.n === sabor)) || p.sabores[0];
+    f.s = (Number(f.s)||0) + qty; syncStockSabores(p); return;
+  }
+  if(p.stock !== null && p.stock !== undefined) p.stock += qty;
+}
+function saboresChips(p){
+  if(!tieneSabores(p)) return "";
+  const sel = saborSel[p.id] || "";
+  return `<div class="sab-wrap" data-sab-wrap="${p.id}"><div class="sab-title">Sabor</div><div class="sab-chips">${p.sabores.filter(x => x.n).map(x => { const out = (Number(x.s)||0) <= 0; return `<button type="button" class="sab-chip${x.n===sel?' on':''}${out?' out':''}" data-sab-pick="${p.id}" data-sab="${escapeHtml(x.n)}" ${out?'disabled':''}>${escapeHtml(x.n)}</button>`; }).join("")}</div></div>`;
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest("[data-sab-pick]"); if(!b || b.disabled) return;
+  const id = b.dataset.sabPick, n = b.dataset.sab;
+  saborSel[id] = (saborSel[id] === n) ? "" : n;
+  document.querySelectorAll(`[data-sab-wrap="${id}"] .sab-chip`).forEach(c => c.classList.toggle("on", c.dataset.sab === saborSel[id]));
+});
 
 const MOTIVO_ART = "";
 const FRASES_SUGERIDAS = [
@@ -1346,7 +1399,7 @@ function motivoRestart(){
 let showcaseSig = "";
 function scCard(p){
   const {precioEf, precioTa, anteriorTa, pct} = calcProductPrices(p), img = (p.images || [])[0];
-  return `<div class="sc-card">${pct > 0 ? `<div class="off-circle"><b>${pct}%</b><span>OFF</span></div>` : ""}<div data-sc-open="${p.id}" style="cursor:pointer;">${img ? `<img src="${img}" alt="">` : `<div style="height:150px;display:flex;align-items:center;justify-content:center;color:#a9ab9c;font-size:.7rem;">Sin foto</div>`}<div class="sc-name">${escapeHtml(conMarca(p.brand, p.name))}</div></div><div class="sc-price">${anteriorTa ? `<s class="old-price">${money(anteriorTa)}</s> ` : ""}${money(precioTa)}</div>${trOn() ? `<div class="sc-cash" style="color:var(--ink)">${money(transFromCard(precioTa))} transferencia</div>` : ""}${cashOn() ? `<div class="sc-cash">${money(precioEf)} efectivo</div>` : ""}<button type="button" class="add-cart-btn" data-sc-add="${p.id}">Comprar</button></div>`;
+  return `<div class="sc-card">${pct > 0 ? `<div class="off-circle"><b>${pct}%</b><span>OFF</span></div>` : ""}<div data-sc-open="${p.id}" style="cursor:pointer;">${img ? `<img src="${img}" alt="">` : `<div style="height:150px;display:flex;align-items:center;justify-content:center;color:#a9ab9c;font-size:.7rem;">Sin foto</div>`}<div class="sc-name">${escapeHtml(conMarca(p.brand, p.name))}</div></div><div class="sc-price">${anteriorTa ? `<s class="old-price">${money(anteriorTa)}</s> ` : ""}${money(precioTa)}</div>${trOn() ? `<div class="sc-cash" style="color:var(--ink)">${money(transFromCard(precioTa))} transferencia</div>` : ""}${cashOn() ? `<div class="sc-cash">${money(precioEf)} efectivo</div>` : ""}<button type="button" class="add-cart-btn" data-sc-add="${p.id}">${tieneSabores(p) ? "Elegir sabor" : "Comprar"}</button></div>`;
 }
 function calcMasVendidos(){
   const cnt = {};
@@ -1375,7 +1428,7 @@ function renderShowcase(){
   box.addEventListener("click", e => {
     const t = e.target, o = t.closest("[data-sc-open]"), a = t.closest("[data-sc-add]"), pv = t.closest("[data-sc-prev]"), nx = t.closest("[data-sc-next]");
     if(o){ openDetail("product", Number(o.dataset.scOpen)); return; }
-    if(a){ addToCart("product", Number(a.dataset.scAdd), 1); return; }
+    if(a){ const pid = Number(a.dataset.scAdd), pp = state.products.find(x => x.id === pid); if(pp && tieneSabores(pp)){ openDetail("product", pid); return; } addToCart("product", pid, 1); return; }
     const k = pv ? pv.dataset.scPrev : nx ? nx.dataset.scNext : null;
     if(k){ const row = document.getElementById(k), n = row.children.length, i = Math.round(row.scrollLeft / step(row)), j = Math.max(0, Math.min(n - 1, i + (nx ? 1 : -1))); row.scrollTo({left: j * step(row), behavior: "smooth"}); }
   });
@@ -1628,7 +1681,7 @@ function matchesFilters(p){
   if(filterCategory && catOf(p) !== filterCategory) return false;
   const q = normTxt(searchQuery).trim();
   if(q){
-    const hay = normTxt([p.name, p.brand, catOf(p), p.desc].join(" "));
+    const hay = normTxt([p.name, p.brand, catOf(p), p.desc, (p.sabores||[]).map(x => x.n).join(" ")].join(" "));
     return q.split(/\s+/).every(w => hay.includes(w));
   }
   return true;
@@ -1756,6 +1809,7 @@ function renderProducts(){
         <div class="p-prices">
           ${priceBlock(precioTa, precioEf, anteriorTa)}
         </div>
+        ${saboresChips(p)}
         <button class="add-cart-btn" data-add-product="${p.id}" ${remaining<=0?'disabled':''}>${remaining<=0?(stock>0?'Todo el stock está en tu pedido':'Sin stock'):'Comprar'}</button>
       </div>
       <div class="admin-panel">
@@ -1768,7 +1822,8 @@ function renderProducts(){
           <div class="admin-row"><label>Cuotas (vacío = no mostrar)</label><input type="number" min="0" data-field="cuotas" data-id="${p.id}" value="${p.cuotas||''}" placeholder="ej: 3"></div>
           <div class="admin-row"><label>Peso en gramos (para el envío)</label><input type="number" min="0" data-field="pesoG" data-id="${p.id}" value="${p.pesoG||''}" placeholder="ej: 300"></div>
           <div class="admin-row"><label>Costo</label><input type="number" data-field="costo" data-id="${p.id}" value="${p.costo}"></div>
-          <div class="admin-row"><label>Stock</label><input type="number" data-field="stock" data-id="${p.id}" value="${p.stock===null?'':p.stock}" placeholder="sin control"></div>
+          <div class="admin-row"><label>Stock${p.sabores&&p.sabores.length?' (suma de sabores)':''}</label><input type="number" data-field="stock" data-id="${p.id}" value="${p.stock===null?'':p.stock}" placeholder="sin control" ${p.sabores&&p.sabores.length?'disabled':''}></div>
+          <div class="admin-row"><label>Sabores (nombre y stock)</label><div class="sab-edit">${(p.sabores||[]).map((sb,i)=>`<div class="sab-row"><input type="text" data-sab-n="${p.id}:${i}" value="${escapeHtml(sb.n||'')}" placeholder="ej: Vainilla"><input type="number" min="0" data-sab-s="${p.id}:${i}" value="${Number(sb.s)||0}" title="Stock de este sabor"><button type="button" data-sab-del="${p.id}:${i}">✕</button></div>`).join("")}<button type="button" class="admin-photo-btn" data-sab-add="${p.id}">➕ Agregar sabor</button></div></div>
           <div class="admin-row"><label>Descuento % (vacío = sin)</label><input type="number" min="0" max="90" data-field="descuentoPct" data-id="${p.id}" value="${p.descuentoPct||''}" placeholder="ej: 15"></div>
           <div class="admin-row"><label>Marg. Ef/Tr %</label><input type="number" data-field="markupEf" data-id="${p.id}" value="${p.markupEf===null?'':p.markupEf}" placeholder="${state.settings.markupEfectivo}"></div>
           <div class="admin-row"><label>Precio manual Ef/Tr</label><input type="number" data-field="precioEfManual" data-id="${p.id}" value="${p.precioEfManual===null?'':p.precioEfManual}" placeholder="automático"></div>
@@ -1902,6 +1957,36 @@ function attachProductListeners(){
       renderProducts(); renderCombos(); scheduleSave();
     });
   });
+  const sabRef = str => { const [pid, i] = String(str).split(":").map(Number); return [state.products.find(pp => pp.id === pid), i]; };
+  document.querySelectorAll("[data-sab-n]").forEach(inp => inp.addEventListener("change", e => {
+    const [prod, i] = sabRef(e.target.dataset.sabN); if(!prod || !prod.sabores || !prod.sabores[i]) return;
+    const v = e.target.value.trim();
+    if(v && prod.sabores.some((x, k) => k !== i && String(x.n).toLowerCase() === v.toLowerCase())){ showToast("Ya cargaste ese sabor"); renderProducts(); return; }
+    if(saborSel[prod.id] === prod.sabores[i].n) saborSel[prod.id] = "";
+    prod.sabores[i].n = v; renderProducts(); renderCombos(); scheduleSave();
+  }));
+  document.querySelectorAll("[data-sab-s]").forEach(inp => inp.addEventListener("change", e => {
+    const [prod, i] = sabRef(e.target.dataset.sabS); if(!prod || !prod.sabores || !prod.sabores[i]) return;
+    const antes = prod.stock;
+    prod.sabores[i].s = Math.max(0, Math.floor(Number(e.target.value) || 0));
+    syncStockSabores(prod);
+    logStockMov(prod, antes === undefined ? null : antes, "Corrección manual (sabor " + (prod.sabores[i].n || "sin nombre") + ")");
+    renderProducts(); renderCombos(); scheduleSave();
+  }));
+  document.querySelectorAll("[data-sab-add]").forEach(btn => btn.addEventListener("click", e => {
+    const prod = state.products.find(pp => pp.id === Number(e.target.dataset.sabAdd)); if(!prod) return;
+    if(!prod.sabores) prod.sabores = [];
+    const primero = prod.sabores.length === 0;
+    prod.sabores.push({n: "", s: (primero && Number(prod.stock) > 0) ? Number(prod.stock) : 0});
+    syncStockSabores(prod); renderProducts(); scheduleSave();
+  }));
+  document.querySelectorAll("[data-sab-del]").forEach(btn => btn.addEventListener("click", e => {
+    const [prod, i] = sabRef(e.target.dataset.sabDel); if(!prod || !prod.sabores || !prod.sabores[i]) return;
+    if(prod.sabores[i].n && !confirm("¿Quitar el sabor " + prod.sabores[i].n + "?")) return;
+    prod.sabores.splice(i, 1);
+    if(!prod.sabores.length) delete prod.sabores; else syncStockSabores(prod);
+    renderProducts(); renderCombos(); scheduleSave();
+  }));
   document.querySelectorAll("[data-cat-sel]").forEach(sel => sel.addEventListener("change", e => {
     const prod = state.products.find(pp => pp.id === Number(sel.dataset.catSel)); if(!prod) return;
     let v = e.target.value;
@@ -2255,6 +2340,7 @@ function renderDetail(type, id){
       </div>
       ${p.cuotas>0 ? `<div class="detail-cuotas">💳 ${p.cuotas} cuotas de ${money(precioTa/p.cuotas)}</div>` : ""}
       <button type="button" class="detail-share" id="shareBtn">🔗 Compartir este producto</button>
+      ${saboresChips(p)}
       ${state.settings.cuponCodigo && state.settings.cuponPct>0 ? `<div class="coupon-row"><input id="cuponInput" placeholder="Código de descuento"><button id="cuponBtn">Aplicar</button></div><div class="coupon-res" id="cuponRes"></div>` : ""}
       ${stock!==Infinity ? `<div class="detail-stock admin-only ${stock<=2?'low':'ok'}">${stock<=0?'Sin stock disponible':'Quedan '+stock+' unidades'}</div>` : ""}
       ${benefitsHtml ? `<div class="detail-benefits">${benefitsHtml}</div>` : (p.desc ? `<div class="detail-benefits"><div class="benefit-line">${escapeHtml(p.desc)}</div></div>` : "")}
@@ -2364,40 +2450,47 @@ function wireDetailQty(type, id, maxQty){
   document.querySelector("[data-detail-qty-dec]").onclick = () => { if(qty>1){ qty--; valEl.textContent = qty; } };
   const addBtn = document.getElementById("detailAddBtn");
   if(addBtn && !addBtn.disabled){
-    addBtn.onclick = () => { addToCart(type, id, qty); closeSheet("detailSheet"); };
+    addBtn.onclick = () => { if(addToCart(type, id, qty) !== false) closeSheet("detailSheet"); };
   }
 }
 
 /* ---------- CART ---------- */
-function addToCart(type, id, qty){
+function addToCart(type, id, qty, sabor){
   qty = qty || 1;
   if(type === "product"){
     const p = state.products.find(pp => pp.id === id);
     if(!p) return;
-    const stock = stockOf(p);
+    if(tieneSabores(p)){
+      sabor = sabor || saborSel[id] || "";
+      const disp = p.sabores.filter(x => x.n && (Number(x.s)||0) > 0);
+      if(!sabor && disp.length === 1) sabor = disp[0].n;
+      if(!sabor){ showToast("Elegí un sabor primero 👆"); return false; }
+    } else sabor = "";
+    const stock = sabor ? stockSabor(p, sabor) : stockOf(p);
     if(stock !== Infinity){
-      const already = inCartQty("product", id);
+      const already = inCartQty("product", id, sabor);
       if(already + qty > stock){
         const room = Math.max(0, stock - already);
-        if(room <= 0){ showToast("Sin stock disponible"); return; }
+        if(room <= 0){ showToast("Sin stock disponible"); return false; }
         qty = room;
         showToast(editMode ? `Solo quedan ${stock} — se agregaron ${room}` : "Se agregó el máximo disponible");
       }
     }
-  }
-  const existing = cart.find(it => it.type===type && it.id===id);
-  if(existing){ existing.qty += qty; } else { cart.push({type, id, qty}); }
+  } else sabor = "";
+  const existing = cart.find(it => it.type===type && it.id===id && (it.sabor||"")===(sabor||""));
+  if(existing){ existing.qty += qty; } else { cart.push(sabor ? {type, id, qty, sabor} : {type, id, qty}); }
   renderCart(); renderProducts();
   showToast("Agregado al pedido");
+  return true;
 }
 
 function cartLineInfo(item){
   if(item.type === "product"){
     const p = state.products.find(pp => pp.id === item.id);
     if(!p) return null;
-    const {precioEf, precioTa} = calcProductPrices(p);
-    const f = couponFactors();
-    return {name:p.name, brand:p.brand||"", unitEf:Math.round(precioEf*f.ef), unitTa:Math.round(precioTa*f.ta), image:(p.images&&p.images[0])||""};
+    const {precioEf, precioTa, pct} = calcProductPrices(p);
+    const f = couponFactors(pct);
+    return {name:p.name + (item.sabor ? " · " + item.sabor : ""), brand:p.brand||"", unitEf:Math.round(precioEf*f.ef), unitTa:Math.round(precioTa*f.ta), image:(p.images&&p.images[0])||"", nota:descNota(pct)};
   } else {
     const c = state.combos.find(cc => cc.id === item.id);
     if(!c) return null;
@@ -2424,6 +2517,7 @@ function renderCart(){
           <div class="cl-qty"><button data-cart-dec="${idx}">−</button><span>${item.qty}</span><button data-cart-inc="${idx}">+</button></div>
           <div class="cl-price">${money(info.unitEf*item.qty)}</div>
           <button class="cl-remove" data-cart-remove="${idx}">✕</button>
+          ${info.nota ? `<div class="cl-note">ℹ️ ${escapeHtml(info.nota)}</div>` : ""}
         </div>`;
     }).join("");
   }
@@ -2464,7 +2558,7 @@ function renderCart(){
     const item = cart[idx];
     if(item.type === "product"){
       const p = state.products.find(pp=>pp.id===item.id);
-      const stock = stockOf(p);
+      const stock = item.sabor ? stockSabor(p, item.sabor) : stockOf(p);
       if(stock !== Infinity && item.qty+1 > stock){ showToast("No hay más stock disponible"); return; }
     }
     item.qty++; renderCart(); renderProducts();
@@ -2490,11 +2584,12 @@ function renderCart(){
       const info = cartLineInfo(item);
       if(!info) return;
       msg += `- ${item.qty}x ${info.brand ? info.brand + " - " : ""}${info.name} (${money(info.unitEf*item.qty)})\n`;
-      pedidoItems.push({type:item.type, id:item.id, name:info.name, brand:info.brand, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
+      pedidoItems.push({type:item.type, id:item.id, sabor:item.sabor||"", name:info.name, brand:info.brand, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
     });
     const envio = (cliente.entrega === "correo" || cliente.entrega === "moto") ? (Number(cliente.envioCosto) || 0) : 0, envioTa = envio ? cardFromCash(envio) : 0;
     let totalTr = 0; cart.forEach(it2 => { const i2 = cartLineInfo(it2); if(i2) totalTr += transFromCard(i2.unitTa) * it2.qty; });
     if(cartCoupon) msg += `\n🎟️ Código ${cartCoupon} (${state.settings.cuponPct}% OFF) aplicado`;
+    if(cart.some(it => { const i3 = cartLineInfo(it); return i3 && i3.nota; })) msg += `\nℹ️ En los productos que ya tienen descuento no se acumula el descuento de amigo/código (rige el mayor).`;
     if(cashOn()) msg += `\n💸 Incluye ${state.settings.descEfPct}% OFF por pagar en efectivo o transferencia`;
     msg += `\nTotal efectivo: ${money(totalEf + envio)}` + (trOn() ? `\nTotal transferencia: ${money(totalTr + envio)}` : "") + `\nTotal tarjeta/Mercado Pago: ${money(totalTa + envioTa)}` + (envio ? "\n(incluye envío)" : "");
     msg += `\n\nMis datos: ${cliente.nombre} - ${cliente.telefono}`;
@@ -3051,7 +3146,7 @@ async function pagarConMercadoPago(){
     if(!info) return;
     totalEf += info.unitEf*item.qty; totalTa += info.unitTa*item.qty;
     items.push({id: item.type+"-"+item.id, title: (info.brand ? info.brand + " - " : "") + info.name, quantity: item.qty, unit_price: Number(info.unitTa)});
-    pedidoItems.push({type:item.type, id:item.id, name:info.name, brand:info.brand, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
+    pedidoItems.push({type:item.type, id:item.id, sabor:item.sabor||"", name:info.name, brand:info.brand, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
   });
   if(!items.length) return;
   if((cliente.entrega === "correo" || cliente.entrega === "moto") && Number(cliente.envioCosto) > 0) items.push({id:"envio", title:(cliente.entrega === "moto" ? "Envío en el día (Uber/Didi Moto)" : "Envío Correo Argentino (" + (cliente.servicio === "domicilio" ? "domicilio" : "sucursal") + ")"), quantity:1, unit_price: cardFromCash(Number(cliente.envioCosto))});
@@ -3334,6 +3429,8 @@ function renderOfferSheet(){
   document.querySelectorAll("#offerSheetBody [data-offer-add]").forEach(btn => {
     btn.onclick = () => {
       const [type, idStr] = btn.dataset.offerAdd.split(":");
+      const pOf = type === "product" ? state.products.find(x => x.id === Number(idStr)) : null;
+      if(pOf && tieneSabores(pOf)){ closeAllSheets(); openDetail("product", pOf.id); return; }
       addToCart(type, Number(idStr), 1);
       renderOfferSheet();
     };
@@ -3443,7 +3540,7 @@ function moverStockCombo(c, qty, sign){
     const prod = state.products.find(pp => pp.id === ci.productId);
     if(prod && prod.stock !== null && prod.stock !== undefined){
       const antesC = prod.stock;
-      prod.stock = Math.max(0, prod.stock - sign * ci.qty * qty);
+      if(sign > 0) descontarStock(prod, ci.qty * qty, null); else devolverStock(prod, ci.qty * qty, null);
       if(sign < 0) logStockMov(prod, antesC, "Venta de combo deshecha (devolución)");
     }
   });
@@ -3474,7 +3571,7 @@ function renderVentasBox(){
   const stockRows = state.products.map(p => `
     <tr>
       <td>${escapeHtml(p.brand||"")} — ${escapeHtml(p.name)}</td>
-      <td><input type="number" min="0" data-stock-edit="${p.id}" value="${p.stock===null||p.stock===undefined?"":p.stock}" placeholder="—"></td>
+      <td><input type="number" min="0" data-stock-edit="${p.id}" value="${p.stock===null||p.stock===undefined?"":p.stock}" placeholder="—" ${p.sabores&&p.sabores.length?'disabled title="Tiene sabores: editá el stock en su ficha"':''}></td>
       <td>${stockPill(p)}</td>
     </tr>`).join("");
   const ventasRows = state.ventas.slice().reverse().map(v => `
@@ -3597,6 +3694,7 @@ function renderVentasBox(){
     } else {
       const prod = state.products.find(pp => pp.id === Number(smProd.value));
       if(!prod) return;
+      if(prod.sabores && prod.sabores.length){ showToast("Ese producto tiene sabores: cargá el stock por sabor en su ficha (Editar)", 4500); return; }
       const antesS = prod.stock;
       prod.stock = (Number(prod.stock) || 0) + cant;
       logStockMov(prod, antesS === undefined ? null : antesS, "Carga de stock a mano");
@@ -3770,8 +3868,9 @@ function confirmarPedido(pedidoId, metodo){
       if(!p) return;
       const precioUnit = metodo === "efectivo" ? it.precioEfUnit : it.precioTaUnit;
       const ganancia = (precioUnit - p.costo) * it.qty;
-      state.ventas.push({id:state.nextVentaId++, fecha:new Date().toLocaleDateString("es-AR"), productId:p.id, comboId:null, marca:p.brand||"", itemNombre:p.name, cantidad:it.qty, metodo, precioUnit, costoUnit:p.costo, total:precioUnit*it.qty, ganancia});
-      if(p.stock !== null && p.stock !== undefined){ p.stock = Math.max(0, p.stock - it.qty); }
+      state.ventas.push({id:state.nextVentaId++, fecha:new Date().toLocaleDateString("es-AR"), productId:p.id, comboId:null, marca:p.brand||"", itemNombre:p.name + (it.sabor ? " · " + it.sabor : ""), sabor:it.sabor||"", cantidad:it.qty, metodo, precioUnit, costoUnit:p.costo, total:precioUnit*it.qty, ganancia});
+      if(it.sabor){ const antesV = p.stock; descontarStock(p, it.qty, it.sabor); logStockMov(p, antesV === undefined ? null : antesV, "Venta (sabor " + it.sabor + ")"); }
+      else descontarStock(p, it.qty, null);
     } else {
       const c = state.combos.find(cc => cc.id === it.id);
       if(!c) return;
@@ -3867,7 +3966,7 @@ function registrarVenta(){
     total: precioUnit * cantidad, ganancia: (precioUnit - p.costo) * cantidad, cliente: cli.nombre
   });
   clienteDeVenta(cli, p.name, cantidad, precioUnit * cantidad);
-  if(!sinControl){ p.stock = Math.max(0, p.stock - cantidad); }
+  if(!sinControl){ descontarStock(p, cantidad, null); }
   ventaSelId = sel;
   render(); scheduleSave();
   showToast(sinControl ? "Venta registrada. Este producto no tiene stock cargado: cargalo en 📦 Stock actual para que se descuente" : "Venta registrada — stock actualizado", sinControl ? 5000 : 1800);
@@ -3882,7 +3981,7 @@ function deshacerVenta(ventaId){
     if(c) moverStockCombo(c, v.cantidad, -1);
   } else {
     const p = state.products.find(pp => pp.id === v.productId);
-    if(p && p.stock !== null && p.stock !== undefined){ const antesD = p.stock; p.stock += v.cantidad; logStockMov(p, antesD, "Venta deshecha (devolución)"); }
+    if(p && p.stock !== null && p.stock !== undefined){ const antesD = p.stock; devolverStock(p, v.cantidad, v.sabor || null); logStockMov(p, antesD, "Venta deshecha (devolución)"); }
   }
   state.ventas.splice(idx,1);
   ventasCol.doc(String(v.id)).delete().catch(err => console.error(err));
@@ -4265,7 +4364,7 @@ function renderStockReview(){
 }
 
 document.getElementById("stockApplyBtn").addEventListener("click", () => {
-  let applied = 0, created = 0;
+  let applied = 0, created = 0; const omitSab = [];
   stockReviewRows.forEach(r => {
     if(r.productId === "new"){
       const id = state.nextProductId++;
@@ -4276,7 +4375,8 @@ document.getElementById("stockApplyBtn").addEventListener("click", () => {
       created++;
     } else if(typeof r.productId === "number"){
       const p = state.products.find(pp => pp.id === r.productId);
-      if(p){
+      if(p && p.sabores && p.sabores.length){ omitSab.push(p.name); }
+      else if(p){
         const antesF = p.stock;
         p.stock = stockMode === "sumar" ? (Number(p.stock) || 0) + r.cantidad : r.cantidad;
         logStockMov(p, antesF === undefined ? null : antesF, stockMode === "sumar" ? "Carga de compra/stock (archivo)" : "Stock reemplazado (archivo)");
@@ -4287,7 +4387,7 @@ document.getElementById("stockApplyBtn").addEventListener("click", () => {
   });
   closeSheet("stockReviewSheet");
   render(); scheduleSave();
-  showToast(`Stock ${stockMode === "sumar" ? "sumado" : "actualizado"} en ${applied} producto(s)` + (created ? ` · ${created} producto(s) nuevo(s) creado(s)` : ""));
+  showToast(`Stock ${stockMode === "sumar" ? "sumado" : "actualizado"} en ${applied} producto(s)` + (created ? ` · ${created} producto(s) nuevo(s) creado(s)` : "") + (omitSab.length ? ` · Omitidos por tener sabores (cargalos en su ficha): ${omitSab.join(", ")}` : ""), omitSab.length ? 6000 : undefined);
 });
 
 document.getElementById("heroImageBtn").addEventListener("click", () => document.getElementById("heroImageInput").click());
@@ -4722,6 +4822,8 @@ async function loadState(){
       if(p.advertencias === undefined) p.advertencias = "";
       if(p.beneficios === undefined) p.beneficios = suggestBeneficios(p.name);
       if(p.stock === undefined) p.stock = null;
+      if(p.sabores !== undefined && !Array.isArray(p.sabores)) delete p.sabores;
+      if(Array.isArray(p.sabores) && !p.sabores.length) delete p.sabores;
       if(p.precioEfManual === undefined) p.precioEfManual = null;
       if(p.precioTaManual === undefined) p.precioTaManual = null;
     });
@@ -4961,7 +5063,7 @@ function renderCartPts(totalEf){
   }
   const disp = ptsDisponible(cuentaActual), pesosDisp = ptsAPesos(ptsDisponibleCompra(cuentaActual)), gan = Math.round(totalEf * (Number(st.ptsCompra) || 0));
   let h = `<div class="pts-cart"><b>🎁 Tus puntos: ${fmtN(disp)} (≈ ${money(pesosDisp)})</b>`;
-  if(amigoFactor() < 1) h += `<div class="ok">👥 Descuento de amigo aplicado: ${st.amigoPct}% OFF en tu primera compra</div>`;
+  if(amigoFactor() < 1) h += `<div class="ok">👥 Descuento de amigo aplicado: ${st.amigoPct}% OFF en tu primera compra${cart.some(it => { const i3 = cartLineInfo(it); return i3 && i3.nota; }) ? " (no se suma en los productos que ya tienen descuento)" : ""}</div>`;
   if(pesosDisp > 0) h += `<label><input type="checkbox" id="cartPtsUsar" ${ptsUsar ? "checked" : ""}> Usar mis puntos${ptsUsoActual.pesos > 0 ? " (−" + money(ptsUsoActual.pesos) + ")" : ""}</label>` + (Number(st.ptsMaxPct) > 0 && Number(st.ptsMaxPct) < 100 ? `<div style="color:var(--muted);">Podés pagar hasta el ${st.ptsMaxPct}% del pedido con puntos.</div>` : "");
   if(ptsExcedenteRef(cuentaActual) > 0) h += `<div style="color:var(--muted);">De tus premios por recomendar solo se usa uno por compra; el resto queda guardado para tus próximas compras.</div>`;
   if(ptsUsar && ptsUsoActual.nota) h += `<div style="color:var(--coral);font-weight:700;">${escapeHtml(ptsUsoActual.nota)}</div>`;
