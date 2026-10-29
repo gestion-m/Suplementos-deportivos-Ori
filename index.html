@@ -255,7 +255,7 @@ body.edit-mode .ventas-box{display:block;}
 .sab-chip{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:5px 10px;font-size:.7rem;font-weight:700;cursor:pointer;}
 .sab-chip.on{background:var(--green);border-color:var(--green);color:#fff;}
 .sab-chip.out{opacity:.45;text-decoration:line-through;cursor:not-allowed;}
-.sab-edit{flex:1;min-width:0;} .sab-row{display:flex;gap:6px;margin-bottom:6px;align-items:center;}
+.sab-edit{flex:1;min-width:0;} .sab-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;align-items:center;} .sab-row select{flex:none;max-width:96px;font-size:.7rem;padding:4px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);}
 .sab-row input[type=text],.sab-row input:not([type]){flex:1;min-width:0;} .sab-row input[type=number]{flex:none;width:68px;} .sab-row button{border:none;background:none;color:var(--coral);font-size:1rem;}
 .cart-line .cl-remove{border:none;background:none;color:var(--coral);font-size:0.9rem;padding:2px 4px;}
 .cart-empty{color:var(--muted);font-size:0.8rem;text-align:center;padding:20px 0;}
@@ -1083,7 +1083,7 @@ function autoLoop(el, speed){
   }
   requestAnimationFrame(step);
 }
-function visibleProducts(){ return editMode ? state.products : state.products.filter(p => stockOf(p) > 0); }
+function visibleProducts(){ return editMode ? state.products : state.products.filter(p => hayStock(p)); }
 function cashOn(){ const d = Number(state.settings.descEfPct) || 0; return d > 0 && d < 90; }
 function cashFromCard(ta){ return cashOn() ? roundPrice(ta * (1 - Number(state.settings.descEfPct)/100)) : ta; }
 function trOn(){ const d = Number(state.settings.descTrPct); return isFinite(d) && d > 0 && d < 90; }
@@ -1322,7 +1322,67 @@ let saborSel = {};
 function tieneSabores(p){ return !!(p && Array.isArray(p.sabores) && p.sabores.some(x => x && x.n)); }
 function stockSabor(p, sabor){ const f = (p.sabores||[]).find(x => x.n === sabor); return f ? (Number(f.s)||0) : 0; }
 function syncStockSabores(p){ if(p && Array.isArray(p.sabores) && p.sabores.length) p.stock = p.sabores.reduce((a,x) => a + (Number(x.s)||0), 0); }
-function descontarStock(p, qty, sabor){
+/* ---- VENTA POR UNIDAD (cajas de N unidades) ---- */
+let modoSel = {};
+function cajaN(p){ const n = Math.floor(Number(p && p.unidadesCaja) || 0); return n > 1 ? n : 1; }
+function permiteUnidad(p){ return cajaN(p) > 1; }
+function enModoUnidad(p){ return permiteUnidad(p) && modoSel[p.id] === "unidad"; }
+function stockTarget(p, sabor){ return (sabor && p.sabores && p.sabores.find(x => x.n === sabor)) || null; }
+function sueltasTotal(p){ return (p.sabores && p.sabores.length) ? p.sabores.reduce((a,x) => a + (Number(x.u)||0), 0) : (Number(p.sueltas)||0); }
+function hayStock(p){ return stockOf(p) > 0 || sueltasTotal(p) > 0; }
+/* unidades sueltas disponibles (cajas*N + sueltas); Infinity si no se controla stock */
+function unidadesDisp(p, sabor){
+  const N = cajaN(p), f = stockTarget(p, sabor);
+  const cajas = f ? (Number(f.s)||0) : stockOf(p);
+  if(cajas === Infinity) return Infinity;
+  return (f ? (Number(f.u)||0) : (Number(p.sueltas)||0)) + cajas * N;
+}
+function enCarritoUnidades(id, sabor){
+  const p = state.products.find(x => x.id === id), N = p ? cajaN(p) : 1;
+  return cart.filter(c => c.type === "product" && c.id === id && (sabor === undefined || (c.sabor||"") === sabor)).reduce((a,c) => a + c.qty * (c.unit ? 1 : N), 0);
+}
+function restanteUnidades(p){
+  const st = stockOf(p); if(st === Infinity) return Infinity;
+  return Math.max(0, st * cajaN(p) + sueltasTotal(p) - enCarritoUnidades(p.id));
+}
+function precioUnidad(p){
+  const pr = calcProductPrices(p), N = cajaN(p), manual = Number(p.precioUnitTa) || 0;
+  const ta = manual > 0 ? manual : roundPrice(pr.precioTa / N);
+  const ratio = pr.precioTa > 0 ? pr.precioEf / pr.precioTa : 1;
+  return {precioTa: ta, precioEf: roundPrice(ta * ratio), manual: manual > 0};
+}
+function precioModo(p){
+  const r = calcProductPrices(p); if(!enModoUnidad(p)) return r;
+  const u = precioUnidad(p);
+  return {precioEf: u.precioEf, precioTa: u.precioTa, anterior: 0, anteriorTa: 0, pct: u.manual ? 0 : r.pct};
+}
+function modoChips(p){
+  if(!permiteUnidad(p)) return "";
+  const u = enModoUnidad(p);
+  return `<div class="sab-wrap"><div class="sab-title">Comprar</div><div class="sab-chips"><button type="button" class="sab-chip${u?'':' on'}" data-modo-pick="${p.id}" data-modo="caja">Caja x${cajaN(p)}</button><button type="button" class="sab-chip${u?' on':''}" data-modo-pick="${p.id}" data-modo="unidad">Unidad</button></div></div>`;
+}
+/* foto asociada al sabor elegido (índice en p.images) */
+function idxFotoSabor(idOrP){
+  const p = (typeof idOrP === "object") ? idOrP : state.products.find(x => String(x.id) === String(idOrP));
+  if(!p) return 0;
+  const sel = saborSel[p.id], sb = sel && (p.sabores||[]).find(x => x.n === sel);
+  return (sb && Number.isInteger(sb.img) && (p.images||[])[sb.img]) ? sb.img : 0;
+}
+function descontarStock(p, qty, sabor, unit){
+  const N = cajaN(p);
+  if(unit && N > 1){
+    const f = stockTarget(p, sabor), t = f || p, key = f ? "u" : "sueltas";
+    const have = Number(t[key]) || 0;
+    if(have >= qty){ t[key] = have - qty; }
+    else {
+      const falta = qty - have, cajas = Math.ceil(falta / N);
+      t[key] = cajas * N - falta;
+      if(f) f.s = Math.max(0, (Number(f.s)||0) - cajas);
+      else if(p.stock !== null && p.stock !== undefined) p.stock = Math.max(0, p.stock - cajas);
+    }
+    if(p.sabores && p.sabores.length) syncStockSabores(p);
+    return;
+  }
   if(p.sabores && p.sabores.length){
     const f = sabor ? p.sabores.find(x => x.n === sabor) : null;
     if(f){ f.s = Math.max(0, (Number(f.s)||0) - qty); }
@@ -1331,7 +1391,12 @@ function descontarStock(p, qty, sabor){
   }
   if(p.stock !== null && p.stock !== undefined) p.stock = Math.max(0, p.stock - qty);
 }
-function devolverStock(p, qty, sabor){
+function devolverStock(p, qty, sabor, unit){
+  if(unit && cajaN(p) > 1){
+    const f = stockTarget(p, sabor);
+    if(f) f.u = (Number(f.u)||0) + qty; else p.sueltas = (Number(p.sueltas)||0) + qty;
+    return;
+  }
   if(p.sabores && p.sabores.length){
     const f = (sabor && p.sabores.find(x => x.n === sabor)) || p.sabores[0];
     f.s = (Number(f.s)||0) + qty; syncStockSabores(p); return;
@@ -1341,13 +1406,27 @@ function devolverStock(p, qty, sabor){
 function saboresChips(p){
   if(!tieneSabores(p)) return "";
   const sel = saborSel[p.id] || "";
-  return `<div class="sab-wrap" data-sab-wrap="${p.id}"><div class="sab-title">Sabor</div><div class="sab-chips">${p.sabores.filter(x => x.n).map(x => { const out = (Number(x.s)||0) <= 0; return `<button type="button" class="sab-chip${x.n===sel?' on':''}${out?' out':''}" data-sab-pick="${p.id}" data-sab="${escapeHtml(x.n)}" ${out?'disabled':''}>${escapeHtml(x.n)}</button>`; }).join("")}</div></div>`;
+  return `<div class="sab-wrap" data-sab-wrap="${p.id}"><div class="sab-title">Sabor</div><div class="sab-chips">${p.sabores.filter(x => x.n).map(x => { const out = (Number(x.s)||0) <= 0 && (Number(x.u)||0) <= 0; return `<button type="button" class="sab-chip${x.n===sel?' on':''}${out?' out':''}" data-sab-pick="${p.id}" data-sab="${escapeHtml(x.n)}" ${out?'disabled':''}>${escapeHtml(x.n)}</button>`; }).join("")}</div></div>`;
 }
 document.addEventListener("click", e => {
   const b = e.target.closest && e.target.closest("[data-sab-pick]"); if(!b || b.disabled) return;
   const id = b.dataset.sabPick, n = b.dataset.sab;
   saborSel[id] = (saborSel[id] === n) ? "" : n;
   document.querySelectorAll(`[data-sab-wrap="${id}"] .sab-chip`).forEach(c => c.classList.toggle("on", c.dataset.sab === saborSel[id]));
+  /* al elegir un sabor se muestra su foto */
+  const p = state.products.find(x => String(x.id) === String(id));
+  if(p && (p.images||[]).length){
+    const idx = idxFotoSabor(p), root = b.closest(".p-card") || document.getElementById("detailContent");
+    const im = root && root.querySelector(".p-photo img, .detail-main-photo img");
+    if(im) im.src = p.images[idx];
+    if(root && root.id === "detailContent"){ detailActiveImgIdx = idx; root.querySelectorAll(".detail-thumbs img").forEach((t,i) => t.classList.toggle("active", i === idx)); }
+  }
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest("[data-modo-pick]"); if(!b) return;
+  const id = Number(b.dataset.modoPick);
+  modoSel[id] = b.dataset.modo === "unidad" ? "unidad" : "caja";
+  if(b.closest("#detailContent")) renderDetail("product", id); else renderProducts();
 });
 
 const MOTIVO_ART = "";
@@ -1412,7 +1491,7 @@ function calcMasVendidos(){
 }
 function renderShowcase(){
   const box = document.getElementById("homeShowcase");
-  const vis = visibleProducts().filter(p => stockOf(p) > 0);
+  const vis = visibleProducts().filter(p => hayStock(p));
   const ofertas = vis.filter(p => calcProductPrices(p).pct > 0);
   const top = (state.settings.masVendidosIds || []).map(id => vis.find(p => p.id === id)).filter(Boolean);
   const useTop = top.length >= 3;
@@ -1676,7 +1755,7 @@ function render(){
 let searchQuery = "";
 function normTxt(t){ return String(t==null?"":t).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(); }
 function matchesFilters(p){
-  if(!editMode && stockOf(p) <= 0) return false;
+  if(!editMode && !hayStock(p)) return false;
   if(filterBrand && p.brand !== filterBrand) return false;
   if(filterCategory && catOf(p) !== filterCategory) return false;
   const q = normTxt(searchQuery).trim();
@@ -1789,15 +1868,15 @@ function renderProducts(){
   const filtered = state.products.filter(matchesFilters);
   document.getElementById("prodCount").textContent = `${filtered.length} de ${visibleProducts().length} productos`;
   filtered.forEach(p => {
-    const {precioEf, precioTa, anterior, anteriorTa, pct} = calcProductPrices(p);
+    const {precioEf, precioTa, anterior, anteriorTa, pct} = precioModo(p);
     const imgs = p.images || [];
     const stock = stockOf(p);
-    const remaining = stock === Infinity ? Infinity : Math.max(0, stock - inCartQty("product", p.id));
+    const remaining = restanteUnidades(p);
     const card = document.createElement("div");
     card.className = "p-card";
     card.innerHTML = `
       <div class="p-photo" data-open-detail="product:${p.id}">
-        ${imgs[0] ? `<img src="${imgs[0]}">` : `<div class="ph-empty">Sin foto</div>`}
+        ${imgs[idxFotoSabor(p)] ? `<img src="${imgs[idxFotoSabor(p)]}">` : `<div class="ph-empty">Sin foto</div>`}
         <div class="p-brand-tag ${state.brandLogos[p.brand]?'has-logo':''}">${state.brandLogos[p.brand]?`<img src="${state.brandLogos[p.brand]}">`:""}${escapeHtml(p.brand||"")}</div>
         ${imgs.length>1 ? `<div class="p-multi-badge">📷 ${imgs.length}</div>` : ""}
         ${pct>0 ? `<div class="off-circle"><b>${pct}%</b><span>OFF</span></div>` : ""}
@@ -1809,7 +1888,7 @@ function renderProducts(){
         <div class="p-prices">
           ${priceBlock(precioTa, precioEf, anteriorTa)}
         </div>
-        ${saboresChips(p)}
+        ${modoChips(p)}${saboresChips(p)}
         <button class="add-cart-btn" data-add-product="${p.id}" ${remaining<=0?'disabled':''}>${remaining<=0?(stock>0?'Todo el stock está en tu pedido':'Sin stock'):'Comprar'}</button>
       </div>
       <div class="admin-panel">
@@ -1822,8 +1901,11 @@ function renderProducts(){
           <div class="admin-row"><label>Cuotas (vacío = no mostrar)</label><input type="number" min="0" data-field="cuotas" data-id="${p.id}" value="${p.cuotas||''}" placeholder="ej: 3"></div>
           <div class="admin-row"><label>Peso en gramos (para el envío)</label><input type="number" min="0" data-field="pesoG" data-id="${p.id}" value="${p.pesoG||''}" placeholder="ej: 300"></div>
           <div class="admin-row"><label>Costo</label><input type="number" data-field="costo" data-id="${p.id}" value="${p.costo}"></div>
+          <div class="admin-row"><label>Unidades por caja (vacío = no se vende suelto)</label><input type="number" min="0" data-field="unidadesCaja" data-id="${p.id}" value="${p.unidadesCaja||''}" placeholder="ej: 12"></div>
+          ${permiteUnidad(p) ? `<div class="admin-row"><label>Precio por unidad, tarjeta (vacío = caja ÷ ${cajaN(p)})</label><input type="number" min="0" data-field="precioUnitTa" data-id="${p.id}" value="${p.precioUnitTa||''}" placeholder="${precioUnidad(p).precioTa}"></div>
+          <div class="admin-row"><label>Unidades sueltas en stock${p.sabores&&p.sabores.length?' (se carga por sabor)':''}</label><input type="number" min="0" data-field="sueltas" data-id="${p.id}" value="${Number(p.sueltas)||0}" ${p.sabores&&p.sabores.length?'disabled':''}></div>` : ""}
           <div class="admin-row"><label>Stock${p.sabores&&p.sabores.length?' (suma de sabores)':''}</label><input type="number" data-field="stock" data-id="${p.id}" value="${p.stock===null?'':p.stock}" placeholder="sin control" ${p.sabores&&p.sabores.length?'disabled':''}></div>
-          <div class="admin-row"><label>Sabores (nombre y stock)</label><div class="sab-edit">${(p.sabores||[]).map((sb,i)=>`<div class="sab-row"><input type="text" data-sab-n="${p.id}:${i}" value="${escapeHtml(sb.n||'')}" placeholder="ej: Vainilla"><input type="number" min="0" data-sab-s="${p.id}:${i}" value="${Number(sb.s)||0}" title="Stock de este sabor"><button type="button" data-sab-del="${p.id}:${i}">✕</button></div>`).join("")}<button type="button" class="admin-photo-btn" data-sab-add="${p.id}">➕ Agregar sabor</button></div></div>
+          <div class="admin-row"><label>Sabores (nombre y stock)</label><div class="sab-edit">${(p.sabores||[]).map((sb,i)=>`<div class="sab-row"><input type="text" data-sab-n="${p.id}:${i}" value="${escapeHtml(sb.n||'')}" placeholder="ej: Vainilla"><input type="number" min="0" data-sab-s="${p.id}:${i}" value="${Number(sb.s)||0}" title="Stock de este sabor (cajas)">${permiteUnidad(p) ? `<input type="number" min="0" data-sab-u="${p.id}:${i}" value="${Number(sb.u)||0}" title="Unidades sueltas de este sabor" placeholder="sueltas">` : ""}${imgs.length ? `<select data-sab-img="${p.id}:${i}" title="Foto que se muestra con este sabor"><option value="">Foto auto</option>${imgs.map((_,k) => `<option value="${k}" ${sb.img===k?'selected':''}>Foto ${k+1}</option>`).join("")}</select>` : ""}<button type="button" data-sab-del="${p.id}:${i}">✕</button></div>`).join("")}<button type="button" class="admin-photo-btn" data-sab-add="${p.id}">➕ Agregar sabor</button></div></div>
           <div class="admin-row"><label>Descuento % (vacío = sin)</label><input type="number" min="0" max="90" data-field="descuentoPct" data-id="${p.id}" value="${p.descuentoPct||''}" placeholder="ej: 15"></div>
           <div class="admin-row"><label>Marg. Ef/Tr %</label><input type="number" data-field="markupEf" data-id="${p.id}" value="${p.markupEf===null?'':p.markupEf}" placeholder="${state.settings.markupEfectivo}"></div>
           <div class="admin-row"><label>Precio manual Ef/Tr</label><input type="number" data-field="precioEfManual" data-id="${p.id}" value="${p.precioEfManual===null?'':p.precioEfManual}" placeholder="automático"></div>
@@ -1953,11 +2035,24 @@ function attachProductListeners(){
       else if(field === "cuotas"){ prod.cuotas = val === "" ? null : Math.max(0, Math.floor(Number(val))||0); }
       else if(field === "markupEf" || field === "markupTa"){ prod[field] = val === "" ? null : Number(val); }
       else if(field === "precioEfManual" || field === "precioTaManual"){ prod[field] = val === "" ? null : Number(val); }
+      else if(field === "unidadesCaja"){ const n = Math.floor(Number(val)); prod.unidadesCaja = (val === "" || !(n > 1)) ? null : n; }
+      else if(field === "precioUnitTa"){ prod.precioUnitTa = val === "" ? null : Math.max(0, Number(val) || 0); }
+      else if(field === "sueltas"){ prod.sueltas = val === "" ? 0 : Math.max(0, Math.floor(Number(val)) || 0); }
       else { prod[field] = val; }
       renderProducts(); renderCombos(); scheduleSave();
     });
   });
   const sabRef = str => { const [pid, i] = String(str).split(":").map(Number); return [state.products.find(pp => pp.id === pid), i]; };
+  document.querySelectorAll("[data-sab-u]").forEach(inp => inp.addEventListener("change", e => {
+    const [prod, i] = sabRef(e.target.dataset.sabU); if(!prod || !prod.sabores || !prod.sabores[i]) return;
+    prod.sabores[i].u = Math.max(0, Math.floor(Number(e.target.value) || 0));
+    renderProducts(); scheduleSave();
+  }));
+  document.querySelectorAll("[data-sab-img]").forEach(sel => sel.addEventListener("change", e => {
+    const [prod, i] = sabRef(e.target.dataset.sabImg); if(!prod || !prod.sabores || !prod.sabores[i]) return;
+    const v = e.target.value; prod.sabores[i].img = v === "" ? null : Number(v);
+    renderProducts(); scheduleSave();
+  }));
   document.querySelectorAll("[data-sab-n]").forEach(inp => inp.addEventListener("change", e => {
     const [prod, i] = sabRef(e.target.dataset.sabN); if(!prod || !prod.sabores || !prod.sabores[i]) return;
     const v = e.target.value.trim();
@@ -2044,6 +2139,7 @@ function attachProductListeners(){
       const prod = state.products.find(p => p.id === id);
       if(!prod) return;
       prod.images.splice(idx,1);
+      (prod.sabores||[]).forEach(sb => { if(Number.isInteger(sb.img)){ if(sb.img === idx) sb.img = null; else if(sb.img > idx) sb.img--; } });
       renderProducts(); scheduleSave();
     });
   });
@@ -2316,7 +2412,7 @@ async function addMultipleImages(fileList, targetArr, max, onDone){
 }
 
 /* ---------- DETAIL SHEET ---------- */
-function openDetail(type, id){ detailActiveImgIdx = 0; renderDetail(type, id); openSheet("detailSheet"); }
+function openDetail(type, id){ detailActiveImgIdx = (type === "product") ? idxFotoSabor(id) : 0; renderDetail(type, id); openSheet("detailSheet"); }
 
 function renderDetail(type, id){
   const box = document.getElementById("detailContent");
@@ -2324,9 +2420,9 @@ function renderDetail(type, id){
     const p = state.products.find(pp => pp.id === id);
     if(!p) return;
     const imgs = p.images || [];
-    const {precioEf, precioTa, anterior, anteriorTa, pct} = calcProductPrices(p);
+    const {precioEf, precioTa, anterior, anteriorTa, pct} = precioModo(p);
     const stock = stockOf(p);
-    const remaining = stock === Infinity ? Infinity : Math.max(0, stock - inCartQty("product", p.id));
+    const remaining = restanteUnidades(p);
     const sections = [["Modo de uso", p.modoDeUso],["Ingredientes", p.ingredientes],["Advertencias", p.advertencias]].filter(([_,v]) => v && v.trim());
     const benefitsHtml = (p.beneficios||"").split("\n").filter(l=>l.trim()).map(l=>`<div class="benefit-line">${escapeHtml(l)}</div>`).join("");
     box.innerHTML = `
@@ -2338,9 +2434,9 @@ function renderDetail(type, id){
       <div class="detail-prices">
         ${priceBlock(precioTa, precioEf, anteriorTa)}
       </div>
-      ${p.cuotas>0 ? `<div class="detail-cuotas">💳 ${p.cuotas} cuotas de ${money(precioTa/p.cuotas)}</div>` : ""}
+      ${p.cuotas>0 && !enModoUnidad(p) ? `<div class="detail-cuotas">💳 ${p.cuotas} cuotas de ${money(precioTa/p.cuotas)}</div>` : ""}
       <button type="button" class="detail-share" id="shareBtn">🔗 Compartir este producto</button>
-      ${saboresChips(p)}
+      ${modoChips(p)}${saboresChips(p)}
       ${state.settings.cuponCodigo && state.settings.cuponPct>0 ? `<div class="coupon-row"><input id="cuponInput" placeholder="Código de descuento"><button id="cuponBtn">Aplicar</button></div><div class="coupon-res" id="cuponRes"></div>` : ""}
       ${stock!==Infinity ? `<div class="detail-stock admin-only ${stock<=2?'low':'ok'}">${stock<=0?'Sin stock disponible':'Quedan '+stock+' unidades'}</div>` : ""}
       ${benefitsHtml ? `<div class="detail-benefits">${benefitsHtml}</div>` : (p.desc ? `<div class="detail-benefits"><div class="benefit-line">${escapeHtml(p.desc)}</div></div>` : "")}
@@ -2350,10 +2446,10 @@ function renderDetail(type, id){
         <span class="dq-val" id="detailQtyVal">1</span>
         <button data-detail-qty-inc>+</button>
       </div>
-      <button class="primary-btn" id="detailAddBtn" ${remaining<=0?'disabled':''}>${remaining<=0?'Sin stock':'Agregar al pedido'}</button>
+      <button class="primary-btn" id="detailAddBtn" ${(enModoUnidad(p) ? remaining : Math.floor(remaining / cajaN(p)))<=0?'disabled':''}>${(enModoUnidad(p) ? remaining : Math.floor(remaining / cajaN(p)))<=0?'Sin stock':(enModoUnidad(p)?'Agregar unidad al pedido':'Agregar al pedido')}</button>
       <div class="cp-box"><div class="cp-row"><span>Entregas para el CP:</span><input id="cpInput" inputmode="numeric" maxlength="4" placeholder="1665"><button id="cpBtn" type="button">Calcular</button></div><div id="cpRes"></div></div>
     `;
-    wireDetailQty("product", id, remaining);
+    wireDetailQty("product", id, enModoUnidad(p) ? remaining : Math.floor(remaining / cajaN(p)));
     { const cpIn = document.getElementById("cpInput"), cpRes = document.getElementById("cpRes");
       try{ cpIn.value = localStorage.getItem("oriCP") || ""; }catch(e){}
       const calcCP = () => {
@@ -2455,30 +2551,31 @@ function wireDetailQty(type, id, maxQty){
 }
 
 /* ---------- CART ---------- */
-function addToCart(type, id, qty, sabor){
+function addToCart(type, id, qty, sabor, unit){
   qty = qty || 1;
   if(type === "product"){
     const p = state.products.find(pp => pp.id === id);
     if(!p) return;
+    unit = (unit === undefined) ? enModoUnidad(p) : (!!unit && permiteUnidad(p));
     if(tieneSabores(p)){
       sabor = sabor || saborSel[id] || "";
-      const disp = p.sabores.filter(x => x.n && (Number(x.s)||0) > 0);
+      const disp = p.sabores.filter(x => x.n && ((Number(x.s)||0) > 0 || (Number(x.u)||0) > 0));
       if(!sabor && disp.length === 1) sabor = disp[0].n;
       if(!sabor){ showToast("Elegí un sabor primero 👆"); return false; }
     } else sabor = "";
-    const stock = sabor ? stockSabor(p, sabor) : stockOf(p);
-    if(stock !== Infinity){
-      const already = inCartQty("product", id, sabor);
-      if(already + qty > stock){
-        const room = Math.max(0, stock - already);
-        if(room <= 0){ showToast("Sin stock disponible"); return false; }
+    const factor = unit ? 1 : cajaN(p), disp = unidadesDisp(p, sabor);
+    if(disp !== Infinity){
+      const already = enCarritoUnidades(id, sabor);
+      if(already + qty * factor > disp){
+        const room = Math.floor(Math.max(0, disp - already) / factor);
+        if(room <= 0){ showToast(unit ? "Sin stock disponible" : "No alcanza para una caja completa: probá comprar por unidad"); return false; }
         qty = room;
-        showToast(editMode ? `Solo quedan ${stock} — se agregaron ${room}` : "Se agregó el máximo disponible");
+        showToast(editMode ? `Solo quedan ${room} — se agregaron ${room}` : "Se agregó el máximo disponible");
       }
     }
-  } else sabor = "";
-  const existing = cart.find(it => it.type===type && it.id===id && (it.sabor||"")===(sabor||""));
-  if(existing){ existing.qty += qty; } else { cart.push(sabor ? {type, id, qty, sabor} : {type, id, qty}); }
+  } else { sabor = ""; unit = false; }
+  const existing = cart.find(it => it.type===type && it.id===id && (it.sabor||"")===(sabor||"") && !!it.unit === !!unit);
+  if(existing){ existing.qty += qty; } else { const ni = {type, id, qty}; if(sabor) ni.sabor = sabor; if(unit) ni.unit = true; cart.push(ni); }
   renderCart(); renderProducts();
   showToast("Agregado al pedido");
   return true;
@@ -2488,9 +2585,11 @@ function cartLineInfo(item){
   if(item.type === "product"){
     const p = state.products.find(pp => pp.id === item.id);
     if(!p) return null;
-    const {precioEf, precioTa, pct} = calcProductPrices(p);
+    const base = calcProductPrices(p), pu = (item.unit && permiteUnidad(p)) ? precioUnidad(p) : null;
+    const precioEf = pu ? pu.precioEf : base.precioEf, precioTa = pu ? pu.precioTa : base.precioTa, pct = (pu && pu.manual) ? 0 : base.pct;
     const f = couponFactors(pct);
-    return {name:p.name + (item.sabor ? " · " + item.sabor : ""), brand:p.brand||"", unitEf:Math.round(precioEf*f.ef), unitTa:Math.round(precioTa*f.ta), image:(p.images&&p.images[0])||"", nota:descNota(pct)};
+    const sbI = item.sabor && (p.sabores||[]).find(x => x.n === item.sabor), imgC = (p.images||[])[sbI && Number.isInteger(sbI.img) ? sbI.img : 0] || (p.images&&p.images[0]) || "";
+    return {name:p.name + (item.sabor ? " · " + item.sabor : "") + (pu ? " · Unidad" : (permiteUnidad(p) ? " · Caja x" + cajaN(p) : "")), brand:p.brand||"", unitEf:Math.round(precioEf*f.ef), unitTa:Math.round(precioTa*f.ta), image:imgC, nota:descNota(pct)};
   } else {
     const c = state.combos.find(cc => cc.id === item.id);
     if(!c) return null;
@@ -2558,8 +2657,8 @@ function renderCart(){
     const item = cart[idx];
     if(item.type === "product"){
       const p = state.products.find(pp=>pp.id===item.id);
-      const stock = item.sabor ? stockSabor(p, item.sabor) : stockOf(p);
-      if(stock !== Infinity && item.qty+1 > stock){ showToast("No hay más stock disponible"); return; }
+      const dispI = unidadesDisp(p, item.sabor || "");
+      if(dispI !== Infinity && enCarritoUnidades(item.id, item.sabor || "") + (item.unit ? 1 : cajaN(p)) > dispI){ showToast("No hay más stock disponible"); return; }
     }
     item.qty++; renderCart(); renderProducts();
   });
@@ -2584,7 +2683,7 @@ function renderCart(){
       const info = cartLineInfo(item);
       if(!info) return;
       msg += `- ${item.qty}x ${info.brand ? info.brand + " - " : ""}${info.name} (${money(info.unitEf*item.qty)})\n`;
-      pedidoItems.push({type:item.type, id:item.id, sabor:item.sabor||"", name:info.name, brand:info.brand, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
+      pedidoItems.push({type:item.type, id:item.id, sabor:item.sabor||"", unit:!!item.unit, name:info.name, brand:info.brand, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
     });
     const envio = (cliente.entrega === "correo" || cliente.entrega === "moto") ? (Number(cliente.envioCosto) || 0) : 0, envioTa = envio ? cardFromCash(envio) : 0;
     let totalTr = 0; cart.forEach(it2 => { const i2 = cartLineInfo(it2); if(i2) totalTr += transFromCard(i2.unitTa) * it2.qty; });
@@ -3146,7 +3245,7 @@ async function pagarConMercadoPago(){
     if(!info) return;
     totalEf += info.unitEf*item.qty; totalTa += info.unitTa*item.qty;
     items.push({id: item.type+"-"+item.id, title: (info.brand ? info.brand + " - " : "") + info.name, quantity: item.qty, unit_price: Number(info.unitTa)});
-    pedidoItems.push({type:item.type, id:item.id, sabor:item.sabor||"", name:info.name, brand:info.brand, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
+    pedidoItems.push({type:item.type, id:item.id, sabor:item.sabor||"", unit:!!item.unit, name:info.name, brand:info.brand, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
   });
   if(!items.length) return;
   if((cliente.entrega === "correo" || cliente.entrega === "moto") && Number(cliente.envioCosto) > 0) items.push({id:"envio", title:(cliente.entrega === "moto" ? "Envío en el día (Uber/Didi Moto)" : "Envío Correo Argentino (" + (cliente.servicio === "domicilio" ? "domicilio" : "sucursal") + ")"), quantity:1, unit_price: cardFromCash(Number(cliente.envioCosto))});
@@ -3377,7 +3476,7 @@ function offerProductHtml(p){
   const {precioEf, precioTa, anterior, pct} = calcProductPrices(p);
   const imgs = p.images || [];
   const stock = stockOf(p);
-  const remaining = stock === Infinity ? Infinity : Math.max(0, stock - inCartQty("product", p.id));
+  const remaining = restanteUnidades(p);
   const sections = [["Modo de uso", p.modoDeUso],["Ingredientes", p.ingredientes],["Advertencias", p.advertencias]].filter(([_,v]) => v && v.trim());
   const benefits = (p.beneficios||"").split("\n").filter(l=>l.trim()).map(l=>`<div class="benefit-line">${escapeHtml(l)}</div>`).join("");
   return `
@@ -3411,7 +3510,7 @@ function offerComboHtml(c){
 }
 function offerBlockHtml(o){
   const combos = (o.comboIds || []).map(id => state.combos.find(c => c.id === id)).filter(Boolean);
-  const prods = (o.productIds || []).map(id => state.products.find(p => p.id === id)).filter(Boolean).filter(p => editMode || stockOf(p) > 0);
+  const prods = (o.productIds || []).map(id => state.products.find(p => p.id === id)).filter(Boolean).filter(p => editMode || hayStock(p));
   return `
     <div class="offer-block">
       <h4>🔥 ${escapeHtml(o.title || "Oferta")}</h4>
@@ -3867,10 +3966,11 @@ function confirmarPedido(pedidoId, metodo){
       const p = state.products.find(pp => pp.id === it.id);
       if(!p) return;
       const precioUnit = metodo === "efectivo" ? it.precioEfUnit : it.precioTaUnit;
-      const ganancia = (precioUnit - p.costo) * it.qty;
-      state.ventas.push({id:state.nextVentaId++, fecha:new Date().toLocaleDateString("es-AR"), productId:p.id, comboId:null, marca:p.brand||"", itemNombre:p.name + (it.sabor ? " · " + it.sabor : ""), sabor:it.sabor||"", cantidad:it.qty, metodo, precioUnit, costoUnit:p.costo, total:precioUnit*it.qty, ganancia});
-      if(it.sabor){ const antesV = p.stock; descontarStock(p, it.qty, it.sabor); logStockMov(p, antesV === undefined ? null : antesV, "Venta (sabor " + it.sabor + ")"); }
-      else descontarStock(p, it.qty, null);
+      const esU = !!it.unit && permiteUnidad(p), costoU = esU ? p.costo / cajaN(p) : p.costo;
+      const ganancia = (precioUnit - costoU) * it.qty;
+      state.ventas.push({id:state.nextVentaId++, fecha:new Date().toLocaleDateString("es-AR"), productId:p.id, comboId:null, marca:p.brand||"", itemNombre:p.name + (it.sabor ? " · " + it.sabor : "") + (esU ? " · Unidad" : ""), sabor:it.sabor||"", unidad:esU, cantidad:it.qty, metodo, precioUnit, costoUnit:costoU, total:precioUnit*it.qty, ganancia});
+      if(it.sabor){ const antesV = p.stock; descontarStock(p, it.qty, it.sabor, esU); logStockMov(p, antesV === undefined ? null : antesV, "Venta (sabor " + it.sabor + (esU ? ", unidad" : "") + ")"); }
+      else descontarStock(p, it.qty, null, esU);
     } else {
       const c = state.combos.find(cc => cc.id === it.id);
       if(!c) return;
@@ -3981,7 +4081,7 @@ function deshacerVenta(ventaId){
     if(c) moverStockCombo(c, v.cantidad, -1);
   } else {
     const p = state.products.find(pp => pp.id === v.productId);
-    if(p && p.stock !== null && p.stock !== undefined){ const antesD = p.stock; devolverStock(p, v.cantidad, v.sabor || null); logStockMov(p, antesD, "Venta deshecha (devolución)"); }
+    if(p && p.stock !== null && p.stock !== undefined){ const antesD = p.stock; devolverStock(p, v.cantidad, v.sabor || null, !!v.unidad); logStockMov(p, antesD, "Venta deshecha (devolución)"); }
   }
   state.ventas.splice(idx,1);
   ventasCol.doc(String(v.id)).delete().catch(err => console.error(err));
