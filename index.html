@@ -1185,7 +1185,11 @@ function pintarTextosEnvio(){
 }
 function envioLocalTxt(){ const v = Number(state.settings.envioLocal), min = Number(state.settings.envioGratisDesde) || 0; return v > 0 ? `🛵 Envío a ${escapeHtml(state.settings.envioLocalZonas || 'José C. Paz / Zona Norte')}: <b>${money(v)}</b>${min > 0 ? ` · <b>GRATIS desde ${money(min)}</b>` : ""} · 🤝 Retiro: sin costo` : ""; }
 function cuotasMP(){ const n = Math.floor(Number(state.settings.cuotasSinInteres)); return n >= 2 && n <= 12 ? n : 0; }
-function priceBlock(precioTa, precioEf, anteriorTa, big){
+function priceBlock(precioTa, precioEf, anteriorTa, big, unico, until){
+  if(unico){
+    return `<div class="pb-card">${anteriorTa ? `<s class="old-price">${money(anteriorTa)}</s>` : ""}<span class="pb-main">${money(precioTa)}</span><span class="pb-sub">🔥 Precio Cyber Monday${until ? " · hasta el " + fmtDay(until) : ""}</span></div>`
+     + (envioLocalTxt() ? `<div class="pb-env">${envioLocalTxt()}</div>` : "");
+  }
   const tr = trOn() ? transFromCard(precioTa) : 0;
   return `<div class="pb-card">${anteriorTa ? `<s class="old-price">${money(anteriorTa)}</s>` : ""}<span class="pb-main">${money(precioTa)}</span><span class="pb-sub">💳 Tarjeta o Mercado Pago</span></div>`
    + (cuotasMP() ? `<div class="pb-cuotas">💳 <b>${cuotasMP()} cuotas sin interés de ${money(precioTa/cuotasMP())}</b> con Mercado Pago</div>` : "")
@@ -1373,7 +1377,7 @@ function offerPriceFor(p){
     if(!offerVisible(o)) continue;
     if(!(o.productIds || []).includes(p.id)) continue;
     const pr = o.prices && o.prices[p.id];
-    if(pr && Number(pr.ef) > 0) return pr;
+    if(pr && Number(pr.ef) > 0) return Object.assign({}, pr, {unico: !!o.unico, until: o.until || ""});
   }
   return null;
 }
@@ -1391,12 +1395,13 @@ function calcProductPricesRaw(p){
   const ta = Number(pr.ta) > 0 ? Number(pr.ta) : cardFromCash(ef);
   const ant = Number(pr.ant) > 0 ? Number(pr.ant) : base.precioEf;
   const pct = ant > ef ? Math.round((1 - ef / ant) * 100) : 0;
+  if(pr.unico) return {precioEf: ef, precioTa: ef, anterior: pct > 0 ? ant : 0, anteriorTa: pct > 0 ? ant : 0, pct, unico: true, until: pr.until};
   return {precioEf: ef, precioTa: ta, anterior: pct > 0 ? ant : 0, anteriorTa: 0, pct};
 }
 function calcProductPrices(p){
   const r = calcProductPricesRaw(p);
   if(r.anterior > 0 && !r.anteriorTa) r.anteriorTa = cardFromCash(r.anterior);
-  if(cashOn()) r.precioEf = cashFromCard(r.precioTa);
+  if(cashOn() && !r.unico) r.precioEf = cashFromCard(r.precioTa);
   return r;
 }
 function waLink(number, text){ const clean=(number||"").replace(/[^0-9]/g,""); return clean ? `https://wa.me/${clean}?text=${encodeURIComponent(text)}` : "#"; }
@@ -1443,7 +1448,7 @@ function precioUnidad(p){
 function precioModo(p){
   const r = calcProductPrices(p); if(!enModoUnidad(p)) return r;
   const u = precioUnidad(p);
-  return {precioEf: u.precioEf, precioTa: u.precioTa, anterior: 0, anteriorTa: 0, pct: u.manual ? 0 : r.pct};
+  return {precioEf: u.precioEf, precioTa: u.precioTa, anterior: 0, anteriorTa: 0, pct: u.manual ? 0 : r.pct, unico: r.unico, until: r.until};
 }
 function modoChips(p){
   if(!permiteUnidad(p)) return "";
@@ -1566,8 +1571,8 @@ function motivoRestart(){
 }
 let showcaseSig = "";
 function scCard(p){
-  const {precioEf, precioTa, anteriorTa, pct} = calcProductPrices(p), img = (p.images || [])[0];
-  return `<div class="sc-card">${pct > 0 ? `<div class="off-circle"><b>${pct}%</b><span>OFF</span></div>` : ""}<div data-sc-open="${p.id}" style="cursor:pointer;">${img ? `<img src="${img}" alt="">` : `<div style="height:150px;display:flex;align-items:center;justify-content:center;color:#a9ab9c;font-size:.7rem;">Sin foto</div>`}<div class="sc-name">${escapeHtml(conMarca(p.brand, p.name))}</div></div><div class="sc-price">${anteriorTa ? `<s class="old-price">${money(anteriorTa)}</s> ` : ""}${money(precioTa)}</div>${trOn() ? `<div class="sc-cash" style="color:var(--ink)">${money(transFromCard(precioTa))} transferencia</div>` : ""}${cashOn() ? `<div class="sc-cash">${money(precioEf)} efectivo</div>` : ""}<button type="button" class="add-cart-btn" data-sc-add="${p.id}">${tieneSabores(p) ? "Elegir sabor" : "Comprar"}</button></div>`;
+  const {precioEf, precioTa, anteriorTa, pct, unico} = calcProductPrices(p), img = (p.images || [])[0];
+  return `<div class="sc-card">${pct > 0 ? `<div class="off-circle"><b>${pct}%</b><span>OFF</span></div>` : ""}<div data-sc-open="${p.id}" style="cursor:pointer;">${img ? `<img src="${img}" alt="">` : `<div style="height:150px;display:flex;align-items:center;justify-content:center;color:#a9ab9c;font-size:.7rem;">Sin foto</div>`}<div class="sc-name">${escapeHtml(conMarca(p.brand, p.name))}</div></div><div class="sc-price">${anteriorTa ? `<s class="old-price">${money(anteriorTa)}</s> ` : ""}${money(precioTa)}</div>${(trOn() && !unico) ? `<div class="sc-cash" style="color:var(--ink)">${money(transFromCard(precioTa))} transferencia</div>` : ""}${(cashOn() && !unico) ? `<div class="sc-cash">${money(precioEf)} efectivo</div>` : ""}${unico ? `<div class="sc-cash" style="color:#d8432f">🔥 Precio Cyber</div>` : ""}<button type="button" class="add-cart-btn" data-sc-add="${p.id}">${tieneSabores(p) ? "Elegir sabor" : "Comprar"}</button></div>`;
 }
 function calcMasVendidos(){
   const cnt = {};
@@ -1774,7 +1779,7 @@ function testPick(cat, budget){
 const tMoney = n => "$" + Math.round(Number(n) || 0).toLocaleString("es-AR");
 function testProdHtml(p, cat){
   const pr = calcProductPrices(p), img = (p.images || [])[0];
-  const ef = cashOn() ? `<div class="pr" style="font-size:.74rem;color:var(--green);font-weight:700;">${tMoney(pr.precioEf)} abonando en efectivo o transferencia</div>` : "";
+  const ef = (cashOn() && !pr.unico) ? `<div class="pr" style="font-size:.74rem;color:var(--green);font-weight:700;">${tMoney(pr.precioEf)} abonando en efectivo o transferencia</div>` : "";
   return `<div class="tq-prod"><div class="row">${img ? `<img src="${img}" alt="">` : `<div class="noimg"></div>`}<div style="min-width:0;">
     <div class="k">${escapeHtml(cat)}</div><div class="n">${escapeHtml((p.brand ? p.brand + " - " : "") + p.name)}</div>
     <div class="why">${escapeHtml(TEST_WHY[cat] || "")}</div>
@@ -2173,7 +2178,7 @@ function renderProducts(){
   const filtered = state.products.filter(matchesFilters);
   document.getElementById("prodCount").textContent = `${filtered.length} de ${visibleProducts().length} productos`;
   filtered.forEach(p => {
-    const {precioEf, precioTa, anterior, anteriorTa, pct} = precioModo(p);
+    const {precioEf, precioTa, anterior, anteriorTa, pct, unico, until} = precioModo(p);
     const imgs = p.images || [];
     const stock = stockOf(p);
     const remaining = restanteUnidades(p);
@@ -2191,7 +2196,7 @@ function renderProducts(){
         <div class="p-name" data-open-detail="product:${p.id}">${escapeHtml(p.name)}</div>
         ${p.desc ? `<div class="p-desc">${escapeHtml(p.desc)}</div>` : ""}
         <div class="p-prices">
-          ${priceBlock(precioTa, precioEf, anteriorTa)}
+          ${priceBlock(precioTa, precioEf, anteriorTa, false, unico, until)}
         </div>
         ${modoChips(p)}${saboresChips(p)}
         <button class="add-cart-btn" data-add-product="${p.id}" ${remaining<=0?'disabled':''}>${remaining<=0?(stock>0?'Todo el stock está en tu pedido':'Sin stock'):'Comprar'}</button>
@@ -2725,7 +2730,7 @@ function renderDetail(type, id){
     const p = state.products.find(pp => pp.id === id);
     if(!p) return;
     const imgs = p.images || [];
-    const {precioEf, precioTa, anterior, anteriorTa, pct} = precioModo(p);
+    const {precioEf, precioTa, anterior, anteriorTa, pct, unico, until} = precioModo(p);
     const stock = stockOf(p);
     const remaining = restanteUnidades(p);
     const sections = [["Modo de uso", p.modoDeUso],["Ingredientes", p.ingredientes],["Advertencias", p.advertencias]].filter(([_,v]) => v && v.trim());
@@ -2737,9 +2742,9 @@ function renderDetail(type, id){
       <div class="detail-main-photo">${imgs[detailActiveImgIdx] ? `<img src="${imgs[detailActiveImgIdx]}">` : `<div class="ph-empty">Sin foto</div>`}${pct>0 ? `<div class="off-circle"><b>${pct}%</b><span>OFF</span></div>` : ""}</div>
       ${imgs.length>1 ? `<div class="detail-thumbs">${imgs.map((im,i)=>`<img src="${im}" class="${i===detailActiveImgIdx?'active':''}" data-set-main="${i}">`).join("")}</div>` : ""}
       <div class="detail-prices">
-        ${priceBlock(precioTa, precioEf, anteriorTa)}
+        ${priceBlock(precioTa, precioEf, anteriorTa, false, unico, until)}
       </div>
-      ${p.cuotas>0 && !enModoUnidad(p) ? `<div class="detail-cuotas">💳 ${p.cuotas} cuotas de ${money(precioTa/p.cuotas)}</div>` : ""}
+      ${p.cuotas>0 && !enModoUnidad(p) && !unico ? `<div class="detail-cuotas">💳 ${p.cuotas} cuotas de ${money(precioTa/p.cuotas)}</div>` : ""}
       <button type="button" class="detail-share" id="shareBtn">🔗 Compartir este producto</button>
       ${modoChips(p)}${saboresChips(p)}
       ${state.settings.cuponCodigo && state.settings.cuponPct>0 ? `<div class="coupon-row"><input id="cuponInput" placeholder="Código de descuento"><button id="cuponBtn">Aplicar</button></div><div class="coupon-res" id="cuponRes"></div>` : ""}
@@ -2894,7 +2899,7 @@ function cartLineInfo(item){
     const precioEf = pu ? pu.precioEf : base.precioEf, precioTa = pu ? pu.precioTa : base.precioTa, pct = (pu && pu.manual) ? 0 : base.pct;
     const f = couponFactors(pct);
     const sbI = item.sabor && (p.sabores||[]).find(x => x.n === item.sabor), imgC = (p.images||[])[sbI && Number.isInteger(sbI.img) ? sbI.img : 0] || (p.images&&p.images[0]) || "";
-    return {name:p.name + (item.sabor ? " · " + item.sabor : "") + (pu ? " · Unidad" : (permiteUnidad(p) ? " · Caja x" + cajaN(p) : "")), brand:p.brand||"", unitEf:Math.round(precioEf*f.ef), unitTa:Math.round(precioTa*f.ta), image:imgC, nota:descNota(pct)};
+    return {name:p.name + (item.sabor ? " · " + item.sabor : "") + (pu ? " · Unidad" : (permiteUnidad(p) ? " · Caja x" + cajaN(p) : "")), brand:p.brand||"", unitEf:Math.round(precioEf*f.ef), unitTa:Math.round(precioTa*f.ta), image:imgC, nota:descNota(pct), unico: !!base.unico};
   } else {
     const c = state.combos.find(cc => cc.id === item.id);
     if(!c) return null;
@@ -2992,7 +2997,7 @@ function renderCart(){
       pedidoItems.push({type:item.type, id:item.id, sabor:item.sabor||"", unit:!!item.unit, name:info.name, brand:info.brand, qty:item.qty, precioEfUnit:info.unitEf, precioTaUnit:info.unitTa});
     });
     const envio = (cliente.entrega === "correo" || cliente.entrega === "moto") ? (Number(cliente.envioCosto) || 0) : 0, envioTa = envio ? cardFromCash(envio) : 0;
-    let totalTr = 0; cart.forEach(it2 => { const i2 = cartLineInfo(it2); if(i2) totalTr += transFromCard(i2.unitTa) * it2.qty; });
+    let totalTr = 0; cart.forEach(it2 => { const i2 = cartLineInfo(it2); if(i2) totalTr += (i2.unico ? i2.unitTa : transFromCard(i2.unitTa)) * it2.qty; });
     if(cartCoupon) msg += `\n🎟️ Código ${cartCoupon} (${state.settings.cuponPct}% OFF) aplicado`;
     if(cart.some(it => { const i3 = cartLineInfo(it); return i3 && i3.nota; })) msg += `\nℹ️ En los productos que ya tienen descuento no se acumula el descuento de amigo/código (rige el mayor).`;
     if(cashOn()) msg += `\n💸 Incluye ${state.settings.descEfPct}% OFF por pagar en efectivo o transferencia`;
@@ -3792,7 +3797,7 @@ function renderOfferBanners(){
 }
 function openOffers(){ renderOfferSheet(); openSheet("offerSheet"); }
 function offerProductHtml(p){
-  const {precioEf, precioTa, anterior, pct} = calcProductPrices(p);
+  const {precioEf, precioTa, anterior, pct, unico} = calcProductPrices(p);
   const imgs = p.images || [];
   const stock = stockOf(p);
   const remaining = restanteUnidades(p);
@@ -3808,8 +3813,8 @@ function offerProductHtml(p){
     <div class="detail-brand">${escapeHtml(p.brand||"")} · ${escapeHtml(catOf(p))}</div>
     <div class="op-title">${escapeHtml(p.name)}</div>
     <div class="op-price-row"><span class="op-price">${money(precioEf)}</span>${anterior ? `<s class="op-old">${money(anterior)}</s>` : ""}</div>
-    <div class="op-sub">efectivo / transferencia</div>
-    <div class="op-card-price">${money(precioTa)} <span>con tarjeta</span></div>
+    <div class="op-sub">${unico ? "🔥 Precio Cyber Monday (un solo precio)" : "efectivo / transferencia"}</div>
+    ${unico ? "" : `<div class="op-card-price">${money(precioTa)} <span>con tarjeta</span></div>`}
     ${benefits ? `<div class="detail-benefits">${benefits}</div>` : (p.desc ? `<div class="p-desc">${escapeHtml(p.desc)}</div>` : "")}
     <div class="detail-info">${sections.map(([t,body])=>`<details><summary>${t}</summary><div class="dbody">${escapeHtml(body)}</div></details>`).join("")}</div>
     <button type="button" class="primary-btn" data-offer-add="product:${p.id}" ${remaining<=0?"disabled":""}>${remaining<=0?"Sin stock":"Agregar al pedido"}</button>
@@ -3868,6 +3873,7 @@ function renderOffersAdmin(){
         <div class="admin-row"><label>Detalle</label><textarea data-of="detail" data-oid="${o.id}" placeholder="Condiciones, descuentos por forma de pago, etc.">${escapeHtml(o.detail||"")}</textarea></div>
         <div class="admin-row"><label>Hasta</label><input type="date" data-of="until" data-oid="${o.id}" value="${o.until||""}"><span style="font-size:0.6rem;color:var(--muted);align-self:center;">vacío = sin vencimiento</span></div>
         <label class="check-row"><input type="checkbox" data-of-active="${o.id}" ${o.active!==false?"checked":""}> Oferta activa (visible para todos)</label>
+        <label class="check-row"><input type="checkbox" data-of-unico="${o.id}" ${o.unico?"checked":""}> Mostrar un solo precio (sin efectivo/transferencia/tarjeta)</label>
         <div style="font-size:0.66rem;font-weight:800;margin:8px 0 2px;">Combos incluidos</div>
         ${state.combos.length ? state.combos.map(c => `<label class="check-row"><input type="checkbox" data-of-combo="${o.id}:${c.id}" ${(o.comboIds||[]).includes(c.id)?"checked":""}> ${escapeHtml(c.name)}</label>`).join("") : `<div style="font-size:0.66rem;color:var(--muted);">Todavía no creaste combos.</div>`}
         <div style="font-size:0.66rem;font-weight:800;margin:8px 0 2px;">Productos incluidos <span style="font-weight:600;color:var(--muted);">(marcalos y abajo poné el precio de oferta)</span></div>
@@ -3903,6 +3909,7 @@ function findOffer(id){ return (state.settings.ofertas || []).find(o => o.id ===
       o.prices[pid][f] = t.value === "" ? "" : Number(t.value);
       renderProducts(); scheduleSave(); return;
     }
+    if(t.dataset.ofUnico){ const o = findOffer(t.dataset.ofUnico); if(o){ o.unico = t.checked; renderProducts(); renderOfferBanners(); scheduleSave(); } return; }
     if(t.dataset.ofActive){ const o = findOffer(t.dataset.ofActive); if(o){ o.active = t.checked; renderOfferBanners(); scheduleSave(); } return; }
     const toggle = (attr, key) => {
       const [oid, id] = attr.split(":").map(Number);
